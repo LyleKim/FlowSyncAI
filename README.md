@@ -39,7 +39,7 @@
 
 ### Run to dev
 
-[BackEnd]
+[Backend]
 1. 최초 1회만 실시합니다.:
     ```bash
     
@@ -47,7 +47,6 @@
 
     pip install -r requirements.txt
 
-    
     python manage.py migrate
 
     ```
@@ -58,17 +57,15 @@
     ```bash
     
     docker compose up --build 
-    
 
     ```
 
-[FrontEnd]
+[Frontend]
 1. 최초 1회만 실행합니다.
   
     ```bash
     
     npm install
-    
 
     ```
 
@@ -78,7 +75,6 @@
     
     npm run dev
     
-
     ```
 
 <br/>
@@ -107,5 +103,6 @@
 
 - Cursor
   API 설계 평가 및 작성
+  에러 구조 파악 및 수정
 
 <br/>
