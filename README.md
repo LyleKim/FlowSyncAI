@@ -40,23 +40,10 @@
 ### Run to dev
 
 [Backend]
-1. 최초 1회만 실시합니다.:
+1. To run :
     ```bash
     
-    python -m venv .venv 
-
-    pip install -r requirements.txt
-
-    python manage.py migrate
-
-    ```
-
-
-2.  To run:
-  
-    ```bash
-    
-    docker compose up --build 
+    docker compose up --build
 
     ```
 
