@@ -1,0 +1,6 @@
+{
+  "name": "Task Management Dashboard",
+  "description": "An interactive, feature-rich dashboard to manage, track, and analyze tasks and projects with stats, Kanban board, and activity log.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
