@@ -66,26 +66,27 @@
 
 <br/>
   
-## Main Contributors  
-<div style="display: inline-block; text-align: center; margin-right: 15px;">
-  <a href="https://github.com/LyleKim" target="_blank">
-    <img src="https://github.com/LyleKim.png" width="40" style="border-radius:50%;" alt="LyleKim" />
-  </a>
-  <div style="font-size: 12px; margin-top: 4px;">LyleKim</div>
-</div>
-<div style="display: inline-block; text-align: center; margin-right: 15px;">
-  <div target="_blank">
-    <img src="https://images.prismic.io/sacra/Z0Sul68jQArT1Sb7_cursorlogo.png?auto=format,compress" width="40" style="border-radius:50%;" alt="Cursor" />
+## Main Contributors 
+<div> 
+  <div style="display: inline-block; text-align: center; margin-right: 15px;">
+    <a href="https://github.com/LyleKim" target="_blank">
+      <img src="https://github.com/LyleKim.png" width="40" style="border-radius:50%;" alt="LyleKim" />
+    </a>
+    <div style="font-size: 12px; margin-top: 4px;">LyleKim</div>
   </div>
-  <div style="font-size: 12px; margin-top: 4px;">Cursor</div>
-</div>
-<div style="display: inline-block; text-align: center; margin-right: 15px;">
-  <div target="_blank">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGB2LXnVjf8bcRSZNhqHg0mHwmjG_5yg-PQH1EFkCSgQ&s=10" width="40" style="border-radius:50%;" alt="Google AI Studio" />
+  <div style="display: inline-block; text-align: center; margin-right: 15px;">
+    <div target="_blank">
+      <img src="https://images.prismic.io/sacra/Z0Sul68jQArT1Sb7_cursorlogo.png?auto=format,compress" width="40" style="border-radius:50%;" alt="Cursor" />
+    </div>
+    <div style="font-size: 12px; margin-top: 4px;">Cursor</div>
   </div>
-  <div style="font-size: 12px; margin-top: 4px;">Google AI Studio</div>
+  <div style="display: inline-block; text-align: center; margin-right: 15px;">
+    <div target="_blank">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGB2LXnVjf8bcRSZNhqHg0mHwmjG_5yg-PQH1EFkCSgQ&s=10" width="40" style="border-radius:50%;" alt="Google AI Studio" />
+    </div>
+    <div style="font-size: 12px; margin-top: 4px;">Google AI Studio</div>
+  </div>
 </div>
-
 <br/>
 
 
