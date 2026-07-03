@@ -94,15 +94,16 @@
 
 ## What we do
 - 김준석(Backend) :  
-  앱 설계
-  URL 설계 및 RESTfull API 구성
-  model - form 구성
+  앱 설계  
+  URL 설계 및 RESTfull API 구성  
+  model - form 구성  
+  
   
 - Google Ai Studio :  
   프론트엔드 ui 생성
 
 - Cursor :  
-  API 설계 평가 및 작성
+  API 설계 평가 및 작성  
   에러 구조 파악 및 수정
 
 <br/>
