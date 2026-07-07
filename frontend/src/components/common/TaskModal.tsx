@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Edit2, Plus, Trash2, CheckSquare, Square, Calendar, User, AlignLeft, Tag, BarChart, ClipboardCheck, Check, Sparkles } from 'lucide-react';
 import { Task, TaskStatus, TaskPriority, SubTask, RoleReview } from '../../types';
+import { postJson } from '../../services/apiClient';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -156,16 +157,10 @@ export default function TaskModal({
 
     setIsGeneratingChecklist(true);
     try {
-      const response = await fetch('/api/v1/generate-checklist/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          roleReviews: roleReviews
-        }),
+      const response = await postJson('/api/v1/generate-checklist/', {
+        title: title.trim(),
+        description: description.trim(),
+        roleReviews: roleReviews
       });
 
       const data = await response.json();

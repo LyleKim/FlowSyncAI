@@ -7,6 +7,7 @@ import {
   invalidateTasksCacheHeaders,
   TASKS_POLL_INTERVAL_MS,
 } from './services/taskSync';
+import { postJson } from './services/apiClient';
 
 // Component Imports
 import Sidebar from './components/layout/Sidebar';
@@ -230,11 +231,7 @@ export default function App() {
     } else {
       // Create mode -> POST in DB
       try {
-        const response = await fetch('/api/v1/tasks/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(taskData)
-        });
+        const response = await postJson('/api/v1/tasks/', taskData);
         if (!response.ok) throw new Error('Failed to create task');
         const createdTask = await response.json();
         saveTasksToLocal([createdTask, ...tasks]);
@@ -274,10 +271,9 @@ export default function App() {
 
   // --- SubTask resource handlers (/api/v1/tasks/<id>/subtasks/...) ---
   const handleAddSubtask = async (taskId: string, title: string): Promise<SubTask> => {
-    const response = await fetch(`/api/v1/tasks/${taskId}/subtasks/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, completed: false }),
+    const response = await postJson(`/api/v1/tasks/${taskId}/subtasks/`, {
+      title,
+      completed: false,
     });
     if (!response.ok) throw new Error('Failed to add subtask');
     const created: SubTask = await response.json();
@@ -335,11 +331,7 @@ export default function App() {
     taskId: string,
     review: Omit<RoleReview, 'id' | 'createdAt'>
   ): Promise<RoleReview> => {
-    const response = await fetch(`/api/v1/tasks/${taskId}/reviews/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(review),
-    });
+    const response = await postJson(`/api/v1/tasks/${taskId}/reviews/`, review);
     if (!response.ok) throw new Error('Failed to add review');
     const data = await response.json();
     // taskStatus는 RoleReview의 필드가 아니라, "첫 리뷰면 작업을 진행 중으로 전환"하는
