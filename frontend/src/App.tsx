@@ -341,13 +341,17 @@ export default function App() {
       body: JSON.stringify(review),
     });
     if (!response.ok) throw new Error('Failed to add review');
-    const created: RoleReview = await response.json();
+    const data = await response.json();
+    // taskStatus는 RoleReview의 필드가 아니라, "첫 리뷰면 작업을 진행 중으로 전환"하는
+    // 업무 규칙을 서버가 처리한 결과로 얹어 보내는 부가 정보다.
+    const { taskStatus, ...created } = data as RoleReview & { taskStatus?: TaskStatus };
     // hasUnreflectedReview/lastReviewAddedAt은 서버가 조회 시점에 계산하는 값이라
     // 별도로 PATCH하지 않는다. 다음 폴링 전까지 배너를 바로 보여주기 위해
     // 로컬 상태만 낙관적으로 맞춰준다.
     updateTaskInState(taskId, (t) => ({
       ...t,
       roleReviews: [...(t.roleReviews || []), created],
+      status: taskStatus ?? t.status,
       hasUnreflectedReview: true,
       lastReviewAddedAt: created.createdAt,
     }));

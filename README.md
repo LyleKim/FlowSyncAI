@@ -73,25 +73,25 @@
       <img src="https://github.com/LyleKim.png" width="40" style="border-radius:50%;" alt="LyleKim" />
     </a>
     <div style="font-size: 12px; margin-top: 4px;">LyleKim</div>
-  </div>
+  </div>  
   <div style="display: inline-block; text-align: center; margin-right: 15px;">
     <div target="_blank">
       <img src="https://images.prismic.io/sacra/Z0Sul68jQArT1Sb7_cursorlogo.png?auto=format,compress" width="40" style="border-radius:50%;" alt="Cursor" />
     </div>
     <div style="font-size: 12px; margin-top: 4px;">Cursor</div>
-  </div>
+  </div>  
   <div style="display: inline-block; text-align: center; margin-right: 15px;">
     <div target="_blank">
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGB2LXnVjf8bcRSZNhqHg0mHwmjG_5yg-PQH1EFkCSgQ&s=10" width="40" style="border-radius:50%;" alt="Google AI Studio" />
     </div>
     <div style="font-size: 12px; margin-top: 4px;">Google AI Studio</div>
-  </div>
+  </div>  
   <div style="display: inline-block; text-align: center; margin-right: 15px;">
     <div target="_blank">
       <img src="https://avatars.slack-edge.com/2025-05-14/8891273522918_30c38bf627ac73075db6_512.png" width="40" style="border-radius:50%;" alt="Claude AI" />
     </div>
     <div style="font-size: 12px; margin-top: 4px;">Claude AI</div>
-  </div>
+  </div>  
 </div>
 <br/>
 
@@ -140,11 +140,13 @@
 "관련 역할 및 검토 기록"에 "진행 상황"관련 댓글을 작성하면 댓글이 추가되고,
 "작업 프로세스 흐름도"가 "할 일"에서 "진행 중"으로 변경되도록 만들어야한다.  
   
-=> POST를 사용해서 "진행 상황"에 대한 댓글을 저장하고,
-PATCH를 사용해서 "작업 상세 정보"의 "작업 프로세스 흐름도"와 관련된 정보를 업데이트한다.
+=> POST를 사용해서 댓글에 달 내용을 적어두되, 백엔드 내부 로직에서
+댓글 저장과 동시에 작업 프로세스 흐름도"를 "할 일"에서 "진행 중"으로 변경한다.
+그 이후에 달리는 댓글에 대해서는 POST로 댓글 내용만 저장하도록 한다.
 
-첫 댓글로 인해서 "작업 프로세스 흐름도"를 PATCH로 변경하고 나면,
-그 다음에 달리는 댓글은 POST로 보내주고 처리해주면 된다.
+원래는 댓글 데이터는 POST, 작업 프로세스 흐름도는 PATCH로 한번에 두 개의 HTTP 메시지를 발생시키려고 했으나 프론트에서는 직관적으로 POST와 PATCH를 따로 해야한다는 사실을 알기 어려울 것으로 판단하였다.  
+  
+이에 POST로만 댓글 내용을 받고. 백엔드 비지니스 로직에서 "작업 프로세스 흐름도"를 변경하도록 하였다.
 
 결과 : 댓글이 추가 되는 부분은 POST로, 상태 데이터가 변경되는 부분은 PATCH로 처리한다.
 

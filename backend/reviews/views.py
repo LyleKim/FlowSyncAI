@@ -38,13 +38,21 @@ def review_list_create(request, task_id):
 
     review, errors, outcome = create_review_from_body(body)
     if errors:
-        status = 409 if (body.get('id') and RoleReview.objects.filter(pk=body['id']).exists()) else 400
-        return json_error('Validation failed', status=status, details={'fields': errors})
+        error_status = 409 if (body.get('id') and RoleReview.objects.filter(pk=body['id']).exists()) else 400
+        return json_error('Validation failed', status=error_status, details={'fields': errors})
+
+    # "작업에 처음 달리는 리뷰는 작업을 진행 중 상태로 전환한다"는 업무 규칙을 여기서
+    # 함께 처리한다. 클라이언트가 별도로 Task를 PATCH할 필요가 없어진다.
+    if outcome == 'created' and task.status == 'todo':
+        if RoleReview.objects.filter(task_id=task.id).count() == 1:
+            task.status = 'inprogress'
+            task.save(update_fields=['status'])
 
     response_body = serialize_review(review)
-    status = 201 if outcome == 'created' else 200
+    response_body['taskStatus'] = task.status
+    status_code = 201 if outcome == 'created' else 200
     return finalize_idempotent_response(
-        request, f'tasks:{task_id}:reviews:POST', idempotency_key, status, response_body
+        request, f'tasks:{task_id}:reviews:POST', idempotency_key, status_code, response_body
     )
 
 

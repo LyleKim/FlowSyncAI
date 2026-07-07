@@ -306,20 +306,12 @@ export default function TaskModal({
     setNewReviewReviewerId('');
     setNewReviewUrgency('normal');
 
-    const shouldMoveToInProgress = status === 'todo' && roleReviews.length === 0;
-    if (shouldMoveToInProgress) {
-      setStatus('inprogress');
-    }
-
-    // 리뷰 자체는 reviews 리소스에 저장한다. hasUnreflectedReview/lastReviewAddedAt은
-    // 서버가 조회 시점에 계산하는 값이라 여기서 따로 보낼 게 없다. status 전환은
-    // "첫 리뷰"일 때만 실제로 값이 바뀌므로 그 경우에만 Task를 PATCH한다.
+    // "첫 리뷰면 작업을 진행 중으로 전환"하는 업무 규칙은 서버(reviews 앱)가 처리한다.
+    // 갱신된 task가 prop으로 다시 내려오면 위쪽 useEffect가 로컬 status도 맞춰주므로
+    // 여기서 따로 상태를 바꾸거나 Task를 PATCH할 필요가 없다.
     onAddReview(task.id, reviewInput)
       .then((created) => {
         setRoleReviews((prev) => [...prev, created]);
-        if (shouldMoveToInProgress) {
-          onSave({ ...task, status: 'inprogress' });
-        }
       })
       .catch((err) => console.error('Failed to add review in backend:', err));
   };
