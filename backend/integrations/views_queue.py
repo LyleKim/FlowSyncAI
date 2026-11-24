@@ -24,6 +24,7 @@ def queue_list(request):
         return json_error('closedWithinDays must be an integer between 1 and 30', status=400,
                           code='invalid_closed_within_days')
     teams = [t.strip() for t in (request.GET.get('teams') or '').split(',') if t.strip()]
+    teams = [t.lower() for t in teams]
     include_areas = 'areas' in (request.GET.get('include') or '').split(',')
     payload = build_queue(login, teams, days, include_areas, timezone.now())
     stamps = [PullRequest.objects.aggregate(m=Max('synced_at'))['m'],

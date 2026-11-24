@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from django.db import connection
 from django.test import TestCase
@@ -53,6 +53,27 @@ class IngestTests(TestCase):
         ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
         ingest_prs(self.repo, [pr(review_requests=[req('a', at=None)])], NOW)
         self.assertEqual(self.rv(login_key='a').requested_at.isoformat(), '2026-11-01T00:00:00+00:00')
+
+    def test_rerequest_while_still_active_moves_requested_at(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T3)],
+                                  latest_reviews=[{'login': 'a', 'state': 'COMMENTED', 'submitted_at': T2}])], NOW)
+        r = self.rv(login_key='a')
+        self.assertEqual((r.requested_at.isoformat(), r.requested_at_estimated), ('2026-11-03T00:00:00+00:00', False))
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T2)])], NOW)  # older event: unchanged
+        self.assertEqual(self.rv(login_key='a').requested_at.isoformat(), '2026-11-03T00:00:00+00:00')
+
+    def test_rerequest_after_review_is_waiting_in_queue(self):
+        from django.utils import timezone
+        from integrations.review_queue import build_queue
+        n = timezone.now().replace(microsecond=0)
+        t = lambda d: (n - timedelta(days=d)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        ingest_prs(self.repo, [pr(created_at=t(5), updated_at=t(1), review_requests=[req('a', at=t(4))])], NOW)
+        rev = [{'login': 'a', 'state': 'COMMENTED', 'submitted_at': t(3)}]
+        ingest_prs(self.repo, [pr(created_at=t(5), updated_at=t(1), latest_reviews=rev,
+                                  review_requests=[req('a', at=t(2))])], NOW)
+        [item] = build_queue('a', [], 7, False, n)['items']
+        self.assertEqual((item['group'], item['reRequested']), ('waiting', True))
 
     def test_missing_requested_at_falls_back_to_pr_created(self):
         ingest_prs(self.repo, [pr(review_requests=[req('a')])], NOW)
@@ -188,3 +209,20 @@ class IngestTests(TestCase):
         with CaptureQueriesContext(connection) as c:
             ingest_prs(self.repo, [pr(1)], NOW)
         self.assertIn('IN (1)', ' '.join(q['sql'] for q in c if 'integrations_pullrequest"' in q['sql'] and 'SELECT' in q['sql']))
+
+
+class TeamKeyEndToEndTests(TestCase):
+    def test_fixture_team_request_reaches_queue(self):
+        from pathlib import Path
+        from unittest import mock
+        from django.utils import timezone
+        from integrations import github_client as gh
+        from integrations.review_queue import build_queue
+        data = json.loads((Path(__file__).parent / 'testdata' / 'graphql_repo_prs.json').read_text())['data']
+        repo = WatchedRepo.objects.create(url='https://github.com/acme/widgets', owner='acme', name='widgets')
+        with mock.patch('integrations.github_client._post_graphql', return_value=data):
+            prs = gh.fetch_repo_pull_requests('acme', 'widgets')['prs']
+        ingest_prs(repo, prs, timezone.now())
+        items = build_queue('nobody', ['acme/backend'], 30, False, timezone.now())['items']
+        i = next(i for i in items if i['number'] == 42)
+        self.assertEqual((i['requestKind'], i['viaTeam']), ('team', 'acme/backend'))

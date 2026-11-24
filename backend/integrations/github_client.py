@@ -126,17 +126,24 @@ def _post_graphql(query, variables, tolerate_alias_not_found=False):
 
 
 def _reviewer_key(r):
-    """('user', login) | ('team', slug) | None for null/Bot/Mannequin."""
+    """('user', login) | ('team', 'org/slug' lowercased) | None for null/Bot/Mannequin."""
     if not r:
         return None
     if r.get('__typename') == 'User':
         return 'user', r['login']
     if r.get('__typename') == 'Team':
-        return 'team', r['slug']
+        return 'team', f"{r['organization']['login']}/{r['slug']}".strip().lower()
     return None
 
 
 def _normalize_pr(n):
+    try:
+        return _normalize_pr_unsafe(n)
+    except (KeyError, TypeError, AttributeError) as e:
+        raise GitHubError(0, f'unexpected pull request shape: {e!r}', kind='upstream')
+
+
+def _normalize_pr_unsafe(n):
     requested = {}  # latest ReviewRequestedEvent per reviewer; ISO-8601 Z strings sort lexicographically
     for ev in (n.get('timelineItems') or {}).get('nodes', []):
         k = _reviewer_key(ev.get('requestedReviewer')) if ev else None
@@ -217,12 +224,15 @@ def list_repo_tree(owner, name, ref=None):
 
     Raises GitHubError(200, ...) if GitHub truncated the tree (huge repo).
     """
-    if not ref:
-        ref = _get(f'/repos/{owner}/{name}')['default_branch']
-    data = _get(f'/repos/{owner}/{name}/git/trees/{quote(ref, safe="")}', {'recursive': 1})
-    if data.get('truncated'):
-        raise GitHubError(200, 'repository tree too large (truncated by GitHub)')
-    return [t['path'] for t in data.get('tree', []) if t.get('type') == 'blob']
+    try:
+        if not ref:
+            ref = _get(f'/repos/{owner}/{name}')['default_branch']
+        data = _get(f'/repos/{owner}/{name}/git/trees/{quote(ref, safe="")}', {'recursive': 1})
+        if data.get('truncated'):
+            raise GitHubError(200, 'repository tree too large (truncated by GitHub)')
+        return [t['path'] for t in data.get('tree', []) if t.get('type') == 'blob']
+    except (KeyError, TypeError, AttributeError) as e:
+        raise GitHubError(200, f'unexpected GitHub response shape: {e!r}', kind='upstream')
 
 
 def list_commits(owner, name, since=None, until=None, max_pages=5):

@@ -87,6 +87,9 @@ def ingest_prs(repo, prs, now):
                         row.is_active, row.removed_at, row.requested_at = True, None, at
                         row.requested_at_estimated = est
                         upd_rv.append(row)
+                    elif ev and ev > row.requested_at:  # re-request while the row stayed active
+                        row.requested_at, row.requested_at_estimated = ev, False
+                        upd_rv.append(row)
                 for k, row in reviewers.get(pr.id, {}).items():
                     if row.is_active and k not in seen:
                         row.is_active, row.removed_at = False, now

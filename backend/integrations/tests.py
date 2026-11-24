@@ -53,6 +53,16 @@ class ClientTests(SimpleTestCase):
             gh._get('/user')
         self.assertEqual(cm.exception.kind, 'upstream')
 
+    def test_tree_unexpected_shape_is_upstream(self, get):
+        get.return_value = resp(body={'tree': [{'type': 'blob'}]})  # blob without path
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh.list_repo_tree('o', 'r', ref='main')
+        self.assertEqual(cm.exception.kind, 'upstream')
+        get.return_value = resp(body=['x'])
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh.list_repo_tree('o', 'r', ref='main')
+        self.assertEqual(cm.exception.kind, 'upstream')
+
     def test_no_token(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {}, clear=True):
@@ -148,13 +158,21 @@ class GraphQLClientTests(SimpleTestCase):
         self.assertEqual(p['files'], ['backend/integrations/github_client.py', 'backend/integrations/tests.py'])
         self.assertEqual(p['review_requests'], [
             {'kind': 'user', 'login': 'bob', 'team_slug': '', 'requested_at': '2026-11-20T01:05:00Z'},
-            {'kind': 'team', 'login': '', 'team_slug': 'backend', 'requested_at': '2026-11-21T02:00:00Z'},
+            {'kind': 'team', 'login': '', 'team_slug': 'acme/backend', 'requested_at': '2026-11-21T02:00:00Z'},
         ])
         self.assertEqual(p['latest_reviews'],
                          [{'login': 'carol', 'state': 'COMMENTED', 'submitted_at': '2026-11-22T10:00:00Z'}])
         self.assertEqual(by[38]['state'], 'merged')
         self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer tok')
         self.assertEqual(post.call_args.kwargs['timeout'], 10)
+
+    def test_malformed_pr_node_is_upstream_error(self, post):
+        bad = pr_node(1)
+        del bad['reviewRequests']
+        post.return_value = resp(body=gql([bad]))
+        with self.assertRaises(gh.GitHubError) as c:
+            gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual(c.exception.kind, 'upstream')
 
     def test_pagination_and_truncation(self, post):
         post.return_value = resp(body=gql([pr_node(1)], has_next=True))
