@@ -43,13 +43,17 @@ describe('useAreas', () => {
 
   it('(c) 느린 A 응답이 B 뒤에 와도 B 유지', async () => {
     let resolveA!: (v: never) => void;
-    fetchA.mockImplementation((r, d) =>
-      r === 1 ? new Promise((res) => (resolveA = res)) : Promise.resolve(resp(r, d)),
-    );
+    let sigA: AbortSignal | undefined;
+    fetchA.mockImplementation((r, d, o) => {
+      if (r !== 1) return Promise.resolve(resp(r, d));
+      sigA = o?.signal;
+      return new Promise((res) => (resolveA = res));
+    });
     const { result, rerender } = renderHook(({ r }) => useAreas(r, 30), { initialProps: { r: 1 } });
     rerender({ r: 2 });
     await flush();
     expect(result.current.data?.repoId).toBe(2);
+    expect(sigA?.aborted).toBe(true);
     await act(async () => resolveA(resp(1)));
     expect(result.current.data?.repoId).toBe(2);
   });
@@ -92,6 +96,29 @@ describe('useAreas', () => {
       vi.advanceTimersByTime(REFRESH_COOLDOWN_MS);
     });
     expect(result.current.canRefresh).toBe(true);
+  });
+
+  it('(f2) 진행 중 refresh()는 요청을 만들지 않는다', async () => {
+    fetchA.mockImplementation(() => new Promise(() => {}));
+    const { result } = renderHook(() => useAreas(1, 30));
+    await flush();
+    await act(async () => result.current.refresh());
+    expect(fetchA).toHaveBeenCalledTimes(1);
+    expect(result.current.canRefresh).toBe(false);
+  });
+
+  it('(g2) 이후 별칭 실패는 직전 목록 유지 + aliasesFailed', async () => {
+    const al = [{ id: 1 }] as never;
+    aliases.mockResolvedValueOnce(al);
+    const { result } = renderHook(() => useAreas(1, 30));
+    await flush();
+    aliases.mockRejectedValue(new Error('x'));
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+      result.current.refresh();
+    });
+    expect(result.current.aliases).toBe(al);
+    expect(result.current.aliasesFailed).toBe(true);
   });
 
   it('(g) 별칭 reject → aliasesFailed · ready', async () => {

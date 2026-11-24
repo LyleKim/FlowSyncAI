@@ -16,7 +16,16 @@ export const isAbort = (e: unknown) => e instanceof DOMException && e.name === '
 type Result = { key: string; data: AreasResponse | null; error: AreaError | null };
 type Aliases = { repoId: number; list: AreaAlias[]; failed: boolean };
 
-export function useAreas(repoId: number | null, days: number) {
+export function useAreas(repoId: number | null, days: number): {
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  data: AreasResponse | null;
+  aliases: AreaAlias[];
+  aliasesFailed: boolean;
+  error: AreaError | null;
+  stale: boolean;
+  refresh(): void;
+  canRefresh: boolean;
+} {
   const key = `${repoId}:${days}`;
   const [result, setResult] = useState<Result>({ key: '', data: null, error: null });
   const [aliasState, setAliasState] = useState<Aliases | null>(null);
@@ -24,6 +33,7 @@ export function useAreas(repoId: number | null, days: number) {
   const [cooling, setCooling] = useState(false);
   const [inflight, setInflight] = useState(false);
   const refreshRef = useRef(false);
+  const inflightRef = useRef(false);
   const lockRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -32,6 +42,7 @@ export function useAreas(repoId: number | null, days: number) {
     const ctl = new AbortController();
     const refresh = refreshRef.current;
     refreshRef.current = false;
+    inflightRef.current = true;
     setInflight(true);
     fetchAreas(repoId, days, { refresh, signal: ctl.signal }).then(
       (data) => !ctl.signal.aborted && setResult({ key, data, error: null }),
@@ -40,10 +51,14 @@ export function useAreas(repoId: number | null, days: number) {
         // 같은 키의 직전 데이터는 유지(stale), 키가 바뀐 경우엔 null로 시작
         setResult((r) => ({ key, data: r.key === key ? r.data : null, error: toAreaError(e) }));
       },
-    ).finally(() => !ctl.signal.aborted && setInflight(false));
+    ).finally(() => {
+      if (ctl.signal.aborted) return;
+      inflightRef.current = false;
+      setInflight(false);
+    });
     fetchAreaAliases(repoId, ctl.signal).then(
       (list) => !ctl.signal.aborted && setAliasState({ repoId, list, failed: false }),
-      (e) => !ctl.signal.aborted && !isAbort(e) && setAliasState({ repoId, list: [], failed: true }),
+      (e) => !ctl.signal.aborted && !isAbort(e) && setAliasState((a) => ({ repoId, list: a?.repoId === repoId ? a.list : [], failed: true })),
     );
     return () => ctl.abort();
   }, [repoId, days, key, nonce]);
@@ -56,7 +71,7 @@ export function useAreas(repoId: number | null, days: number) {
   }, [key]);
 
   const refresh = useCallback(() => {
-    if (repoId === null || lockRef.current) return;
+    if (repoId === null || lockRef.current || inflightRef.current) return;
     lockRef.current = true;
     setCooling(true);
     timerRef.current = setTimeout(() => {
@@ -82,14 +97,5 @@ export function useAreas(repoId: number | null, days: number) {
     stale: !!data && !!error,
     refresh,
     canRefresh: repoId !== null && !cooling && !inflight,
-  } as {
-    status: 'idle' | 'loading' | 'ready' | 'error';
-    data: AreasResponse | null;
-    aliases: AreaAlias[];
-    aliasesFailed: boolean;
-    error: AreaError | null;
-    stale: boolean;
-    refresh(): void;
-    canRefresh: boolean;
   };
 }
