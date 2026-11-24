@@ -1,9 +1,9 @@
 import React from 'react';
-import { Kanban, ListTodo, BarChart3, Users, CheckSquare, Clock } from 'lucide-react';
+import { Kanban, ListTodo, BarChart3, Network, Users, CheckSquare, Clock } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'board' | 'list' | 'analytics';
-  setActiveTab: (tab: 'board' | 'list' | 'analytics') => void;
+  activeTab: 'board' | 'list' | 'analytics' | 'architecture';
+  setActiveTab: (tab: 'board' | 'list' | 'analytics' | 'architecture') => void;
   taskCounts: {
     all: number;
     todo: number;
@@ -31,6 +31,12 @@ export default function Sidebar({ activeTab, setActiveTab, taskCounts }: Sidebar
       id: 'analytics' as const,
       label: '분석',
       icon: BarChart3,
+      badge: null
+    },
+    {
+      id: 'architecture' as const,
+      label: '아키텍처',
+      icon: Network,
       badge: null
     }
   ];

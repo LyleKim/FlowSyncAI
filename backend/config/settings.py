@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'reviews',
     'activities',
     'ai_services',
+    'integrations',
 ]
 
 MIDDLEWARE = [

@@ -10,16 +10,16 @@ from api.idempotency import (
     replay_idempotent_response,
 )
 from .models import Task, SubTask
-from .serializers import (
-    serialize_task,
-    serialize_subtask,
-    create_task_from_body,
-    update_task_from_body,
+from .serializers import serialize_task, serialize_subtask
+from .services import (
     create_subtask_from_body,
-    update_subtask_from_body,
+    create_task_from_body,
+    get_tasks_last_modified,
     save_subtasks,
+    serialize_task_list,
+    update_subtask_from_body,
+    update_task_from_body,
 )
-from .services import get_tasks_last_modified, serialize_task_list
 
 
 @api_view

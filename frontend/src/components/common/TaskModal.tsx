@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Edit2, Plus, Trash2, CheckSquare, Square, Calendar, User, AlignLeft, Tag, BarChart, ClipboardCheck, Check, Sparkles } from 'lucide-react';
 import { Task, TaskStatus, TaskPriority, SubTask, RoleReview } from '../../types';
 import { postJson } from '../../services/apiClient';
+import PrBadge from './PrBadge';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -527,6 +528,7 @@ export default function TaskModal({
                   <Calendar size={13} className="text-slate-400" />
                   <span>생성일: <strong>{formatCreatedAt(task?.createdAt || (task as any)?.created_at)}</strong></span>
                 </span>
+                <PrBadge url={task?.sourceUrl} />
               </div>
 
               {/* Title & Description */}

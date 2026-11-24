@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, ArrowLeft, ArrowRight, Eye, Trash2, Calendar, ClipboardCheck, ListTodo, RefreshCw, FileCheck2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Task, TaskStatus } from '../../types';
+import PrBadge from '../common/PrBadge';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -330,6 +331,7 @@ export default function TaskBoard({
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider font-mono truncate max-w-[120px]">
                       {task.category || 'Development'}
                     </span>
+                    <PrBadge url={task.sourceUrl} />
                     <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-black rounded-full border ${priorityStyle.badge}`}>
                       {priorityStyle.label}
                     </span>
