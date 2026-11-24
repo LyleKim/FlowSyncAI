@@ -66,6 +66,13 @@ describe('integrationsApi', () => {
     const r = await syncPullRequests();
     expect(r.created).toBe(2);
     expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('uuid-1');
+    expect(fetchMock.mock.calls[0][1].body).toBe('{}');
+  });
+
+  it('sync with repoId sends it in body', async () => {
+    fetchMock.mockResolvedValue(json({ created: 0, skipped: 0, errors: [] }));
+    await syncPullRequests(2);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ repoId: 2 });
   });
 });
 

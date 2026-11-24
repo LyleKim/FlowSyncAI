@@ -31,8 +31,8 @@ export async function removeWatchedRepo(id: number): Promise<void> {
   await parse<void>(await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE' }));
 }
 
-export async function syncPullRequests(): Promise<SyncResult> {
-  return parse<SyncResult>(await postJson(`${BASE}/sync-prs/`, {}));
+export async function syncPullRequests(repoId?: number): Promise<SyncResult> {
+  return parse<SyncResult>(await postJson(`${BASE}/sync-prs/`, repoId === undefined ? {} : { repoId }));
 }
 
 export function formatSyncResult(r: SyncResult): string {
