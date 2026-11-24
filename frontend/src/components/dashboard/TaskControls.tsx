@@ -18,7 +18,7 @@ export interface TaskActions {
 export function TaskTitle({ task, onSelectTask }: { task: Task; onSelectTask?: (t: Task) => void }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <Link to={ROUTES.task(task.id)} onClick={() => onSelectTask?.(task)} className="min-h-6 truncate font-medium hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
+      <Link to={ROUTES.task(task.id)} onClick={() => onSelectTask?.(task)} className="inline-block min-h-6 truncate font-medium hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
         {task.title}
       </Link>
       <PrBadge url={isPrTask(task) ? task.sourceUrl : null} />

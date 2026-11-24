@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { useLocation } from 'react-router';
 import type { ReactNode } from 'react';
-import { ToastProvider, useToasts } from '../hooks/useToasts';
+import { ToastProvider, UNDO_WINDOW_MS, useToasts } from '../hooks/useToasts';
 import { TasksProvider, useTasksContext } from '../hooks/TasksContext';
 import { ToastHost } from '../components/common/ToastHost';
 import { renderWithRouter } from '../test/render';
@@ -34,7 +34,7 @@ const setup = (route = '/tasks', extra: Record<string, () => { status?: number; 
   return { ...r, ...renderWithRouter(
     <ToastProvider><Wrap><Probe /><TasksScreen /></Wrap><ToastHost /></ToastProvider>, { route }) };
 };
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('TasksScreen', () => {
   it('(a) 상태 라벨은 "리뷰 중"', async () => {
@@ -48,7 +48,7 @@ describe('TasksScreen', () => {
     expect(screen.getByRole('button', { name: '목록' })).toHaveAttribute('aria-pressed', 'true');
     const link = await screen.findByRole('link', { name: /로그인 버그 수정/ });
     expect(link).toHaveAttribute('href', '/tasks/t1');
-    expect(document.querySelectorAll('div[onclick]').length).toBe(0);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
     expect(screen.getByRole('link', { name: '새 작업' })).toHaveAttribute('href', '/tasks/new');
   });
 
@@ -108,5 +108,40 @@ describe('TasksScreen', () => {
     await user.selectOptions(within(row).getByLabelText('상태 변경'), 'done');
     expect(await screen.findByRole('alert')).toHaveTextContent('작업 상태를 변경하지 못했습니다.');
     expect(within(row).getByLabelText('상태 변경')).toHaveValue('todo');
+  });
+
+  describe('지연 DELETE', () => {
+    const del = (calls: { method: string; url: string }[]) => calls.filter((c) => c.method === 'DELETE');
+    const start = async (extra = {}) => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const r = setup('/tasks', { 'DELETE /api/v1/tasks/t1/': () => ({ status: 204 }), ...extra });
+      await screen.findByRole('link', { name: /로그인/ });
+      await r.user.click(screen.getByRole('button', { name: /로그인 버그 수정.*삭제/ }));
+      return r;
+    };
+    const wait = () => act(async () => { await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS + 100); });
+
+    it('(h) 창이 끝나면 DELETE가 정확히 1회 나가고 행은 그대로 없다', async () => {
+      const { calls } = await start();
+      expect(del(calls)).toHaveLength(0);
+      await wait();
+      expect(del(calls).map((c) => c.url)).toEqual(['/api/v1/tasks/t1/']);
+      expect(screen.queryByRole('link', { name: /로그인/ })).not.toBeInTheDocument();
+    });
+
+    it('(i) DELETE가 500이면 행이 돌아오고 오류 알림', async () => {
+      await start({ 'DELETE /api/v1/tasks/t1/': () => ({ status: 500 }) });
+      await wait();
+      expect(await screen.findByRole('link', { name: /로그인/ })).toBeInTheDocument();
+      expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+    });
+
+    it('(j) 창 안에서 되돌리면 DELETE 없이 행이 돌아온다', async () => {
+      const { calls, user } = await start();
+      await user.click(screen.getByRole('button', { name: '되돌리기' }));
+      await wait();
+      expect(del(calls)).toHaveLength(0);
+      expect(screen.getByRole('link', { name: /로그인/ })).toBeInTheDocument();
+    });
   });
 });
