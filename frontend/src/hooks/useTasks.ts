@@ -57,7 +57,8 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
     const r = await fetchTasksFromServer();
     if (r.status === 'updated') {
       loadedRef.current = true;
-      setTasks(r.tasks);
+      // 진행 중 mutation의 낙관적 상태를 폴링 결과로 덮어쓰지 않는다.
+      if (inflight.current.size === 0) setTasks(r.tasks);
       setLoadState('ready');
     } else if (r.status === 'not-modified') {
       if (loadedRef.current) setLoadState('ready');
@@ -80,10 +81,12 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
     errMsg: string,
     fn: () => Promise<T>,
     rollback?: () => void,
+    apply?: () => void, // 낙관적 갱신: 중복 가드를 통과한 뒤에만 실행
   ): Promise<MutationResult<T>> => {
     if (inflight.current.has(key)) return { ok: false, error: '이미 처리 중입니다.' };
     inflight.current.add(key);
     try {
+      apply?.();
       const value = await fn();
       invalidateTasksCacheHeaders();
       return { ok: true, value };
@@ -103,10 +106,10 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
   const moveTask: TasksApi['moveTask'] = (id, status) => {
     const old = tasksRef.current.find((t) => t.id === id);
     if (!old) return Promise.resolve({ ok: false, error: '작업을 찾을 수 없습니다.' });
-    patchTask(id, (t) => ({ ...t, status }));
     return mutate(`move:${id}`, '작업 상태를 변경하지 못했습니다.', async () => {
       await send('PATCH', base(id), { status });
-    }, () => patchTask(id, (t) => ({ ...t, status: old.status })));
+    }, () => patchTask(id, (t) => ({ ...t, status: old.status })),
+    () => patchTask(id, (t) => ({ ...t, status })));
   };
 
   const createTask: TasksApi['createTask'] = (d) =>
@@ -145,13 +148,12 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
         ...t,
         subtasks: t.subtasks.map((s) => (s.id === subtaskId ? { ...s, completed: c } : s)),
       }));
-    set(completed);
     return mutate(`toggle:${subtaskId}`, '체크리스트 항목을 변경하지 못했습니다.', async () => {
       const updated: SubTask = await (
         await send('PATCH', `${base(taskId)}subtasks/${subtaskId}/`, { completed })
       ).json();
       patchTask(taskId, (t) => ({ ...t, subtasks: t.subtasks.map((s) => (s.id === subtaskId ? updated : s)) }));
-    }, () => set(old?.completed ?? !completed));
+    }, () => set(old?.completed ?? !completed), () => set(completed));
   };
 
   const removeSubtask: TasksApi['removeSubtask'] = (taskId, subtaskId) =>

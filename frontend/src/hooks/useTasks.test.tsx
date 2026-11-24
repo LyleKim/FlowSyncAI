@@ -102,4 +102,51 @@ describe('useTasks', () => {
     await act(async () => { await result.current.deleteTask('a'); });
     expect(result.current.tasks.map((t) => t.id)).toEqual(['b']);
   });
+
+  it('(c2) 중복 moveTask의 두 번째 호출은 상태도 바꾸지 않는다', async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    fetchMock.mockImplementationOnce(() => new Promise((res) => setTimeout(() => res(json({})), 20)));
+    await act(async () => {
+      const p1 = result.current.moveTask('a', 'done');
+      const p2 = result.current.moveTask('a', 'review');
+      await p1; await p2;
+    });
+    expect(result.current.tasks.find((t) => t.id === 'a')!.status).toBe('done');
+  });
+
+  it('(c3) 중복 toggleSubtask의 두 번째 호출은 상태도 바꾸지 않는다', async () => {
+    const { result } = setup([mk('a', { subtasks: [{ id: 's1', title: 's', completed: false }] })]);
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    fetchMock.mockImplementationOnce(
+      () => new Promise((res) => setTimeout(() => res(json({ id: 's1', title: 's', completed: true })), 20)),
+    );
+    await act(async () => {
+      const p1 = result.current.toggleSubtask('a', 's1', true);
+      const p2 = result.current.toggleSubtask('a', 's1', false);
+      await p1; await p2;
+    });
+    expect(result.current.tasks[0].subtasks[0].completed).toBe(true);
+  });
+
+  it('toggleSubtask 실패 시 롤백·notify 1회', async () => {
+    const { result, notify } = setup([mk('a', { subtasks: [{ id: 's1', title: 's', completed: false }] })]);
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    fetchMock.mockResolvedValueOnce(json({}, 500));
+    await act(async () => { await result.current.toggleSubtask('a', 's1', true); });
+    expect(result.current.tasks[0].subtasks[0].completed).toBe(false);
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('진행 중 mutation이 있으면 refresh가 tasks를 덮어쓰지 않는다', async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    fetchMock.mockImplementationOnce(() => new Promise((res) => setTimeout(() => res(json({})), 30)));
+    fetchMock.mockResolvedValueOnce(json([mk('a'), mk('b')]));
+    let p!: Promise<unknown>;
+    act(() => { p = result.current.moveTask('a', 'done'); });
+    await act(() => result.current.refresh());
+    expect(result.current.tasks[0].status).toBe('done');
+    await act(async () => { await p; });
+  });
 });
