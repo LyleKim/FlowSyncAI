@@ -105,6 +105,16 @@ class ListTests(ViewBase):
         self.assertEqual(self.mocks[0].call_count, 1)
 
 
+class CacheDivergenceTests(ViewBase):
+    def test_tree_cache_expiring_alone_does_not_500(self):
+        self.assertEqual(self.list().status_code, 200)  # primes tree + activity caches
+        cache.delete('tree:acme/api')
+        github_client.list_repo_tree.return_value = ['docs/only.md', 'docs/two.md']  # tree changed
+        self.assertEqual(self.list().status_code, 200)
+        self.assertEqual(self.detail(B).status_code, 200)  # served from the paths activity was computed with
+        self.assertEqual(self.detail('gone').status_code, 404)
+
+
 class DetailTests(ViewBase):
     def test_area_detail_and_missing_area(self):
         d = self.detail(B).json()

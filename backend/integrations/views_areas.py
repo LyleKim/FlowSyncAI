@@ -23,8 +23,8 @@ def _context(request, repo_id):
         return None, json_error('days must be an integer', status=400, code='invalid_days')
     refresh = request.GET.get('refresh') == '1'
     try:
-        activity = areas.get_activity(repo, days, refresh)
-        groups = group_paths(areas.get_paths(repo.owner, repo.name))
+        activity, paths = areas.get_activity(repo, days, refresh)
+        groups = group_paths(paths)
     except GitHubError as e:
         return None, json_error(f'GitHub request failed: {e.message}', status=502, code='github_unavailable')
     return (repo, days, groups, activity), None
@@ -56,7 +56,7 @@ def area_list(request, repo_id):
     return JsonResponse({
         'repoId': repo.id, 'generatedAt': activity['generatedAt'], 'days': days,
         'truncated': activity['truncated'], 'analyzedCommits': activity['analyzedCommits'],
-        'areas': [_area(d, by_id[d['id']], aliases, waiting) for d in activity['groups']],
+        'areas': [_area(d, by_id[d['id']], aliases, waiting) for d in activity['groups'] if d['id'] in by_id],
         'couplings': activity['couplings'],
     })
 
@@ -69,12 +69,12 @@ def area_detail(request, repo_id, area_id):
         return err
     repo, days, groups, activity = ctx
     data = next((d for d in activity['groups'] if d['id'] == area_id), None)
-    if data is None:
+    group = next((g for g in groups if g.id == area_id), None)
+    if data is None or group is None:
         return json_error('Area not found', status=404, code='area_not_found')
     now = timezone.now()
     aliases = {a.path_prefix: a for a in repo.area_aliases.all()}
     waiting = areas.review_waiting_by_area(repo, groups, now)
-    group = next(g for g in groups if g.id == area_id)
     return JsonResponse({
         **_area(data, group, aliases, waiting),
         'recentCommits': data['recentCommits'],

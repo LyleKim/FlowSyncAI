@@ -124,10 +124,12 @@ def waiting_prs_for_area(repo, groups, area_id, now):
 
 
 def get_activity(repo, days, refresh=False):
-    """5-min cached compute_activity reusing the cached tree (one tree fetch shared with architecture/)."""
+    """5-min cached compute_activity -> (payload, paths). Cached together with the tree it was computed from,
+    so groups derived from `paths` always match payload ids even if the tree cache expires independently."""
     key = f'areas-activity:{repo.owner.lower()}/{repo.name.lower()}:{days}'
-    payload = None if refresh else cache.get(key)
-    if payload is None:
-        payload = compute_activity(repo.owner, repo.name, days, paths=get_paths(repo.owner, repo.name, refresh))
-        cache.set(key, payload, CACHE_SECONDS)
-    return payload
+    hit = None if refresh else cache.get(key)
+    if hit is None:
+        paths = get_paths(repo.owner, repo.name, refresh)
+        hit = {'paths': paths, 'payload': compute_activity(repo.owner, repo.name, days, paths=paths)}
+        cache.set(key, hit, CACHE_SECONDS)
+    return hit['payload'], hit['paths']
