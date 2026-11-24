@@ -185,6 +185,47 @@ describe('useReviewQueue', () => {
     expect(result.current.retryingRepoId).toBeNull();
   });
 
+  it('(f3) syncNow 대기 중 a → b로 바뀌어도 b의 로드가 취소되지 않고 a로 GET하지 않는다', async () => {
+    const b = deferred<ReviewQueueResponse>();
+    fetchQ.mockImplementation((p) => (p.login === 'b' ? b.promise : Promise.resolve(q(p.login))));
+    const { result, rerender } = renderHook(({ l }) => useReviewQueue(l), { initialProps: { l: 'a' } });
+    await flush();
+    const s = deferred<void>();
+    syncNow.mockReturnValue(s.promise);
+    let p!: Promise<void>;
+    act(() => {
+      p = result.current.refresh();
+    });
+    fetchQ.mockClear();
+    rerender({ l: 'b' });
+    s.resolve();
+    await act(() => p);
+    b.resolve(q('b'));
+    await flush();
+    expect(fetchQ.mock.calls.map((c) => c[0].login)).toEqual(['b']);
+    expect(result.current.loadState).toBe('ready');
+    expect(result.current.data?.login).toBe('b');
+  });
+
+  it('retryRepo가 겹치면 먼저 끝난 쪽이 retryingRepoId를 지우지 않는다', async () => {
+    const { result } = renderHook(() => useReviewQueue('a'));
+    await flush();
+    const s1 = deferred<void>();
+    const s2 = deferred<void>();
+    syncNow.mockReturnValueOnce(s1.promise).mockReturnValueOnce(s2.promise);
+    let p1!: Promise<void>, p2!: Promise<void>;
+    act(() => {
+      p1 = result.current.retryRepo(1);
+      p2 = result.current.retryRepo(2);
+    });
+    s1.resolve();
+    await act(() => p1);
+    expect(result.current.retryingRepoId).toBe(2);
+    s2.resolve();
+    await act(() => p2);
+    expect(result.current.retryingRepoId).toBeNull();
+  });
+
   it('언마운트하면 진행 중 요청을 취소하고 폴링을 멈춘다', async () => {
     fetchQ.mockReturnValue(new Promise(() => {}));
     const { unmount } = renderHook(() => useReviewQueue('a'));
@@ -265,5 +306,21 @@ describe('(j) ReviewQueueProvider · useReviewBadge', () => {
     expect(screen.getByText('a:1')).toBeInTheDocument();
     expect(screen.getByText('badge:1')).toBeInTheDocument();
     expect(fetchQ).toHaveBeenCalledTimes(1);
+  });
+
+  it('Provider가 값 변화 없이 리렌더되면 소비자는 다시 그려지지 않는다(PrSync 상태 변화 등)', async () => {
+    me.login = 'a';
+    let renders = 0;
+    function Consumer() {
+      useReviewQueueContext();
+      renders++;
+      return null;
+    }
+    const child = <Consumer />;
+    const { rerender } = render(<ReviewQueueProvider>{child}</ReviewQueueProvider>);
+    await flush();
+    const before = renders;
+    rerender(<ReviewQueueProvider>{child}</ReviewQueueProvider>);
+    expect(renders).toBe(before);
   });
 });

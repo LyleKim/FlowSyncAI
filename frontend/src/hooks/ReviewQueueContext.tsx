@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useMyLogin, useMyTeams } from './useMyLogin';
 import { useReviewQueue, type ReviewQueueState } from './useReviewQueue';
 
@@ -10,8 +10,14 @@ export const ReviewQueueContext = createContext<ReviewQueueContextValue | null>(
 export function ReviewQueueProvider({ children }: { children: ReactNode }) {
   const { login } = useMyLogin();
   const { teams } = useMyTeams();
-  const queue = useReviewQueue(login, teams);
-  return <ReviewQueueContext.Provider value={{ ...queue, login }}>{children}</ReviewQueueContext.Provider>;
+  const q = useReviewQueue(login, teams);
+  // 필드 단위로 메모해 PrSync 상태 변화 등으로 Provider만 리렌더될 때 소비자가 다시 그려지지 않게 한다
+  const value = useMemo(
+    () => ({ ...q, login }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [q.data, q.loadState, q.loadError, q.refreshError, q.refreshing, q.retryingRepoId, q.refresh, q.reload, q.retryRepo, login],
+  );
+  return <ReviewQueueContext.Provider value={value}>{children}</ReviewQueueContext.Provider>;
 }
 
 export function useReviewQueueContext(): ReviewQueueContextValue {

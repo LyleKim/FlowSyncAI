@@ -3,7 +3,7 @@ import { fetchReviewQueue, QueueFetchError } from '../services/reviewQueueApi';
 import { TASKS_POLL_INTERVAL_MS } from '../services/taskSync';
 import type { ReviewQueueResponse } from '../types/reviewQueue';
 import { usePrSyncContext } from './PrSyncContext';
-import { isAbort } from './useAreas';
+import { isAbort } from '../lib/abort';
 
 export interface ReviewQueueState {
   data: ReviewQueueResponse | null;
@@ -44,11 +44,13 @@ export function useReviewQueue(login: string | null, teams?: string[]): ReviewQu
   const ctlRef = useRef<AbortController | null>(null);
   const getRef = useRef<Promise<void> | null>(null);
   const refreshRef = useRef<Promise<void> | null>(null);
+  const retrySeq = useRef(0);
 
   // force: 진행 중 GET을 취소하고 새로 요청(서버 동기화 직후 최신 결과가 필요할 때)
   const get = useCallback(
     (force: boolean): Promise<void> => {
-      if (!login) return Promise.resolve();
+      // 로그인 변경·언마운트 뒤 이전 렌더의 refresh/retryRepo가 부르면 아무것도 하지 않는다(새 키의 요청을 취소하지 않도록)
+      if (!login || keyRef.current !== key) return Promise.resolve();
       if (getRef.current && !force) return getRef.current;
       ctlRef.current?.abort();
       const ctl = new AbortController();
@@ -100,12 +102,14 @@ export function useReviewQueue(login: string | null, teams?: string[]): ReviewQu
   const retryRepo = useCallback(
     async (repoId: number) => {
       if (!login) return;
+      const seq = ++retrySeq.current;
       setRetryingRepoId(repoId);
       try {
         await syncNow(repoId).catch(swallow);
         await get(true);
       } finally {
-        setRetryingRepoId(null);
+        // 겹친 재시도 중 마지막 것만 표시를 지운다
+        if (retrySeq.current === seq) setRetryingRepoId(null);
       }
     },
     [login, syncNow, get],
@@ -113,14 +117,16 @@ export function useReviewQueue(login: string | null, teams?: string[]): ReviewQu
 
   // 마운트·로그인 변경 시 1회 요청, 정리 때 진행 중 요청 취소(StrictMode 이중 실행에도 안전)
   useEffect(() => {
+    keyRef.current = key;
     void reload();
     return () => {
       ctlRef.current?.abort();
       ctlRef.current = null;
       getRef.current = null;
       refreshRef.current = null;
+      keyRef.current = null; // 언마운트 뒤 이전 요청 체인이 GET하지 않게(키 변경 시엔 다음 effect가 다시 설정)
     };
-  }, [reload]);
+  }, [key, reload]);
 
   useEffect(() => {
     if (!login) return;

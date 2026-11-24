@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchAreaDetail } from '../services/areasApi';
 import type { AreaDetail } from '../types/areas';
-import { isAbort, toAreaError, type AreaError } from './useAreas';
+import { toAreaError, type AreaError } from './useAreas';
+import { isAbort } from '../lib/abort';
 
 type Result = { key: string; data: AreaDetail | null; error: AreaError | null };
 

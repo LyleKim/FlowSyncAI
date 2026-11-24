@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AreasApiError, fetchAreaAliases, fetchAreas } from '../services/areasApi';
 import type { AreaAlias, AreasResponse } from '../types/areas';
+import { isAbort } from '../lib/abort';
 
 export const REFRESH_COOLDOWN_MS = 30_000;
 
@@ -11,7 +12,7 @@ export function toAreaError(e: unknown): AreaError {
   return { status: 0, code: null, message: e instanceof Error ? e.message : '알 수 없는 오류' };
 }
 
-export const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
+export { isAbort } from '../lib/abort';
 
 type Result = { key: string; data: AreasResponse | null; error: AreaError | null };
 type Aliases = { repoId: number; list: AreaAlias[]; failed: boolean };
