@@ -1,9 +1,11 @@
-// 자리표시: 이후 태스크가 채운다.
+import { Link } from 'react-router';
+import { ROUTES } from '../routes';
+
 export default function AreaDetailScreen() {
   return (
     <>
-      <h1 className="text-xl font-bold">영역 흐름</h1>
-      <p className="mt-2 text-sm text-muted">영역 흐름 화면을 준비하고 있어요.</p>
+      <h1 className="text-xl font-bold">영역 상세</h1>
+      <Link to={ROUTES.areas} className="mt-2 inline-block text-sm underline">영역 흐름으로 돌아가기</Link>
     </>
   );
 }

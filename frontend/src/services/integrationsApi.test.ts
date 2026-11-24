@@ -84,8 +84,8 @@ describe('formatters', () => {
 
   it('formatLastSynced', () => {
     const now = Date.parse('2026-01-02T12:00:00Z');
-    expect(formatLastSynced(null)).toBe('동기화 이력 없음');
-    expect(formatLastSynced('garbage')).toBe('동기화 이력 없음');
+    expect(formatLastSynced(null)).toBe('가져온 기록 없음');
+    expect(formatLastSynced('garbage')).toBe('가져온 기록 없음');
     expect(formatLastSynced('2026-01-02T11:59:30Z', now)).toBe('방금 전');
     expect(formatLastSynced('2026-01-02T11:15:00Z', now)).toBe('45분 전');
     expect(formatLastSynced('2026-01-02T09:00:00Z', now)).toBe('3시간 전');

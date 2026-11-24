@@ -40,9 +40,9 @@ export function formatSyncResult(r: SyncResult): string {
 }
 
 export function formatLastSynced(iso: string | null | undefined, now = Date.now()): string {
-  if (!iso) return '동기화 이력 없음';
+  if (!iso) return '가져온 기록 없음';
   const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return '동기화 이력 없음';
+  if (Number.isNaN(t)) return '가져온 기록 없음';
   const min = Math.floor((now - t) / 60000);
   if (min < 1) return '방금 전';
   if (min < 60) return `${min}분 전`;
