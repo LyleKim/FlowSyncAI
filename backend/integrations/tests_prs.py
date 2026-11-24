@@ -47,6 +47,57 @@ class EndpointTests(TestCase):
         self.assertEqual(a.json(), b.json())
         self.assertEqual(WatchedRepo.objects.count(), 1)
 
+    def test_response_has_new_status_fields(self):
+        d = self.post({'url': 'https://github.com/o/r'}).json()
+        for k in ('id', 'url', 'owner', 'name', 'githubLogin', 'lastSyncedAt', 'lastAttemptAt',
+                  'lastSuccessAt', 'lastError', 'truncated', 'createdAt', 'updatedAt'):
+            self.assertIn(k, d)
+        self.assertEqual(d['lastSyncedAt'], d['lastSuccessAt'])
+        self.assertIsNone(d['lastError'])
+        self.assertFalse(d['truncated'])
+        self.assertRegex(d['createdAt'], r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$')
+        self.assertRegex(d['updatedAt'], r'Z$')
+
+    def test_synced_timestamps_are_z(self):
+        from django.utils import timezone
+        r = WatchedRepo.objects.create(url='https://github.com/o/z', owner='o', name='z',
+                                       last_synced_at=timezone.now())
+        d = self.client.get(self.URL).json()[0]
+        self.assertRegex(d['lastSyncedAt'], r'Z$')
+        self.assertEqual(d['lastSyncedAt'], d['lastSuccessAt'])
+
+    def test_duplicate_returns_409_with_existing(self):
+        first = self.post({'url': 'https://github.com/o/r'}).json()
+        r = self.post({'url': 'https://github.com/o/r'})
+        self.assertEqual(r.status_code, 409)
+        b = r.json()
+        self.assertEqual(b['code'], 'already_connected')
+        self.assertEqual(b['existing']['id'], first['id'])
+
+    def test_delete_is_hard_and_second_delete_404(self):
+        d = self.post({'url': 'https://github.com/o/r'}).json()
+        self.assertEqual(self.client.delete(f"{self.URL}{d['id']}/").status_code, 204)
+        self.assertEqual(self.client.get(self.URL).json(), [])
+        self.assertFalse(WatchedRepo.objects.filter(pk=d['id']).exists())
+        self.assertEqual(self.client.delete(f"{self.URL}{d['id']}/").status_code, 404)
+
+    def test_idempotency_key_replays_201(self):
+        a = self.post({'url': 'https://github.com/o/r'}, HTTP_IDEMPOTENCY_KEY='k2')
+        b = self.post({'url': 'https://github.com/o/r'}, HTTP_IDEMPOTENCY_KEY='k2')
+        self.assertEqual((a.status_code, b.status_code), (201, 201))
+        self.assertEqual(a.json(), b.json())
+        self.assertEqual(WatchedRepo.objects.count(), 1)
+
+    def test_github_login_accepted_but_ignored(self):
+        d = self.post({'url': 'https://github.com/o/r', 'githubLogin': 'me'}).json()
+        self.assertEqual(d['githubLogin'], 'me')
+        self.assertEqual(self.client.get(self.URL).json()[0]['githubLogin'], 'me')
+
+    def test_invalid_url_400_code(self):
+        r = self.post({'url': 'https://example.com/x'})
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()['code'], 'invalid_url')
+
 
 class TaskSourceUrlTests(TestCase):
     def test_serialization(self):
