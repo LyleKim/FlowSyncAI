@@ -66,7 +66,11 @@ def map_body_to_model_data(body, instance=None):
     """프론트엔드 camelCase 요청을 Django 모델 필드로 변환."""
     assignee = body.get('assigneeId')
     if assignee is None and instance:
-        assignee = instance.creator or instance.assignee_id
+        # PR Task의 creator는 작성자이므로 담당자 폴백으로 쓰지 않는다
+        assignee = (
+            instance.assignee_id if task_kind(instance) == 'pr'
+            else instance.creator or instance.assignee_id
+        )
     assignee = (assignee or '').strip()
 
     data = {

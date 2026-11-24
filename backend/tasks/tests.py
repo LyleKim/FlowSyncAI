@@ -308,6 +308,24 @@ class TaskKindTests(ApiMixin, TestCase):
         self.mk(sourceUrl='https://github.com/o/r/pull/9')
         self.assertEqual(self.client.get(T + 't1/').json()['kind'], 'manual')
 
+    def test_patch_title_only_on_pr_task_keeps_assignee_and_author(self):
+        self.pr()
+        r = self.req('patch', T + 'pr-o-r-1/', {'title': 'new'}).json()
+        self.assertEqual((r['assigneeId'], r['author'], r['title']), ('', 'alice', 'new'))
+        r = self.client.get(T + 'pr-o-r-1/').json()
+        self.assertEqual((r['assigneeId'], r['author']), ('', 'alice'))
+
+    def test_patch_title_only_on_manual_task_unchanged_behavior(self):
+        self.mk(assigneeId='bob')
+        r = self.req('patch', T + 't1/', {'title': 'new'}).json()
+        self.assertEqual((r['assigneeId'], r['author']), ('bob', None))
+
+    def test_patch_explicit_assignee_on_pr_task_is_stored(self):
+        self.pr()
+        r = self.req('patch', T + 'pr-o-r-1/', {'assigneeId': 'carol'}).json()
+        self.assertEqual(r['assigneeId'], 'carol')
+        self.assertEqual(self.client.get(T + 'pr-o-r-1/').json()['assigneeId'], 'carol')
+
     def test_kind_filter(self):
         self.pr()
         self.mk()
