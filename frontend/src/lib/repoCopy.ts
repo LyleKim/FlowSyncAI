@@ -34,7 +34,7 @@ export function describeRepoError(
 ): RepoErrorView {
   const since = lastSuccessAt && formatClock(lastSuccessAt);
   const listAsOf = since ? `목록은 ${since} 기준이에요.` : '아직 가져온 적이 없어요.';
-  const admin = `${repo} 레포를 읽지 못했어요. 서버의 GITHUB_TOKEN을 확인해 주세요. (${err.message})`;
+  const admin = `${repo} 레포를 읽지 못했어요. 서버의 GITHUB_TOKEN을 확인해 주세요.${err.message ? ` (${err.message})` : ''}`;
   switch (err.kind) {
     case 'auth':
       return {

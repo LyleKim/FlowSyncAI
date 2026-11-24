@@ -8,23 +8,35 @@ export default function SyncStatusLine({
   status,
   onRefresh,
   now = new Date(),
+  repo,
 }: {
   status: SyncStatusInfo;
   onRefresh: () => void;
   now?: Date;
+  repo?: string;
 }) {
   const { lastSuccessAt, syncing, error, truncated } = status;
   const stale = !!lastSuccessAt && minutesAgo(lastSuccessAt, now) > STALE_MIN;
   const resetMs = error?.kind === 'rate_limit' && error.resetAt ? Date.parse(error.resetAt) - now.getTime() : 0;
   const limited = error?.kind === 'rate_limit';
-  const disabledText = limited
+  // repo 이름이 없으면 제목이 어색하지 않은 중립 표기를 쓴다
+  const view = error
+    ? describeRepoError(
+        repo ?? (error.kind === 'not_found' ? '연결된' : '연결된 레포'),
+        { ...error, message: '' },
+        lastSuccessAt,
+        now,
+      )
+    : null;
+  const blocked = !!view && (!view.canRetry || !!view.retryDisabledReason);
+  const disabled = syncing || blocked || limited;
+  const hint = limited
     ? resetMs > 0
       ? `${Math.ceil(resetMs / 60000)}분 뒤에 다시 가져올 수 있어요`
       : '잠시 뒤에 다시 가져올 수 있어요'
     : syncing
       ? '가져오는 중이에요'
       : '';
-  const disabled = syncing || limited;
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -43,11 +55,14 @@ export default function SyncStatusLine({
       >
         지금 가져오기
       </button>
-      {disabled && disabledText && <span>{disabledText}</span>}
-      {error && (
-        <p role="alert" className="w-full text-danger">
-          {describeRepoError('연결된 레포', { ...error, message: '' }, lastSuccessAt, now).title}
-        </p>
+      {hint && <span>{hint}</span>}
+      {view?.retryDisabledReason && <span>{view.retryDisabledReason}</span>}
+      {view && (
+        <div role="alert" className="w-full text-danger">
+          <p>{view.title}</p>
+          <p>{view.body}</p>
+          {view.adminCopy && <p>{view.adminCopy}</p>}
+        </div>
       )}
     </div>
   );
