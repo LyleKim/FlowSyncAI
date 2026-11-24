@@ -88,7 +88,7 @@ query($owner:String!, $name:String!, $after:String, $recent:Int!) {
 }""" + PR_FIELDS
 
 
-def _post_graphql(query, variables):
+def _post_graphql(query, variables, tolerate_alias_not_found=False):
     """POST one GraphQL query -> `data` dict. Raises GitHubError (with kind) on any failure."""
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
@@ -97,11 +97,22 @@ def _post_graphql(query, variables):
                          headers={'Authorization': f'Bearer {token}'}, timeout=TIMEOUT)
     if resp.status_code >= 300:
         raise _error_from_response(resp)
-    body = resp.json()
-    if body.get('errors'):  # partial `data` is discarded on purpose
-        err = body['errors'][0]
+    try:
+        body = resp.json()
+        if not isinstance(body, dict):
+            raise ValueError
+    except ValueError:
+        raise GitHubError(resp.status_code, 'invalid JSON from GitHub', kind='upstream')
+    errors = body.get('errors') or []
+    if tolerate_alias_not_found:  # unresolvable pr<N> aliases come back null + NOT_FOUND; skip them
+        errors = [e for e in errors if not (
+            e.get('type') == 'NOT_FOUND' and re.fullmatch(r'pr\d+', str((e.get('path') or [''])[-1])))]
+    if errors:  # partial `data` is discarded on purpose
+        err = errors[0]
         kind = {'RATE_LIMITED': 'rate_limit', 'NOT_FOUND': 'not_found'}.get(err.get('type'), 'unknown')
         raise GitHubError(resp.status_code, err.get('message', 'GraphQL error'), kind)
+    if not isinstance(body.get('data'), dict):
+        raise GitHubError(resp.status_code, 'GraphQL response had no data', kind='upstream')
     return body['data']
 
 
@@ -122,6 +133,7 @@ def _normalize_pr(n):
         k = _reviewer_key(ev.get('requestedReviewer')) if ev else None
         if k and ev['createdAt'] > requested.get(k, ''):
             requested[k] = ev['createdAt']
+    files = n.get('files') or {}
     reqs = []
     for node in n['reviewRequests']['nodes']:
         k = _reviewer_key(node['requestedReviewer'])
@@ -135,8 +147,8 @@ def _normalize_pr(n):
         'created_at': n['createdAt'], 'updated_at': n['updatedAt'],
         'closed_at': n['closedAt'], 'merged_at': n['mergedAt'],
         'additions': n['additions'], 'deletions': n['deletions'], 'changed_files': n['changedFiles'],
-        'files': [f['path'] for f in n['files']['nodes']][:100],
-        'files_truncated': n['files']['pageInfo']['hasNextPage'],
+        'files': [f['path'] for f in files.get('nodes') or []][:100],
+        'files_truncated': bool((files.get('pageInfo') or {}).get('hasNextPage')),
         'review_requests': reqs,
         'latest_reviews': [
             {'login': (r['author'] or {}).get('login', ''), 'state': r['state'], 'submitted_at': r['submittedAt']}
@@ -172,9 +184,10 @@ def fetch_repo_pull_requests(owner, name, tracked_open=(), max_open=250, recent_
     if missing:  # one aliased query for all of them
         body = ' '.join(f'pr{i}: pullRequest(number:{int(i)}){{...PRFields}}' for i in missing)
         q = 'query($owner:String!, $name:String!){ repository(owner:$owner, name:$name){ ' + body + ' } }' + PR_FIELDS
-        repo = _post_graphql(q, {'owner': owner, 'name': name})['repository']
+        repo = _post_graphql(q, {'owner': owner, 'name': name},
+                              tolerate_alias_not_found=True)['repository']
         for i in missing:
-            if repo.get(f'pr{i}'):
+            if repo.get(f'pr{i}'):  # null = deleted/transferred; skipped
                 prs[i] = _normalize_pr(repo[f'pr{i}'])
     return {'prs': list(prs.values()), 'truncated': truncated}
 

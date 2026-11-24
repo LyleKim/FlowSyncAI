@@ -227,3 +227,41 @@ class GraphQLClientTests(SimpleTestCase):
                 gh.fetch_repo_pull_requests('o', 'r')
         self.assertEqual((c.exception.status, c.exception.kind), (401, 'auth'))
         post.assert_not_called()
+
+
+@mock.patch('integrations.github_client.requests.post')
+class GraphQLFixRound1Tests(SimpleTestCase):
+    def setUp(self):
+        p = mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def _fallback(self, post, errors):
+        fb = gql(pr8=pr_node(8), pr9=None)
+        fb['errors'] = errors
+        post.side_effect = [resp(body=gql([pr_node(1)])), resp(body=fb)]
+        return gh.fetch_repo_pull_requests('o', 'r', tracked_open=[8, 9])
+
+    def test_tracked_not_found_alias_is_skipped(self, post):
+        out = self._fallback(post, [{'type': 'NOT_FOUND', 'path': ['repository', 'pr9'], 'message': 'x'}])
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 8})
+
+    def test_tracked_other_error_still_raises(self, post):
+        with self.assertRaises(gh.GitHubError):
+            self._fallback(post, [{'type': 'FORBIDDEN', 'path': ['repository', 'pr9'], 'message': 'x'}])
+        with self.assertRaises(gh.GitHubError):  # NOT_FOUND on a non-alias path is not tolerated
+            self._fallback(post, [{'type': 'NOT_FOUND', 'path': ['repository'], 'message': 'x'}])
+
+    def test_non_json_and_null_data_are_upstream(self, post):
+        bad = resp(body=None)
+        bad.json.side_effect = ValueError('no json')
+        for r in (bad, resp(body={'data': None})):
+            post.return_value = r
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+            self.assertEqual(c.exception.kind, 'upstream')
+
+    def test_null_files(self, post):
+        post.return_value = resp(body=gql([pr_node(1, files=None)]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertEqual((p['files'], p['files_truncated']), ([], False))
