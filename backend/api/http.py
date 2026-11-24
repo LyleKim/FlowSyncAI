@@ -19,10 +19,6 @@ def parse_json_body(request):
         return None, json_error('Invalid JSON', status=400)
 
 
-def method_not_allowed():
-    return json_error('Method not allowed', status=405)
-
-
 def compute_etag(payload):
     """응답 본문 기준 ETag (쌍따옴표 포함)."""
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(',', ':'))

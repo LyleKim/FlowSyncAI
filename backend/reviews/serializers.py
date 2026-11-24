@@ -1,5 +1,6 @@
 import uuid
 
+from .forms import RoleReviewForm
 from .models import RoleReview
 
 
@@ -32,19 +33,8 @@ def serialize_review(review):
     }
 
 
-def review_payload_matches(existing, body):
-    model_data = map_review_body_to_model(body, instance=existing)
-    for field, value in model_data.items():
-        if getattr(existing, field) != value:
-            return False
-    return True
-
-
 def _review_fields_changed(review, model_data):
-    for field, value in model_data.items():
-        if getattr(review, field) != value:
-            return True
-    return False
+    return any(getattr(review, field) != value for field, value in model_data.items())
 
 
 def create_review_from_body(body):
@@ -53,13 +43,11 @@ def create_review_from_body(body):
     반환: (review, errors, outcome)
     outcome: 'created' | 'replayed' | None(실패)
     """
-    from .forms import RoleReviewForm
-
     review_id = (body.get('id') or '').strip()
     if review_id:
         existing = RoleReview.objects.filter(pk=review_id).first()
         if existing:
-            if review_payload_matches(existing, body):
+            if not _review_fields_changed(existing, map_review_body_to_model(body, instance=existing)):
                 return existing, None, 'replayed'
             return None, {
                 'id': ['동일 ID의 검토가 이미 다른 내용으로 존재합니다.']
@@ -73,8 +61,6 @@ def create_review_from_body(body):
 
 
 def update_review_from_body(review, body):
-    from .forms import RoleReviewForm
-
     model_data = map_review_body_to_model(body, instance=review)
     if not _review_fields_changed(review, model_data):
         return review, None
