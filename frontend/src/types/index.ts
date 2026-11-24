@@ -53,16 +53,6 @@ export interface SyncResult {
   errors: string[];
 }
 
-export interface Activity {
-  id: string;
-  userName: string;
-  userAvatarColor: string;
-  userAvatarText: string;
-  action: string;
-  targetName: string;
-  timestamp: string;
-}
-
 export type ArchGroupKind = 'backend' | 'frontend' | 'infra' | 'docs' | 'other';
 export type ArchTrend = 'rising' | 'steady' | 'quiet';
 

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Sun, Moon, Search, Plus, Bell, Sparkles, CheckSquare, History, GitBranch } from 'lucide-react';
-import { Task, Activity, TaskStatus, SubTask, RoleReview } from './types';
-import { INITIAL_ACTIVITIES } from './constants/initialData';
+import { Sun, Moon, Search, Plus, GitBranch } from 'lucide-react';
+import { Task, TaskStatus, SubTask, RoleReview } from './types';
 import {
   fetchTasksFromServer,
   invalidateTasksCacheHeaders,
   TASKS_POLL_INTERVAL_MS,
 } from './services/taskSync';
 import { postJson } from './services/apiClient';
+import { purgeLegacyKeys } from './lib/storage';
 import { listWatchedRepos, syncPullRequests, formatSyncResult } from './services/integrationsApi';
 import WatchedReposPanel, { SyncInfo } from './components/common/WatchedReposPanel';
 
@@ -16,19 +16,15 @@ import Sidebar from './components/layout/Sidebar';
 import TaskBoard from './components/dashboard/TaskBoard';
 import TaskList from './components/dashboard/TaskList';
 import TaskModal from './components/common/TaskModal';
-import AnalyticsView from './components/dashboard/AnalyticsView';
 import ArchitectureView from './components/dashboard/ArchitectureView';
-import ActivityFeed from './components/dashboard/ActivityFeed';
 
 export default function App() {
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState<'board' | 'list' | 'analytics' | 'architecture'>('board');
+  const [activeTab, setActiveTab] = useState<'board' | 'list' | 'architecture'>('board');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isActivityStreamOpen, setIsActivityStreamOpen] = useState(false);
 
   // Core Data State (synchronized with localStorage & API)
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,10 +72,6 @@ export default function App() {
         return;
       }
 
-      if (result.status === 'error') {
-        const localTasks = localStorage.getItem('tasks');
-        if (localTasks) setTasks(JSON.parse(localTasks));
-      }
     };
 
     syncTasks();
@@ -128,23 +120,10 @@ export default function App() {
     return () => window.clearInterval(id);
   }, [runPrSync]);
 
-  // Activities: localStorage only (no backend API)
+  // 옛 버전이 남긴 localStorage 캐시 1회 정리
   useEffect(() => {
-    const localActivities = localStorage.getItem('activities');
-    if (localActivities) setActivities(JSON.parse(localActivities));
-    else setActivities(INITIAL_ACTIVITIES);
+    purgeLegacyKeys();
   }, []);
-
-  // Save states to localStorage whenever they change
-  const saveTasksToLocal = (newTasks: Task[]) => {
-    setTasks(newTasks);
-    localStorage.setItem('tasks', JSON.stringify(newTasks));
-  };
-
-  const saveActivitiesToLocal = (newActivities: Activity[]) => {
-    setActivities(newActivities);
-    localStorage.setItem('activities', JSON.stringify(newActivities));
-  };
 
   // Toggle Dark Mode
   useEffect(() => {
@@ -167,11 +146,6 @@ export default function App() {
     };
   }, [tasks]);
 
-  // Helper to log a user activity to feed (disabled)
-  const logActivity = (action: string, targetName: string) => {
-    // Activities disabled as requested
-  };
-
   // Handle task status movement
   const handleMoveTask = async (id: string, newStatus: TaskStatus) => {
     const originalTask = tasks.find((t) => t.id === id);
@@ -180,7 +154,7 @@ export default function App() {
     const updatedTasks = tasks.map((t) =>
       t.id === id ? { ...t, status: newStatus } : t
     );
-    saveTasksToLocal(updatedTasks);
+    setTasks(updatedTasks);
     invalidateTasksCacheHeaders();
 
     try {
@@ -192,9 +166,6 @@ export default function App() {
     } catch (err) {
       console.error('Failed to update task status in backend:', err);
     }
-
-    const statusNames = { todo: 'To Do', inprogress: 'In Progress', review: 'Review', done: 'Completed' };
-    logActivity(`moved to ${statusNames[newStatus]}`, originalTask.title);
   };
 
   // Handle task deletion
@@ -211,9 +182,8 @@ export default function App() {
     }
 
     const updatedTasks = tasks.filter((t) => t.id !== id);
-    saveTasksToLocal(updatedTasks);
+    setTasks(updatedTasks);
     invalidateTasksCacheHeaders();
-    logActivity('deleted', originalTask.title);
 
     // If deleting active task in modal, close it and redirect to main board page
     if (selectedTask?.id === id) {
@@ -233,78 +203,31 @@ export default function App() {
 
   // Save/Create Task Handler
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => {
+    // 실패는 던져서 호출자가 처리 (Task 6에서 MutationResult로 대체)
     if (taskData.id) {
-      // Edit mode -> UPDATE in DB
-      try {
-        const response = await fetch(`/api/v1/tasks/${taskData.id}/`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(taskData)
-        });
-        if (!response.ok) throw new Error('Failed to update task');
-        const updatedTask = await response.json();
-        const updatedTasks = tasks.map((t) => (t.id === taskData.id ? updatedTask : t));
-        saveTasksToLocal(updatedTasks);
-        invalidateTasksCacheHeaders();
-        if (selectedTask?.id === taskData.id) {
-          setSelectedTask(updatedTask);
-        }
-        logActivity('updated details of', taskData.title);
-      } catch (err) {
-        console.error('Failed to patch task in backend, updating locally:', err);
-        const updatedTasks = tasks.map((t) =>
-          t.id === taskData.id
-            ? {
-                ...t,
-                ...taskData,
-                subtasks: taskData.subtasks || [],
-                roles: taskData.roles || [],
-                roleReviews: taskData.roleReviews || []
-              }
-            : t
-        );
-        saveTasksToLocal(updatedTasks as Task[]);
-        if (selectedTask?.id === taskData.id) {
-          setSelectedTask({ ...selectedTask, ...taskData } as Task);
-        }
-      }
+      const response = await fetch(`/api/v1/tasks/${taskData.id}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskData)
+      });
+      if (!response.ok) throw new Error('Failed to update task');
+      const updatedTask = await response.json();
+      setTasks(tasks.map((t) => (t.id === taskData.id ? updatedTask : t)));
+      invalidateTasksCacheHeaders();
+      if (selectedTask?.id === taskData.id) setSelectedTask(updatedTask);
     } else {
-      // Create mode -> POST in DB
-      try {
-        const response = await postJson('/api/v1/tasks/', taskData);
-        if (!response.ok) throw new Error('Failed to create task');
-        const createdTask = await response.json();
-        saveTasksToLocal([createdTask, ...tasks]);
-        invalidateTasksCacheHeaders();
-        logActivity('created', taskData.title);
-      } catch (err) {
-        console.error('Failed to post task in backend, creating locally:', err);
-        const newTask: Task = {
-          id: 'task-' + Date.now(),
-          title: taskData.title,
-          description: taskData.description,
-          status: taskData.status,
-          priority: taskData.priority,
-          category: taskData.category,
-          assigneeId: taskData.assigneeId,
-          subtasks: taskData.subtasks || [],
-          roles: taskData.roles || [],
-          roleReviews: taskData.roleReviews || [],
-          createdAt: new Date().toISOString()
-        };
-        saveTasksToLocal([newTask, ...tasks]);
-      }
+      const response = await postJson('/api/v1/tasks/', taskData);
+      if (!response.ok) throw new Error('Failed to create task');
+      const createdTask = await response.json();
+      setTasks([createdTask, ...tasks]);
+      invalidateTasksCacheHeaders();
     }
   };
 
   // Apply a server-confirmed change to one task's sub-resource (subtasks/reviews)
   // into both the global task list and the currently open modal, if any.
   const updateTaskInState = (taskId: string, updater: (t: Task) => Task) => {
-    setTasks((prev) => {
-      const next = prev.map((t) => (t.id === taskId ? updater(t) : t));
-      localStorage.setItem('tasks', JSON.stringify(next));
-      return next;
-    });
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? updater(t) : t)));
     setSelectedTask((prev) => (prev && prev.id === taskId ? updater(prev) : prev));
     invalidateTasksCacheHeaders();
   };
@@ -415,7 +338,7 @@ export default function App() {
     }));
   };
 
-  const handleTabChange = (tab: 'board' | 'list' | 'analytics' | 'architecture') => {
+  const handleTabChange = (tab: 'board' | 'list' | 'architecture') => {
     setActiveTab(tab);
     setSelectedKanbanStatus(null);
     setIsModalOpen(false);
@@ -516,13 +439,11 @@ export default function App() {
             <h2 className="text-xl font-extrabold font-sans text-slate-800 dark:text-slate-50 tracking-tight leading-none">
               {activeTab === 'board' && '칸반 보드'}
               {activeTab === 'list' && '작업 대장'}
-              {activeTab === 'analytics' && '프로젝트 분석'}
               {activeTab === 'architecture' && '아키텍처'}
             </h2>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 leading-normal max-w-2xl">
               {activeTab === 'board' && '워크플로우 단계를 시각적으로 관리하고 단계를 손쉽게 이동합니다.'}
               {activeTab === 'list' && '작업 세부 목록을 정렬, 필터링하여 순차적으로 상세하게 확인합니다.'}
-              {activeTab === 'analytics' && '전체 작업 통계 및 우선순위'}
               {activeTab === 'architecture' && 'GitHub 저장소를 기능 그룹으로 나누고 그룹별 변경 흐름과 연관성을 보여줍니다.'}
             </p>
           </div>
@@ -554,7 +475,6 @@ export default function App() {
                 onMoveTask={handleMoveTask}
               />
             )}
-            {activeTab === 'analytics' && <AnalyticsView tasks={tasks} />}
             {activeTab === 'architecture' && <ArchitectureView darkMode={darkMode} />}
           </div>
         </div>
