@@ -31,7 +31,7 @@ class ClientTests(SimpleTestCase):
     def test_token_header(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'}):
-            self.assertEqual(gh.get_authenticated_login(), 'me')
+            self.assertEqual(gh._get('/user')['login'], 'me')
         kw = get.call_args.kwargs
         self.assertEqual(kw['headers']['Authorization'], 'Bearer tok')
         self.assertEqual(kw['timeout'], 10)
@@ -39,22 +39,8 @@ class ClientTests(SimpleTestCase):
     def test_no_token(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {}, clear=True):
-            gh.get_authenticated_login()
+            gh._get('/user')
         self.assertNotIn('Authorization', get.call_args.kwargs['headers'])
-
-    def test_search(self, get):
-        get.return_value = resp(body={'items': [{
-            'number': 3, 'title': 't', 'html_url': 'u', 'created_at': 'c', 'updated_at': 'x',
-            'repository_url': 'https://api.github.com/repos/o/r', 'user': {'login': 'a'}, 'draft': True}]})
-        out = gh.search_review_requested_prs('me', 'o', 'r')
-        self.assertEqual(out, [{'number': 3, 'title': 't', 'html_url': 'u', 'repo': 'o/r', 'author': 'a',
-                                'created_at': 'c', 'updated_at': 'x', 'draft': True}])
-        self.assertEqual(get.call_args.kwargs['params']['q'], 'is:pr is:open review-requested:me repo:o/r')
-
-    def test_search_no_repo(self, get):
-        get.return_value = resp(body={'items': []})
-        self.assertEqual(gh.search_review_requested_prs('me'), [])
-        self.assertNotIn('repo:', get.call_args.kwargs['params']['q'])
 
     def test_tree_default_branch(self, get):
         get.side_effect = [resp(body={'default_branch': 'main'}),
@@ -92,7 +78,7 @@ class ClientTests(SimpleTestCase):
     def test_errors(self, get):
         get.return_value = resp(404, {'message': 'Not Found'})
         with self.assertRaises(gh.GitHubError) as c:
-            gh.get_authenticated_login()
+            gh._get('/user')
         self.assertEqual((c.exception.status, c.exception.message), (404, 'Not Found'))
 
     def test_rate_limit(self, get):
@@ -100,7 +86,7 @@ class ClientTests(SimpleTestCase):
             get.return_value = resp(status, {'message': 'API rate limit exceeded'},
                                     {'X-RateLimit-Remaining': '0'})
             with self.assertRaises(gh.GitHubError) as c:
-                gh.get_authenticated_login()
+                gh._get('/user')
             self.assertEqual(c.exception.status, status)
             self.assertIn('rate limit', c.exception.message)
 

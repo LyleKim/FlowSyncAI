@@ -9,7 +9,6 @@ from api.idempotency import finalize_idempotent_response, replay_idempotent_resp
 
 from .github_client import parse_repo_url
 from .models import WatchedRepo
-from .pr_sync import sync_review_requests
 
 SCOPE = 'integrations:watched-repos:POST'
 
@@ -63,8 +62,3 @@ def watched_repo_detail(request, pk):
     get_object_or_404(WatchedRepo, pk=pk).delete()
     return HttpResponse(status=204)
 
-
-@api_view
-@require_http_methods(['POST'])
-def sync_prs(request):
-    return JsonResponse(sync_review_requests())

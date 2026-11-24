@@ -203,35 +203,6 @@ def parse_repo_url(url):
     return m.group(1), m.group(2)
 
 
-def get_authenticated_login():
-    """GET /user -> login string (needs token)."""
-    return _get('/user')['login']
-
-
-def search_review_requested_prs(login, owner=None, name=None):
-    """Open PRs where `login` is review-requested (optionally within owner/name).
-
-    -> [{number, title, html_url, repo 'owner/name', author, created_at, updated_at, draft}]
-    """
-    q = f'is:pr is:open review-requested:{login}'
-    if owner and name:
-        q += f' repo:{owner}/{name}'
-    data = _get('/search/issues', {'q': q, 'per_page': 100})
-    return [
-        {
-            'number': i['number'],
-            'title': i['title'],
-            'html_url': i['html_url'],
-            'repo': i['repository_url'].split('/repos/', 1)[-1],
-            'author': (i.get('user') or {}).get('login', ''),
-            'created_at': i['created_at'],
-            'updated_at': i['updated_at'],
-            'draft': bool(i.get('draft')),
-        }
-        for i in data.get('items', [])
-    ]
-
-
 def list_repo_tree(owner, name, ref=None):
     """All file (blob) paths at `ref` (default branch if None) -> list[str].
 
