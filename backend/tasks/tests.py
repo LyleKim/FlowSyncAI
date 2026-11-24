@@ -32,7 +32,7 @@ class TaskCrudTests(ApiMixin, TestCase):
         self.assertEqual(set(data), {
             'id', 'title', 'description', 'status', 'priority', 'category',
             'assigneeId', 'subtasks', 'createdAt', 'roles', 'roleReviews',
-            'hasUnreflectedReview', 'lastReviewAddedAt', 'sourceUrl'})
+            'hasUnreflectedReview', 'lastReviewAddedAt', 'sourceUrl', 'kind', 'author'})
         self.assertEqual(data['status'], 'todo')
         self.assertEqual(data['priority'], 'medium')
         self.assertEqual(data['assigneeId'], 'Unknown')  # creator fallback
@@ -274,3 +274,68 @@ class ListQueryCountTests(ApiMixin, TestCase):
             RoleReview.objects.create(id=f'r{i}', task_id=f't{i}', role='qa', comment='x')
         with self.assertNumQueries(4):  # tasks, subtasks, reviews, last-modified
             self.client.get(T)
+
+
+class TaskKindTests(ApiMixin, TestCase):
+    def pr(self, **over):
+        return Task.objects.create(
+            id='pr-o-r-1', title='PR', creator='alice', **over
+        )
+
+    def test_serialized_task_has_kind(self):
+        self.pr()
+        self.mk()
+        by_id = {t['id']: t for t in self.client.get(T).json()}
+        self.assertEqual(by_id['pr-o-r-1']['kind'], 'pr')
+        self.assertEqual(by_id['t1']['kind'], 'manual')
+
+    def test_pr_task_assignee_is_not_author(self):
+        self.pr()
+        self.mk(assigneeId='bob')
+        by_id = {t['id']: t for t in self.client.get(T).json()}
+        self.assertEqual(by_id['pr-o-r-1']['assigneeId'], '')
+        self.assertEqual(by_id['pr-o-r-1']['author'], 'alice')
+        self.assertEqual(by_id['t1']['assigneeId'], 'bob')
+        self.assertIsNone(by_id['t1']['author'])
+
+    def test_pr_task_author_empty_when_creator_blank(self):
+        Task.objects.create(id='pr-o-r-2', title='PR', creator='')
+        t = self.client.get(T + 'pr-o-r-2/').json()
+        self.assertEqual(t['author'], '')
+        self.assertEqual(t['assigneeId'], '')
+
+    def test_manual_task_with_pr_source_url_stays_manual(self):
+        self.mk(sourceUrl='https://github.com/o/r/pull/9')
+        self.assertEqual(self.client.get(T + 't1/').json()['kind'], 'manual')
+
+    def test_kind_filter(self):
+        self.pr()
+        self.mk()
+        ids = lambda q: [t['id'] for t in self.client.get(T + q).json()]
+        self.assertEqual(ids('?kind=manual'), ['t1'])
+        self.assertEqual(ids('?kind=pr'), ['pr-o-r-1'])
+        self.assertEqual(sorted(ids('')), ['pr-o-r-1', 't1'])
+        r = self.client.get(T + '?kind=x')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()['code'], 'invalid_kind')
+
+    def test_kind_filter_has_independent_etag(self):
+        self.pr()
+        self.mk()
+        etags = {}
+        for q in ('', '?kind=pr', '?kind=manual'):
+            etags[q] = self.client.get(T + q)['ETag']
+        self.assertEqual(len(set(etags.values())), 3)
+        for q, e in etags.items():
+            self.assertEqual(self.client.get(T + q, HTTP_IF_NONE_MATCH=e).status_code, 304)
+        self.assertEqual(
+            self.client.get(T + '?kind=pr', HTTP_IF_NONE_MATCH=etags['?kind=manual']).status_code, 200
+        )
+
+    def test_kind_filter_last_modified_is_per_filter(self):
+        Task.objects.create(id='t-old', title='old')
+        Task.objects.filter(pk='t-old').update(updated_at=timezone.now() - timedelta(days=1))
+        self.pr()
+        since = http_date(timezone.now().timestamp() - 3600)
+        self.assertEqual(self.client.get(T + '?kind=manual', HTTP_IF_MODIFIED_SINCE=since).status_code, 304)
+        self.assertEqual(self.client.get(T + '?kind=pr', HTTP_IF_MODIFIED_SINCE=since).status_code, 200)

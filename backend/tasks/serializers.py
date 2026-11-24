@@ -21,6 +21,11 @@ def serialize_subtask(subtask):
     return {'id': subtask.id, 'title': subtask.title, 'completed': subtask.completed}
 
 
+def task_kind(task):
+    # id 접두사가 유일한 기준 (수동 작업이 PR URL을 sourceUrl로 가져도 manual)
+    return 'pr' if task.id.startswith('pr-') else 'manual'
+
+
 def serialize_task(task, reviews=None):
     """프론트엔드 Task 타입(camelCase)에 맞춘 직렬화."""
     if reviews is None:
@@ -34,6 +39,8 @@ def serialize_task(task, reviews=None):
         and (not task.checklist_generated_at or latest_review_at > task.checklist_generated_at)
     )
 
+    is_pr = task_kind(task) == 'pr'
+
     return {
         'id': task.id,
         'title': task.title,
@@ -41,7 +48,10 @@ def serialize_task(task, reviews=None):
         'status': task.status,
         'priority': task.priority,
         'category': task.category,
-        'assigneeId': task.creator or task.assignee_id,
+        # PR Task: 작성자 != 담당자 (작성자는 author)
+        'assigneeId': (task.assignee_id or '') if is_pr else (task.creator or task.assignee_id),
+        'kind': 'pr' if is_pr else 'manual',
+        'author': (task.creator or '') if is_pr else None,
         'subtasks': [serialize_subtask(subtask) for subtask in task.subtasks.all()],
         'createdAt': task.created_at.isoformat() if task.created_at else None,
         'roles': _parse_roles(task.roles),

@@ -26,12 +26,15 @@ from .services import (
 @require_http_methods(['GET', 'POST'])
 def task_list_create(request):
     if request.method == 'GET':
-        payload = serialize_task_list()
+        kind = request.GET.get('kind')
+        if kind not in (None, 'pr', 'manual'):
+            return json_error("kind must be 'pr' or 'manual'", status=400, code='invalid_kind')
+        payload = serialize_task_list(kind)
         return conditional_json_response(
             request,
             payload,
             safe=False,
-            last_modified=get_tasks_last_modified(),
+            last_modified=get_tasks_last_modified(kind),
         )
 
     replay_response, idempotency_key = replay_idempotent_response(request, 'tasks:POST')

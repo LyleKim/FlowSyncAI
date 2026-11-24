@@ -13,17 +13,26 @@ from .forms import TaskForm, SubTaskForm
 from .serializers import map_body_to_model_data, serialize_task
 
 
-def serialize_task_list():
-    tasks = list(Task.objects.prefetch_related('subtasks'))
+def tasks_for_kind(kind=None):
+    qs = Task.objects.all()
+    if kind == 'pr':
+        return qs.filter(id__startswith='pr-')
+    if kind == 'manual':
+        return qs.exclude(id__startswith='pr-')
+    return qs
+
+
+def serialize_task_list(kind=None):
+    tasks = list(tasks_for_kind(kind).prefetch_related('subtasks'))
     by_task = defaultdict(list)
     for review in RoleReview.objects.filter(task_id__in=[t.id for t in tasks]):
         by_task[review.task_id].append(review)
     return [serialize_task(task, by_task[task.id]) for task in tasks]
 
 
-def get_tasks_last_modified():
+def get_tasks_last_modified(kind=None):
     """목록 캐시 검증용 Last-Modified (가장 최근 task.updated_at). 작업 없으면 None."""
-    return Task.objects.aggregate(latest=Max('updated_at'))['latest']
+    return tasks_for_kind(kind).aggregate(latest=Max('updated_at'))['latest']
 
 
 def _normalize_roles_value(roles):
