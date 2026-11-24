@@ -85,7 +85,10 @@ def map_body_to_model_data(body, instance=None):
         'status': body.get('status', instance.status if instance else 'todo'),
         'priority': body.get('priority', instance.priority if instance else 'medium'),
         'category': body.get('category', instance.category if instance else ''),
-        'assignee_id': assignee or (instance.assignee_id if instance else ''),
+        # PR Task는 assigneeId 키가 있으면 빈 문자열도 그대로 저장(담당자 해제)
+        'assignee_id': (
+            (assignee if 'assigneeId' in body else instance.assignee_id) if pr_instance
+            else assignee or (instance.assignee_id if instance else '')),
     }
 
     if 'roles' in body:

@@ -336,6 +336,12 @@ class TaskKindTests(ApiMixin, TestCase):
         r = self.req('patch', T + 'pr-o-r-1/', {'title': 'new'}).json()
         self.assertEqual((r['assigneeId'], r['author']), ('bob', 'alice'))
 
+    def test_patch_empty_assignee_on_pr_task_clears_it_keeps_author(self):
+        self.pr(assignee_id='bob')
+        r = self.req('patch', T + 'pr-o-r-1/', {'assigneeId': ''}).json()
+        self.assertEqual((r['assigneeId'], r['author']), ('', 'alice'))
+        self.assertEqual(self.client.get(T + 'pr-o-r-1/').json()['assigneeId'], '')
+
     def test_kind_filter(self):
         self.pr()
         self.mk()
