@@ -36,6 +36,23 @@ class ClientTests(SimpleTestCase):
         self.assertEqual(kw['headers']['Authorization'], 'Bearer tok')
         self.assertEqual(kw['timeout'], 10)
 
+    def test_network_errors_become_upstream(self, get):
+        import requests
+        for exc in (requests.ConnectionError('x'), requests.Timeout('t')):
+            get.side_effect = exc
+            with self.assertRaises(gh.GitHubError) as cm:
+                gh._get('/user')
+            self.assertEqual(cm.exception.kind, 'upstream')
+
+    def test_non_json_200_becomes_upstream(self, get):
+        r = resp(body={})
+        r.json.side_effect = ValueError('no json')
+        get.side_effect = None
+        get.return_value = r
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh._get('/user')
+        self.assertEqual(cm.exception.kind, 'upstream')
+
     def test_no_token(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {}, clear=True):

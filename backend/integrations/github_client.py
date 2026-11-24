@@ -57,10 +57,16 @@ def _get(path, params=None):
     token = os.environ.get('GITHUB_TOKEN')
     if token:
         headers['Authorization'] = f'Bearer {token}'
-    resp = requests.get(API + path, headers=headers, params=params, timeout=TIMEOUT)
+    try:
+        resp = requests.get(API + path, headers=headers, params=params, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        raise GitHubError(0, f'network error: {e}', kind='upstream')
     if resp.status_code >= 300:
         raise _error_from_response(resp)
-    return resp.json()
+    try:
+        return resp.json()
+    except ValueError:
+        raise GitHubError(resp.status_code, 'invalid JSON from GitHub', kind='upstream')
 
 
 _REVIEWER = '{ __typename ... on User{login} ... on Team{slug organization{login}} }'
@@ -93,8 +99,11 @@ def _post_graphql(query, variables, tolerate_alias_not_found=False):
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
         raise GitHubError(401, 'GITHUB_TOKEN is not set', kind='auth')
-    resp = requests.post(API + '/graphql', json={'query': query, 'variables': variables},
-                         headers={'Authorization': f'Bearer {token}'}, timeout=TIMEOUT)
+    try:
+        resp = requests.post(API + '/graphql', json={'query': query, 'variables': variables},
+                             headers={'Authorization': f'Bearer {token}'}, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        raise GitHubError(0, f'network error: {e}', kind='upstream')
     if resp.status_code >= 300:
         raise _error_from_response(resp)
     try:

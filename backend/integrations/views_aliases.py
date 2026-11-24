@@ -93,14 +93,13 @@ def alias_detail(request, repo_id, alias_id):
         return error_response
     if not isinstance(body, dict):
         return json_error('Invalid JSON', status=400)
-    groups = _groups(repo)
     expected = body.get('expectedUpdatedAt')
     # exact match of the serialized (second-precision Z) string the client echoes back
     if expected is not None and expected != iso_z(alias.updated_at):
-        return json_error('Alias was modified', status=409, code='conflict', current=_one(alias, groups))
+        return json_error('Alias was modified', status=409, code='conflict', current=_one(alias, _groups(repo)))
     name = _name(body)
     if name is None:
         return json_error('displayName must be 1-80 characters', status=400, code='invalid_name')
     alias.display_name = name
     alias.save()
-    return JsonResponse(_one(alias, groups))
+    return JsonResponse(_one(alias, _groups(repo)))

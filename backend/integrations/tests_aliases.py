@@ -1,4 +1,6 @@
 import json
+
+import requests
 from unittest import mock
 
 from django.test import TestCase
@@ -89,3 +91,23 @@ class AliasTests(TestCase):
     def test_unknown_or_deleted_repo_404_repo_not_found(self):
         r = self.client.get('/api/v1/integrations/watched-repos/9999/area-aliases/')
         self.assertEqual((r.status_code, r.json()['code']), (404, 'repo_not_found'))
+
+    def test_network_error_on_tree_read_keeps_endpoints_working(self):
+        mock.patch.stopall()  # use the real get_groups -> github_client
+        with mock.patch('integrations.github_client.requests.get', side_effect=requests.ConnectionError('x')):
+            a = self.post({'pathPrefix': 'p', 'displayName': 'n'})
+            self.assertEqual((a.status_code, a.json()['status']), (201, 'unknown'))
+            self.assertEqual([x['status'] for x in self.client.get(self.url).json()], ['unknown'])
+            r = self.patch(a.json()['id'], {'displayName': 'm'})
+            self.assertEqual((r.status_code, r.json()['status']), (200, 'unknown'))
+
+    def test_patch_with_unreadable_tree_200_unknown(self):
+        a = self.mk()
+        self.groups.side_effect = GitHubError(502, 'boom')
+        r = self.patch(a['id'], {'displayName': 'q'})
+        self.assertEqual((r.status_code, r.json()['status']), (200, 'unknown'))
+
+    def test_invalid_path_prefix_400(self):
+        for p in ('', '  ', 'x' * 301, None):
+            r = self.post({'pathPrefix': p, 'displayName': 'n'})
+            self.assertEqual((r.status_code, r.json()['code']), (400, 'invalid_path_prefix'))
