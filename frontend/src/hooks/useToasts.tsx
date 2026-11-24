@@ -77,6 +77,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const schedule = useCallback((action: UndoAction) => {
     const id = nextId.current++;
     const windowMs = action.windowMs ?? UNDO_WINDOW_MS;
+    // 같은 key의 이전 대기는 먼저 확정한다(독립 대기 2개 방지).
+    if (action.key) for (const [pid, p] of pending.current) if (p.action.key === action.key) void commitPending(pid);
     action.hide();
     const timer = setTimeout(() => void commitPending(id), windowMs);
     pending.current.set(id, { action, toastId: id, timer });

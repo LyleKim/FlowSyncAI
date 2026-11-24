@@ -43,7 +43,43 @@ describe('useUndo', () => {
     const a = mk(false); wrap(null);
     act(() => api.schedule({ label: 'x', ...a }));
     await tick(10000);
-    expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.getByRole('alert')).toHaveTextContent('x 처리에 실패해 원래대로 되돌렸어요');
+    expect(ids.size).toBe(0);
+  });
+  it('(d2) commit이 throw해도 restore + alert + 키 해제', async () => {
+    const a = mk(); a.commit.mockRejectedValue(new Error('net')); wrap(null);
+    act(() => api.schedule({ label: 'x', key: 'k', ...a }));
+    await tick(10000);
+    expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.getByRole('alert')).toBeInTheDocument(); expect(ids.has('k')).toBe(false);
+  });
+  it('windowMs를 따른다', async () => {
+    const a = mk(); wrap(null);
+    act(() => api.schedule({ label: 'x', windowMs: 2000, ...a }));
+    await tick(1900); expect(a.commit).not.toHaveBeenCalled();
+    await tick(100); expect(a.commit).toHaveBeenCalledTimes(1);
+  });
+  it('같은 key 재schedule 시 이전 대기를 먼저 commit하고 새 대기만 남는다', async () => {
+    const a = mk(), b = mk(); wrap(null);
+    act(() => api.schedule({ label: 'a', key: 'k', ...a }));
+    await tick(3000);
+    act(() => api.schedule({ label: 'b', key: 'k', ...b }));
+    await tick(0);
+    expect(a.commit).toHaveBeenCalledTimes(1); expect(b.commit).not.toHaveBeenCalled(); expect(ids.has('k')).toBe(true);
+    await tick(10000); expect(a.commit).toHaveBeenCalledTimes(1); expect(b.commit).toHaveBeenCalledTimes(1);
+  });
+  it('카운트다운은 aria-hidden이고 live region 안의 안내 문구는 정적이다', () => {
+    const a = mk(); wrap(null);
+    act(() => api.schedule({ label: 'x', ...a }));
+    const cd = screen.getByTestId('undo-countdown');
+    expect(cd).toHaveAttribute('aria-hidden', 'true');
+    expect(cd.closest('[role="status"]')).not.toBeNull();
+  });
+  it('Provider 언마운트 후 pagehide는 commit하지 않는다(리스너 제거, 타이머도 정리)', async () => {
+    const a = mk(); const r = wrap(null);
+    act(() => api.schedule({ label: 'x', ...a }));
+    r.unmount();
+    await act(async () => { window.dispatchEvent(new Event('pagehide')); });
+    await tick(10000); expect(a.commit).not.toHaveBeenCalled();
   });
   it('(e) 두 건은 독립 commit', async () => {
     const a = mk(), b = mk(); wrap(null);
