@@ -16,7 +16,7 @@ def parse_json_body(request):
     try:
         return json.loads(request.body or b'{}'), None
     except json.JSONDecodeError:
-        return None, json_error('Invalid JSON', status=400, code='invalid_json')
+        return None, json_error('Invalid JSON', status=400)
 
 
 def compute_etag(payload):

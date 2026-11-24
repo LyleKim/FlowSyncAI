@@ -12,7 +12,7 @@ from .pr_sync import sync_repos
 def sync_prs(request):
     body, error_response = parse_json_body(request)
     if error_response:
-        return error_response
+        return json_error('Invalid JSON', status=400, code='invalid_json')
     if not isinstance(body, dict):
         return json_error('Invalid JSON', status=400, code='invalid_json')
     repo_id = body.get('repoId')
