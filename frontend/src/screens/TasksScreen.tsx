@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from 'react-router';
+import { Link, Outlet, useSearchParams } from 'react-router';
 import { useTasksContext } from '../hooks/TasksContext';
 import { usePendingIds, useUndo } from '../hooks/useUndo';
 import { searchTasks, sortByCreatedAt } from '../lib/taskFilters';
@@ -56,6 +56,7 @@ export default function TasksScreen() {
           : loadState === 'error' ? <p role="alert" className="text-sm text-danger">작업을 불러오지 못했어요.</p>
           : view === 'board' ? <TaskBoard {...shared} /> : <TaskList {...shared} />}
       </div>
+      <Outlet />{/* /tasks/new, /tasks/:id 대화상자 */}
     </>
   );
 }

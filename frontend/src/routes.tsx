@@ -5,6 +5,7 @@ import AreaDetailScreen from './screens/AreaDetailScreen';
 import TasksScreen from './screens/TasksScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import NotFoundScreen from './screens/NotFoundScreen';
+import TaskDetailDialog from './components/task/TaskDetailDialog';
 
 export const ROUTES = {
   me: '/me',
@@ -48,10 +49,10 @@ export function AppRoutes() {
       <Route path={ROUTES.me} element={<MyReviewsScreen />} />
       <Route path={ROUTES.areas} element={<AreasScreen />} />
       <Route path="/areas/:areaId" element={<AreaDetailScreen />} />
-      {/* 하위 경로는 Task 13이 대화상자로 채운다(TasksScreen의 Outlet, R1). */}
+      {/* 상세는 목록 위 대화상자(TasksScreen의 Outlet, R1). */}
       <Route path={ROUTES.tasks} element={<TasksScreen />}>
-        <Route path="new" />
-        <Route path=":id" />
+        <Route path="new" element={<TaskDetailDialog />} />
+        <Route path=":id" element={<TaskDetailDialog />} />
       </Route>
       <Route path={ROUTES.settings} element={<SettingsScreen />} />
       <Route path="*" element={<NotFoundScreen />} />

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router';
-import { NOT_FOUND_TITLE } from '../routes';
+import { NOT_FOUND_TITLE, ROUTES } from '../routes';
+
+const inTasks = (p: string) => p === ROUTES.tasks || p.startsWith(`${ROUTES.tasks}/`);
 
 /**
  * 라우트가 바뀌면 문서 제목을 갱신하고 본문(main)으로 포커스를 옮긴다.
@@ -18,7 +20,8 @@ export function useRouteAnnouncer(titleFor: (pathname: string) => string) {
     const from = prev.current;
     prev.current = pathname;
     if (from === pathname) return; // StrictMode 재실행 등
-    const move = from === null ? title === NOT_FOUND_TITLE : from !== '/';
+    // /tasks ↔ /tasks/:id|new 는 목록 위 대화상자 열기/닫기: 포커스는 Dialog(제목·열었던 요소)가 맡는다.
+    const move = from === null ? title === NOT_FOUND_TITLE : from !== '/' && !(inTasks(from) && inTasks(pathname));
     if (move) document.getElementById('main')?.focus();
   }, [pathname, titleFor]);
 }
