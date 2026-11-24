@@ -7,7 +7,7 @@ from api.decorators import api_view
 from api.http import json_error, parse_json_body
 from api.idempotency import finalize_idempotent_response, replay_idempotent_response
 
-from .github_client import parse_repo_url
+from .github_client import parse_repo_url, validate_login
 from .models import WatchedRepo
 from .pr_sync import sync_review_requests
 
@@ -48,6 +48,11 @@ def watched_repo_list_create(request):
         return json_error(str(e), status=400)
     url = f'https://github.com/{owner}/{name}'
     login = str(body.get('githubLogin') or '').strip()
+    if login:
+        try:
+            validate_login(login)
+        except ValueError as e:
+            return json_error(str(e), status=400)
 
     try:
         with transaction.atomic():

@@ -50,6 +50,16 @@ def parse_repo_url(url):
     return m.group(1), m.group(2)
 
 
+_LOGIN_RE = re.compile(r'^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$')
+
+
+def validate_login(login):
+    """GitHub 사용자명 형식(영숫자/하이픈, 최대 39자)이 아니면 ValueError."""
+    if not _LOGIN_RE.match(login or ''):
+        raise ValueError(f'Invalid GitHub login: {login!r}')
+    return login
+
+
 def get_authenticated_login():
     """GET /user -> login string (needs token)."""
     return _get('/user')['login']
@@ -60,6 +70,7 @@ def search_review_requested_prs(login, owner=None, name=None):
 
     -> [{number, title, html_url, repo 'owner/name', author, created_at, updated_at, draft}]
     """
+    validate_login(login)  # q 에 그대로 들어가므로 `repo:` 같은 검색 한정자 주입을 막는다
     q = f'is:pr is:open review-requested:{login}'
     if owner and name:
         q += f' repo:{owner}/{name}'
