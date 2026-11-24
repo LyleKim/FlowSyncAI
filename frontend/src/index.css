@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* TEMP: Impeccable — 값은 임시. 이름만 계약(F-T17에서 확정). */
+:root {
+  --surface: #ffffff; /* TEMP: Impeccable */
+  --surface-raised: #ffffff;
+  --surface-sunken: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --focus-ring: #2563eb;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+  --status-todo: #64748b;
+  --status-inprogress: #2563eb;
+  --status-review: #9333ea;
+  --status-done: #16a34a;
+  --priority-low: #64748b;
+  --priority-medium: #2563eb;
+  --priority-high: #d97706;
+  --priority-urgent: #dc2626;
+}
+
+.dark {
+  --surface: #0f172a; /* TEMP: Impeccable */
+  --surface-raised: #1e293b;
+  --surface-sunken: #020617;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+  --accent: #60a5fa;
+  --accent-contrast: #0f172a;
+  --focus-ring: #60a5fa;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --status-todo: #94a3b8;
+  --status-inprogress: #60a5fa;
+  --status-review: #c084fc;
+  --status-done: #4ade80;
+  --priority-low: #94a3b8;
+  --priority-medium: #60a5fa;
+  --priority-high: #fbbf24;
+  --priority-urgent: #f87171;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-focus-ring: var(--focus-ring);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-status-todo: var(--status-todo);
+  --color-status-inprogress: var(--status-inprogress);
+  --color-status-review: var(--status-review);
+  --color-status-done: var(--status-done);
+  --color-priority-low: var(--priority-low);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-high: var(--priority-high);
+  --color-priority-urgent: var(--priority-urgent);
+}
+
+@theme {
+  --text-caption: 12px;
+  --text-body-sm: 14px;
+  --text-body: 16px;
+  --text-title: 20px;
+  --text-heading: 24px;
+  --text-display: 30px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --spacing: 4px;
+  --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

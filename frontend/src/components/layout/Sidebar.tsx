@@ -44,7 +44,7 @@ export default function Sidebar({ activeTab, setActiveTab, taskCounts }: Sidebar
   return (
     <aside className="w-64 bg-slate-900 flex flex-col h-full shrink-0" id="app-sidebar">
       {/* Brand Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-850 gap-3 shrink-0">
+      <div className="h-16 flex items-center px-6 border-b gap-3 shrink-0">
         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
           <CheckSquare size={18} strokeWidth={2.5} />
         </div>

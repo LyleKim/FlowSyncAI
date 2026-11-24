@@ -1,9 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var v = localStorage.getItem('darkMode');
+        var d = v === 'true' || v === 'dark' ? true : v === 'false' || v === 'light' ? false : matchMedia('(prefers-color-scheme: dark)').matches;
+        if (d) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+    <title>FlowSyncAI</title>
   </head>
   <body>
     <div id="root"></div>

@@ -212,7 +212,7 @@ export default function TaskBoard({
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-4 text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-450 transition-colors">
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-4 text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-blue-600 transition-colors">
                   <span>단계 진입</span>
                   <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -338,7 +338,7 @@ export default function TaskBoard({
                   </div>
 
                   <div className="cursor-pointer" onClick={() => onSelectTask(task)}>
-                    <h4 className="font-sans font-bold text-slate-800 dark:text-slate-100 text-[13.5px] leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-450 transition-colors line-clamp-2">
+                    <h4 className="font-sans font-bold text-slate-800 dark:text-slate-100 text-[13.5px] leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
                       {task.title}
                     </h4>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
