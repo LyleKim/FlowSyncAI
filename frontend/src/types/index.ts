@@ -33,10 +33,12 @@ export interface Task {
   hasUnreflectedReview?: boolean;
   lastReviewAddedAt?: string;
   sourceUrl?: string | null;
+  kind?: 'pr' | 'manual';
+  author?: string | null;
 }
 
 export interface WatchedRepo {
-  id: string | number;
+  id: number;
   url: string;
   owner: string;
   name: string;

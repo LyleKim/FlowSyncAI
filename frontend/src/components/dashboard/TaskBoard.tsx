@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Plus, ArrowLeft, ArrowRight, Eye, Trash2, Calendar, ClipboardCheck, ListTodo, RefreshCw, FileCheck2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Task, TaskStatus } from '../../types';
 import PrBadge from '../common/PrBadge';
+import { formatDate } from '../../lib/date';
+import { getInitials, getAvatarColor } from '../../lib/avatar';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -12,35 +14,6 @@ interface TaskBoardProps {
   selectedStatus: TaskStatus | null;
   onSelectedStatusChange: (status: TaskStatus | null) => void;
 }
-
-const getInitials = (name: string) => {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
-const getAvatarColor = (name: string) => {
-  const colors = [
-    'bg-blue-500',
-    'bg-emerald-500',
-    'bg-rose-500',
-    'bg-amber-500',
-    'bg-purple-500',
-    'bg-sky-500',
-    'bg-indigo-500',
-    'bg-pink-500',
-  ];
-  if (!name) return 'bg-slate-500';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-};
 
 const getPriorityStyles = (priority: string | undefined) => {
   const p = priority || 'medium';
@@ -134,30 +107,6 @@ export default function TaskBoard({
       icon: CheckCircle2
     }
   ];
-
-  const getPriorityStyle = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-100 dark:border-rose-900/30';
-      case 'medium':
-        return 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-100 dark:border-amber-900/30';
-      case 'low':
-      default:
-        return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border-slate-100 dark:border-slate-700/50';
-    }
-  };
-
-  const getCategoryStyle = (category: string) => {
-    const hash = category.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const colors = [
-      'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/30',
-      'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/30',
-      'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100 dark:bg-fuchsia-950/20 dark:text-fuchsia-400 dark:border-fuchsia-900/30',
-      'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/20 dark:text-teal-400 dark:border-teal-900/30',
-      'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30'
-    ];
-    return colors[hash % colors.length];
-  };
 
   const moveLeft = (status: TaskStatus): TaskStatus | null => {
     if (status === 'inprogress') return 'todo';
@@ -397,10 +346,7 @@ export default function TaskBoard({
                         <Calendar size={11} className="text-slate-400 dark:text-slate-500" />
                         <span>
                           {task.createdAt
-                            ? new Date(task.createdAt).toLocaleDateString('ko-KR', {
-                                month: '2-digit',
-                                day: '2-digit',
-                              })
+                            ? formatDate(task.createdAt)
                             : '-'}
                         </span>
                       </span>

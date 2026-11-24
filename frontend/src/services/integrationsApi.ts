@@ -27,7 +27,7 @@ export async function addWatchedRepo(url: string, githubLogin?: string): Promise
   return parse<WatchedRepo>(await postJson(`${BASE}/watched-repos/`, body));
 }
 
-export async function removeWatchedRepo(id: string | number): Promise<void> {
+export async function removeWatchedRepo(id: number): Promise<void> {
   await parse<void>(await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE' }));
 }
 

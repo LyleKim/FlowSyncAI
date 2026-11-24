@@ -3,6 +3,8 @@ import { X, Save, Edit2, Plus, Trash2, CheckSquare, Square, Calendar, User, Alig
 import { Task, TaskStatus, TaskPriority, SubTask, RoleReview } from '../../types';
 import { postJson } from '../../services/apiClient';
 import PrBadge from './PrBadge';
+import { formatDate } from '../../lib/date';
+import { getInitials, getAvatarColor } from '../../lib/avatar';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -20,53 +22,6 @@ interface TaskModalProps {
   onDeleteReview: (taskId: string, reviewId: string) => Promise<void>;
   onNavigateToStatus?: (status: TaskStatus) => void;
 }
-
-const getInitials = (name: string) => {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
-const getAvatarColor = (name: string) => {
-  const colors = [
-    'bg-blue-500',
-    'bg-emerald-500',
-    'bg-rose-500',
-    'bg-amber-500',
-    'bg-purple-500',
-    'bg-sky-500',
-    'bg-indigo-500',
-    'bg-pink-500',
-  ];
-  if (!name) return 'bg-slate-500';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-};
-
-const formatCreatedAt = (dateString?: string) => {
-  if (!dateString) return '알 수 없음';
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '알 수 없음';
-    
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    
-    return `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes}분`;
-  } catch (e) {
-    return '알 수 없음';
-  }
-};
 
 export default function TaskModal({
   isOpen,
@@ -526,7 +481,7 @@ export default function TaskModal({
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
                 <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border text-slate-600 dark:text-slate-300">
                   <Calendar size={13} className="text-slate-400" />
-                  <span>생성일: <strong>{formatCreatedAt(task?.createdAt || (task as any)?.created_at)}</strong></span>
+                  <span>생성일: <strong>{formatDate(task?.createdAt || (task as any)?.created_at)}</strong></span>
                 </span>
                 <PrBadge url={task?.sourceUrl} />
               </div>
