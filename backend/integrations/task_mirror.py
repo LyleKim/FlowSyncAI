@@ -37,4 +37,4 @@ def mirror_repo(repo):
         status = 'done' if pr.state in ('merged', 'closed') else task.status
         if (title, status) != (task.title, task.status):
             task.title, task.status = title[:255], status
-            task.save(update_fields=['title', 'status'])
+            task.save(update_fields=['title', 'status', 'updated_at'])

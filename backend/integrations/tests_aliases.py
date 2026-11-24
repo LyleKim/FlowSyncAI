@@ -3,6 +3,7 @@ import json
 import requests
 from unittest import mock
 
+from django.core.cache import cache
 from django.test import TestCase
 
 from integrations import areas
@@ -15,6 +16,7 @@ PATHS = ['backend/payments/a.py', 'backend/payments/b.py', 'docs/x.md', 'docs/y.
 
 class AliasTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.repo = WatchedRepo.objects.create(url='https://github.com/o/r', owner='o', name='r')
         self.url = f'/api/v1/integrations/watched-repos/{self.repo.id}/area-aliases/'
         p = mock.patch('integrations.areas.get_groups', return_value=group_paths(PATHS))
@@ -91,6 +93,13 @@ class AliasTests(TestCase):
     def test_unknown_or_deleted_repo_404_repo_not_found(self):
         r = self.client.get('/api/v1/integrations/watched-repos/9999/area-aliases/')
         self.assertEqual((r.status_code, r.json()['code']), (404, 'repo_not_found'))
+
+    def test_path_prefix_normalized(self):
+        r = self.post({'pathPrefix': ' /backend/payments/ ', 'displayName': 'n'})
+        self.assertEqual((r.status_code, r.json()['pathPrefix']), (201, 'backend/payments'))
+        self.assertEqual(self.post({'pathPrefix': ' @docs ', 'displayName': 'n'}).json()['pathPrefix'], '@docs')
+        r = self.post({'pathPrefix': ' / ', 'displayName': 'n'})
+        self.assertEqual((r.status_code, r.json()['code']), (400, 'invalid_path_prefix'))
 
     def test_network_error_on_tree_read_keeps_endpoints_working(self):
         mock.patch.stopall()  # use the real get_groups -> github_client

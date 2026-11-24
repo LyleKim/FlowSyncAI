@@ -14,8 +14,8 @@ def sync_prs(request):
     if error_response:
         return error_response
     if not isinstance(body, dict):
-        return json_error('Invalid JSON', status=400)
+        return json_error('Invalid JSON', status=400, code='invalid_json')
     repo_id = body.get('repoId')
     if repo_id is not None and (isinstance(repo_id, bool) or not isinstance(repo_id, int)):
-        return json_error('repoId must be an integer', status=400)
+        return json_error('repoId must be an integer', status=400, code='invalid_repo_id')
     return JsonResponse(sync_repos(repo_id))

@@ -59,7 +59,7 @@ def alias_list_create(request, repo_id):
         return replay_response
 
     prefix = body.get('pathPrefix')
-    prefix = prefix.strip() if isinstance(prefix, str) else ''
+    prefix = prefix.strip().strip('/').strip() if isinstance(prefix, str) else ''
     if not prefix or len(prefix) > 300:
         return json_error('pathPrefix is required', status=400, code='invalid_path_prefix')
     name = _name(body)

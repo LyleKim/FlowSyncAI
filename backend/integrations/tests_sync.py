@@ -40,6 +40,21 @@ class SyncTests(TestCase):
         self.assertIsNone(st['lastError'])
         self.assertEqual(PullRequest.objects.count(), 1)
 
+    @mock.patch(FETCH, return_value=ok(1))
+    def test_success_never_moves_last_success_backwards(self, _):
+        later = T0 + timedelta(hours=1)
+        WatchedRepo.objects.filter(pk=self.repo.pk).update(last_synced_at=later)
+        out = sync_repos(now=T0)
+        self.assertEqual(out['repos'][0]['lastSuccessAt'], later.strftime('%Y-%m-%dT%H:%M:%SZ'))
+
+    def test_repo_deleted_mid_sync_does_not_raise(self):
+        def boom(*a, **k):
+            WatchedRepo.objects.all().delete()
+            raise gh.GitHubError(500, 'x')
+        with mock.patch(FETCH, side_effect=boom):
+            out = sync_repos(now=T0)
+        self.assertEqual((set(out), out['repos']), (KEYS, []))
+
     @mock.patch(FETCH)
     def test_sync_mirrors_task_for_legacy_login(self, fetch):
         WatchedRepo.objects.filter(pk=self.repo.pk).update(github_login='Me')
@@ -144,7 +159,12 @@ class EndpointTests(TestCase):
         self.assertEqual(r.json()['throttled'], [self.repo.id])
         self.assertEqual(self.client.post(self.URL, '{bad', content_type='application/json').status_code, 400)
         self.assertEqual(self.client.post(self.URL, '[]', content_type='application/json').status_code, 400)
-        self.assertEqual(self.client.post(self.URL, '{"repoId":"x"}', content_type='application/json').status_code, 400)
+        r = self.client.post(self.URL, '{"repoId":"x"}', content_type='application/json')
+        self.assertEqual((r.status_code, r.json()['code']), (400, 'invalid_repo_id'))
+        r = self.client.post(self.URL, '{bad', content_type='application/json')
+        self.assertEqual((r.status_code, r.json()['code']), (400, 'invalid_json'))
+        r = self.client.post(self.URL, '[1]', content_type='application/json')
+        self.assertEqual((r.status_code, r.json()['code']), (400, 'invalid_json'))
 
     def test_no_repos(self):
         WatchedRepo.objects.all().delete()

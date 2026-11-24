@@ -33,8 +33,11 @@ def _sync_one(repo, now):
     data = github_client.fetch_repo_pull_requests(
         repo.owner, repo.name, tracked_open=tracked_open_numbers(repo))
     res = ingest_prs(repo, data['prs'], now)
+    WatchedRepo.objects.filter(pk=repo.pk).filter(  # never move lastSuccessAt backwards
+        Q(last_synced_at__isnull=True) | Q(last_synced_at__lt=now)).update(
+        last_synced_at=now)
     WatchedRepo.objects.filter(pk=repo.pk).update(
-        last_synced_at=now, last_error_kind='', last_error_message='', last_error_reset_at=None,
+        last_error_kind='', last_error_message='', last_error_reset_at=None,
         truncated=bool(data['truncated']))
     try:  # legacy kanban mirror: its failure must not undo the ingest or last_synced_at
         mirror_repo(repo)
@@ -67,7 +70,10 @@ def sync_repos(repo_id=None, now=None):
                 WatchedRepo.objects.filter(pk=repo.pk).update(
                     last_error_kind=err.kind, last_error_message=err.message, last_error_reset_at=err.reset_at)
                 out['errors'].append(f'{repo}: {err.message}')
-        repo.refresh_from_db()
+        try:
+            repo.refresh_from_db()
+        except WatchedRepo.DoesNotExist:  # deleted mid-sync
+            continue
         out['repos'].append(serialize_repo_status(repo))
     return out
 
