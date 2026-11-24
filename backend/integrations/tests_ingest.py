@@ -142,3 +142,36 @@ class IngestTests(TestCase):
         with CaptureQueriesContext(connection) as c:
             ingest_prs(self.repo, snap(), NOW)
         self.assertLessEqual(len(c), 10)
+
+    def test_duplicate_pr_number_in_snapshot(self):
+        r = ingest_prs(self.repo, [pr(1, title='x'), pr(1, title='y')], NOW)
+        self.assertEqual(r, IngestResult(created=1, updated=0))
+        self.assertEqual(PullRequest.objects.get().title, 'y')
+
+    def test_duplicate_reviewer_login_in_one_pr(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('A', at=T1), req('a', at=T1)],
+                                  latest_reviews=[{'login': 'A', 'state': 'APPROVED', 'submitted_at': T2},
+                                                  {'login': 'a', 'state': 'COMMENTED', 'submitted_at': T3}])], NOW)
+        self.assertEqual(PullRequestReviewer.objects.count(), 1)
+        self.assertEqual(PullRequestReview.objects.count(), 1)
+
+    def test_team_row_deactivate_and_reactivate(self):
+        ingest_prs(self.repo, [pr(review_requests=[req(team='o/t', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr()], NOW)
+        t = self.rv(team_slug='o/t')
+        self.assertEqual((t.is_active, t.removed_at), (False, NOW))
+        ingest_prs(self.repo, [pr(review_requests=[req(team='o/t', at=T3)])], NOW)
+        t = self.rv(team_slug='o/t')
+        self.assertEqual((t.is_active, t.removed_at), (True, None))
+        self.assertEqual(t.requested_at.isoformat(), '2026-11-03T00:00:00+00:00')
+
+    def test_prs_not_in_snapshot_not_loaded(self):
+        ingest_prs(self.repo, [pr(n) for n in range(1, 6)], NOW)
+        before = {p.number: p.synced_at for p in PullRequest.objects.all()}
+        ingest_prs(self.repo, [pr(1, title='z')], NOW)
+        for p in PullRequest.objects.exclude(number=1):
+            self.assertEqual(p.synced_at, before[p.number])
+            self.assertEqual(p.title, 't')
+        with CaptureQueriesContext(connection) as c:
+            ingest_prs(self.repo, [pr(1)], NOW)
+        self.assertIn('IN (1)', ' '.join(q['sql'] for q in c if 'integrations_pullrequest"' in q['sql'] and 'SELECT' in q['sql']))

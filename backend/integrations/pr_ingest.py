@@ -39,8 +39,10 @@ def _pr_values(d, now):
 
 def ingest_prs(repo, prs, now):
     res = IngestResult()
+    prs = list({d['number']: d for d in prs}.values())  # dedupe by number, last wins
     with transaction.atomic():
-        existing = {p.number: p for p in PullRequest.objects.filter(repo=repo)}
+        existing = {p.number: p for p in PullRequest.objects.filter(
+            repo=repo, number__in=[d['number'] for d in prs])}
         to_update, pairs = [], []
         for d in prs:
             vals = _pr_values(d, now)
@@ -60,8 +62,9 @@ def ingest_prs(repo, prs, now):
             PullRequest.objects.bulk_update(to_update, _PR_FIELDS)
 
         ids = [pr.id for pr, _ in pairs]
-        reviewers = {(r.pr_id, r.login_key, r.team_slug): r
-                     for r in PullRequestReviewer.objects.filter(pr_id__in=ids)}
+        reviewers = {}  # pr_id -> {(login_key, team_slug): row}
+        for r in PullRequestReviewer.objects.filter(pr_id__in=ids):
+            reviewers.setdefault(r.pr_id, {})[(r.login_key, r.team_slug)] = r
         reviews = {(r.pr_id, r.login_key): r for r in PullRequestReview.objects.filter(pr_id__in=ids)}
         new_rv, upd_rv, new_rw, upd_rw = [], [], [], []
         for pr, d in pairs:
@@ -74,15 +77,15 @@ def ingest_prs(repo, prs, now):
                         continue
                     seen.add(k)
                     at = _dt(r.get('requested_at')) or created_at
-                    row = reviewers.get((pr.id, *k))
+                    row = reviewers.get(pr.id, {}).get(k)
                     if row is None:
                         new_rv.append(PullRequestReviewer(pr=pr, login=r.get('login') or '', login_key=k[0],
                                                           team_slug=k[1], requested_at=at))
                     elif not row.is_active:  # re-request
                         row.is_active, row.removed_at, row.requested_at = True, None, at
                         upd_rv.append(row)
-                for (pid, lk, ts), row in reviewers.items():
-                    if pid == pr.id and row.is_active and (lk, ts) not in seen:
+                for k, row in reviewers.get(pr.id, {}).items():
+                    if row.is_active and k not in seen:
                         row.is_active, row.removed_at = False, now
                         upd_rv.append(row)
             for r in d.get('latest_reviews') or []:
@@ -98,7 +101,7 @@ def ingest_prs(repo, prs, now):
                     new_rw.append(row)
                 else:
                     row.login, row.state, row.submitted_at = login, r['state'], _dt(r['submitted_at'])
-                    if row not in new_rw:
+                    if row.pk is not None:
                         upd_rw.append(row)
         PullRequestReviewer.objects.bulk_create(new_rv)
         PullRequestReviewer.objects.bulk_update(upd_rv, ['is_active', 'removed_at', 'requested_at'])
