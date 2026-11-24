@@ -8,6 +8,7 @@ const GAP = 6;
 const STEP = BAR_W + GAP;
 const TOP = 2; // 잘림 표식 여백
 const FLOOR = TOP + BAR_MAX_CELLS * CELL;
+const INSET = 0.75; // 속 빈 막대 윤곽(1.5)이 잘리지 않게 반 두께만큼 안쪽으로
 const HEIGHT = FLOOR + 2;
 
 interface Props {
@@ -31,14 +32,19 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
   const cur = unknown ? -1 : currentWeekIndex(weekly, generatedAt);
   const name = unknown ? '데이터 없음' : describeWeekly(weekly, cur, days);
   const detail = variant === 'detail' && !unknown;
-  const col = { width: STEP, textAlign: 'center' as const, display: 'inline-block' };
+  const col = (i: number) => ({
+    width: BAR_W,
+    marginRight: i < n - 1 ? GAP : 0,
+    display: 'inline-flex',
+    justifyContent: 'center',
+  });
 
   return (
-    <div className="inline-block text-(--text-muted)">
+    <div className={`inline-block text-(--text-muted) ${detail ? 'px-3' : ''}`}>
       {detail && (
-        <div style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
-          {weekly.map((w) => (
-            <span key={w.weekStart} style={col}>{w.commits}</span>
+        <div aria-hidden="true" style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
+          {weekly.map((w, i) => (
+            <span key={w.weekStart} style={col(i)}>{w.commits}</span>
           ))}
         </div>
       )}
@@ -69,13 +75,13 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
                   <g key={w.weekStart}>
                     <rect
                       aria-hidden="true"
-                      x={x}
+                      x={now ? x + INSET : x}
                       y={FLOOR - h}
-                      width={BAR_W}
+                      width={now ? BAR_W - 2 * INSET : BAR_W}
                       height={h}
                       fill={now ? 'none' : 'var(--text-muted)'}
                       stroke={now ? 'var(--accent)' : undefined}
-                      strokeWidth={now ? 1.5 : undefined}
+                      strokeWidth={now ? INSET * 2 : undefined}
                     />
                     {isClipped(w.commits) && (
                       <line data-clipped x1={x} x2={x + BAR_W} y1={TOP - 1} y2={TOP - 1} stroke="var(--text-muted)" strokeWidth={1.5} />
@@ -88,8 +94,8 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
       </svg>
       {detail && (
         <div style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
-          {weekly.map((w) => (
-            <span key={w.weekStart} style={col}>{md(w.weekStart)}</span>
+          {weekly.map((w, i) => (
+            <span key={w.weekStart} style={col(i)}>{md(w.weekStart)}</span>
           ))}
         </div>
       )}

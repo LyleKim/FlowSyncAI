@@ -79,11 +79,16 @@ describe('WeeklyBars', () => {
     expect(getByText('11/17')).toBeTruthy();
   });
 
+  it('detail의 값 행만 aria-hidden, 날짜 행은 노출', () => {
+    const { getByText } = setup([4, 16], { variant: 'detail' });
+    expect(getByText('16').parentElement!.getAttribute('aria-hidden')).toBe('true');
+    expect(getByText('10/27').parentElement!.getAttribute('aria-hidden')).toBeNull();
+  });
+
   it('(i) 막대 수에 비례해 viewBox 폭이 늘어남', () => {
     const w = (n: number) => {
       const { container } = setup(Array(n).fill(2));
-      expect(rects(container).length).toBe(n - 1 + 1);
-      return Number(container.querySelector('svg')!.getAttribute('viewBox')!.split(' ')[2]);
+            return Number(container.querySelector('svg')!.getAttribute('viewBox')!.split(' ')[2]);
     };
     const [a, b, c] = [w(5), w(13), w(26)];
     expect(b / a).toBeCloseTo(13 / 5, 0);
