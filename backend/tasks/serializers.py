@@ -73,11 +73,15 @@ def map_body_to_model_data(body, instance=None):
         )
     assignee = (assignee or '').strip()
 
+    # PR 작성자(creator)는 Task API로 바뀌지 않는다
+    pr_instance = instance is not None and task_kind(instance) == 'pr'
+
     data = {
         'id': body.get('id') or (instance.id if instance else f"task-{uuid.uuid4().hex[:8]}"),
         'title': body.get('title', instance.title if instance else ''),
         'description': body.get('description', instance.description if instance else ''),
-        'creator': assignee or (instance.creator if instance else 'Unknown'),
+        'creator': instance.creator if pr_instance else (
+            assignee or (instance.creator if instance else 'Unknown')),
         'status': body.get('status', instance.status if instance else 'todo'),
         'priority': body.get('priority', instance.priority if instance else 'medium'),
         'category': body.get('category', instance.category if instance else ''),
