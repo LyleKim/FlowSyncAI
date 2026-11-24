@@ -60,3 +60,42 @@ export interface Activity {
   targetName: string;
   timestamp: string;
 }
+
+export type ArchGroupKind = 'backend' | 'frontend' | 'infra' | 'docs' | 'other';
+export type ArchTrend = 'rising' | 'steady' | 'quiet';
+
+export interface ArchWeek {
+  weekStart: string;
+  commits: number;
+  filesChanged: number;
+}
+
+export interface ArchGroup {
+  id: string;
+  name: string;
+  kind: ArchGroupKind;
+  fileCount: number;
+  samplePaths: string[];
+  weekly: ArchWeek[];
+  totalCommits: number;
+  lastChangeAt: string | null;
+  authors: string[];
+  recentCommits: { sha7: string; message: string; author: string; date: string }[];
+  trend: ArchTrend;
+}
+
+export interface ArchCoupling {
+  a: string;
+  b: string;
+  count: number;
+}
+
+export interface ArchitectureResponse {
+  repo: { owner: string; name: string; url: string };
+  generatedAt: string;
+  days: number;
+  truncated: boolean;
+  analyzedCommits: number;
+  groups: ArchGroup[];
+  couplings: ArchCoupling[];
+}

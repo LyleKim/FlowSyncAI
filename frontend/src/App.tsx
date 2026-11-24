@@ -17,11 +17,12 @@ import TaskBoard from './components/dashboard/TaskBoard';
 import TaskList from './components/dashboard/TaskList';
 import TaskModal from './components/common/TaskModal';
 import AnalyticsView from './components/dashboard/AnalyticsView';
+import ArchitectureView from './components/dashboard/ArchitectureView';
 import ActivityFeed from './components/dashboard/ActivityFeed';
 
 export default function App() {
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState<'board' | 'list' | 'analytics'>('board');
+  const [activeTab, setActiveTab] = useState<'board' | 'list' | 'analytics' | 'architecture'>('board');
   const [searchQuery, setSearchQuery] = useState('');
   const [isActivityStreamOpen, setIsActivityStreamOpen] = useState(false);
 
@@ -414,7 +415,7 @@ export default function App() {
     }));
   };
 
-  const handleTabChange = (tab: 'board' | 'list' | 'analytics') => {
+  const handleTabChange = (tab: 'board' | 'list' | 'analytics' | 'architecture') => {
     setActiveTab(tab);
     setSelectedKanbanStatus(null);
     setIsModalOpen(false);
@@ -516,11 +517,13 @@ export default function App() {
               {activeTab === 'board' && '칸반 보드'}
               {activeTab === 'list' && '작업 대장'}
               {activeTab === 'analytics' && '프로젝트 분석'}
+              {activeTab === 'architecture' && '아키텍처'}
             </h2>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 leading-normal max-w-2xl">
               {activeTab === 'board' && '워크플로우 단계를 시각적으로 관리하고 단계를 손쉽게 이동합니다.'}
               {activeTab === 'list' && '작업 세부 목록을 정렬, 필터링하여 순차적으로 상세하게 확인합니다.'}
               {activeTab === 'analytics' && '전체 작업 통계 및 우선순위'}
+              {activeTab === 'architecture' && 'GitHub 저장소를 기능 그룹으로 나누고 그룹별 변경 흐름과 연관성을 보여줍니다.'}
             </p>
           </div>
 
@@ -552,6 +555,7 @@ export default function App() {
               />
             )}
             {activeTab === 'analytics' && <AnalyticsView tasks={tasks} />}
+            {activeTab === 'architecture' && <ArchitectureView darkMode={darkMode} />}
           </div>
         </div>
       </main>
