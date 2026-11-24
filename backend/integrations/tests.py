@@ -103,3 +103,127 @@ class ClientTests(SimpleTestCase):
                 gh.get_authenticated_login()
             self.assertEqual(c.exception.status, status)
             self.assertIn('rate limit', c.exception.message)
+
+
+import copy
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+FIXTURE = json.loads((Path(__file__).parent / 'testdata' / 'graphql_repo_prs.json').read_text())
+
+
+def gql(open_nodes=(), recent_nodes=(), has_next=False, **extra):
+    return {'data': {'repository': {
+        'open': {'pageInfo': {'hasNextPage': has_next, 'endCursor': 'c'}, 'nodes': list(open_nodes)},
+        'recent': {'nodes': list(recent_nodes)}, **extra}}}
+
+
+def pr_node(number=1, **kw):
+    n = copy.deepcopy(FIXTURE['data']['repository']['open']['nodes'][1])
+    n['number'] = number
+    n.update(kw)
+    return n
+
+
+@mock.patch('integrations.github_client.requests.post')
+class GraphQLClientTests(SimpleTestCase):
+    def setUp(self):
+        p = mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_normalizes_fixture(self, post):
+        post.return_value = resp(body=FIXTURE)
+        out = gh.fetch_repo_pull_requests('acme', 'widgets')
+        self.assertFalse(out['truncated'])
+        by = {p['number']: p for p in out['prs']}
+        self.assertEqual(set(by), {42, 40, 39, 38})
+        p = by[42]
+        self.assertEqual(p['author'], 'alice')
+        self.assertEqual(p['state'], 'open')
+        self.assertEqual(p['files'], ['backend/integrations/github_client.py', 'backend/integrations/tests.py'])
+        self.assertEqual(p['review_requests'], [
+            {'kind': 'user', 'login': 'bob', 'team_slug': '', 'requested_at': '2026-11-20T01:05:00Z'},
+            {'kind': 'team', 'login': '', 'team_slug': 'backend', 'requested_at': '2026-11-21T02:00:00Z'},
+        ])
+        self.assertEqual(p['latest_reviews'],
+                         [{'login': 'carol', 'state': 'COMMENTED', 'submitted_at': '2026-11-22T10:00:00Z'}])
+        self.assertEqual(by[38]['state'], 'merged')
+        self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer tok')
+        self.assertEqual(post.call_args.kwargs['timeout'], 10)
+
+    def test_pagination_and_truncation(self, post):
+        post.return_value = resp(body=gql([pr_node(1)], has_next=True))
+        out = gh.fetch_repo_pull_requests('o', 'r', max_open=1)
+        self.assertTrue(out['truncated'])
+        self.assertEqual(post.call_count, 1)
+        post.reset_mock()
+        post.side_effect = [resp(body=gql([pr_node(1)], has_next=True)), resp(body=gql([pr_node(2)]))]
+        out = gh.fetch_repo_pull_requests('o', 'r', max_open=250)
+        self.assertFalse(out['truncated'])
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 2})
+
+    def test_ghost_author_and_null_reviewer(self, post):
+        n = pr_node(1, author=None)
+        n['reviewRequests']['nodes'] = [
+            {'requestedReviewer': None},
+            {'requestedReviewer': {'__typename': 'Bot', 'login': 'b'}},
+            {'requestedReviewer': {'__typename': 'Mannequin', 'login': 'm'}},
+            {'requestedReviewer': {'__typename': 'User', 'login': 'u'}},
+        ]
+        post.return_value = resp(body=gql([n]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertEqual(p['author'], '')
+        self.assertEqual([r['login'] for r in p['review_requests']], ['u'])
+
+    def test_files_truncated_flag(self, post):
+        n = pr_node(1)
+        n['files'] = {'nodes': [{'path': f'f{i}'} for i in range(100)], 'pageInfo': {'hasNextPage': True}}
+        post.return_value = resp(body=gql([n]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertTrue(p['files_truncated'])
+        self.assertEqual(len(p['files']), 100)
+
+    def test_tracked_missing_triggers_single_extra_query(self, post):
+        post.side_effect = [resp(body=gql([pr_node(1)])), resp(body=gql(pr9=pr_node(9, state='CLOSED')))]
+        out = gh.fetch_repo_pull_requests('o', 'r', tracked_open=[1, 9])
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 9})
+        post.reset_mock()
+        post.side_effect = None
+        post.return_value = resp(body=gql([pr_node(9)]))
+        gh.fetch_repo_pull_requests('o', 'r', tracked_open=[9])
+        self.assertEqual(post.call_count, 1)
+
+    def test_graphql_errors_array_raises(self, post):
+        body = gql([pr_node(1)])
+        body['errors'] = [{'message': 'boom'}]
+        post.return_value = resp(body=body)
+        with self.assertRaises(gh.GitHubError) as c:
+            gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual(c.exception.kind, 'unknown')
+
+    def test_error_kinds(self, post):
+        def kind(r):
+            post.return_value = r
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+            return c.exception
+        self.assertEqual(kind(resp(401, {'message': 'bad'})).kind, 'auth')
+        e = kind(resp(403, {'message': 'x'}, {'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': '1800000000'}))
+        self.assertEqual(e.kind, 'rate_limit')
+        self.assertEqual(e.reset_at, datetime.fromtimestamp(1800000000, timezone.utc))
+        self.assertEqual(kind(resp(200, {'errors': [{'type': 'RATE_LIMITED', 'message': 'r'}]})).kind, 'rate_limit')
+        self.assertEqual(kind(resp(200, {'errors': [{'type': 'NOT_FOUND', 'message': 'n'}]})).kind, 'not_found')
+        self.assertEqual(kind(resp(404, {'message': 'n'})).kind, 'not_found')
+        self.assertEqual(kind(resp(502, {'message': 'u'})).kind, 'upstream')
+        self.assertEqual(kind(resp(418, {'message': 't'})).kind, 'unknown')
+
+    def test_no_token_fails_before_call(self, post):
+        with mock.patch.dict('os.environ', {}, clear=True):
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual((c.exception.status, c.exception.kind), (401, 'auth'))
+        post.assert_not_called()
