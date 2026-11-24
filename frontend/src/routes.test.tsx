@@ -53,6 +53,37 @@ describe('routes', () => {
     expect(ROUTES.area('한글')).toBe('/areas/%ED%95%9C%EA%B8%80');
     expect(titleFor('/tasks/x')).toBe('전체 작업');
     expect(titleFor('/nope')).toBe('페이지를 찾을 수 없어요');
+    expect(titleFor('/')).toBe('내 리뷰 요청');
+    expect(titleFor('/me/x')).toBe('페이지를 찾을 수 없어요');
+    expect(titleFor('/tasks/a/b')).toBe('페이지를 찾을 수 없어요');
+    expect(titleFor('/areas/a/b')).toBe('페이지를 찾을 수 없어요');
+  });
+
+  it('/ 로 처음 열면 /me 리다이렉트 후에도 포커스는 body, NotFound 제목이 깜빡이지 않고 첫 Tab 은 스킵 링크', async () => {
+    const titles: string[] = [];
+    vi.spyOn(Document.prototype, 'title', 'set').mockImplementation((t: string) => { titles.push(t); });
+    const { user } = await renderApp('/');
+    expect(screen.getByRole('heading', { level: 1, name: '내 리뷰 요청' })).toBeInTheDocument();
+    expect(document.activeElement).toBe(document.body);
+    expect(titles.length).toBeGreaterThan(0);
+    expect(titles.every((t) => t === '내 리뷰 요청 · FlowSyncAI')).toBe(true);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole('link', { name: '본문으로 건너뛰기' }));
+  });
+
+  it('존재하지 않는 주소로 처음 열면 포커스가 main 으로 간다', async () => {
+    await renderApp('/zzz');
+    expect(document.activeElement).toBe(screen.getByRole('main'));
+    expect(document.title).toBe('페이지를 찾을 수 없어요 · FlowSyncAI');
+  });
+
+  it('(g) 저장소가 throw 해도 전체 App 이 렌더되고 안내 배너', async () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    await renderApp('/');
+    expect(screen.getByRole('heading', { level: 1, name: '내 리뷰 요청' })).toBeInTheDocument();
+    expect(screen.getByText('이 브라우저에서는 설정을 저장하지 못해요. 새로고침하면 처음 상태로 돌아가요.')).toHaveAttribute('role', 'status');
   });
 
   it('(c) 라우트 이동 후 document.title 변경, 포커스가 main', async () => {

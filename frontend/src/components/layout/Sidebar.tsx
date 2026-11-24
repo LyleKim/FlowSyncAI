@@ -14,7 +14,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-surface-sunken text-accent' : 'text-muted hover:text-text'
   }`;
 
-// FC로 선언해야 key prop이 타입 검사를 통과한다(@types/react 미설치 환경).
+// 일반 함수 컴포넌트로 두면 tsc가 key prop을 TS2322로 거부해 FC로 선언한다(이 저장소에는 @types/react가 없다).
 const Item: FC<{ to: string; icon: LucideIcon; badge?: number }> = ({ to, icon: Icon, badge }) => {
   return (
     <NavLink to={to} className={linkClass}>

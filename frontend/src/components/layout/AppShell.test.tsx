@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { renderWithRouter } from '../../test/render';
 import AppShell from './AppShell';
 import Sidebar from './Sidebar';
@@ -26,16 +26,6 @@ describe('AppShell', () => {
     const current = nav.querySelectorAll('[aria-current="page"]');
     expect(current).toHaveLength(1);
     expect(current[0]).toHaveTextContent('설정');
-  });
-
-  it('(g) 저장소가 throw 해도 렌더되고 안내 배너', async () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('SecurityError'); });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('SecurityError'); });
-    shell();
-    await act(async () => {});
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '이 브라우저에서는 설정을 저장하지 못해요. 새로고침하면 처음 상태로 돌아가요.',
-    );
   });
 
   it('저장소가 정상이면 배너 없음', () => {

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router';
+import { matchPath, Navigate, Route, Routes } from 'react-router';
 import MyReviewsScreen from './screens/MyReviewsScreen';
 import AreasScreen from './screens/AreasScreen';
 import AreaDetailScreen from './screens/AreaDetailScreen';
@@ -16,7 +16,7 @@ export const ROUTES = {
   settings: '/settings',
 } as const;
 
-// 최상위 경로 → 화면명. 하위 경로(/tasks/:id 등)는 첫 세그먼트로 찾는다.
+// 내비 항목 경로 → 화면명
 export const SCREEN_TITLES: Record<string, string> = {
   [ROUTES.me]: '내 리뷰 요청',
   [ROUTES.areas]: '영역 흐름',
@@ -25,8 +25,20 @@ export const SCREEN_TITLES: Record<string, string> = {
 };
 export const NOT_FOUND_TITLE = '페이지를 찾을 수 없어요';
 
+// AppRoutes와 같은 패턴. 일치하는 라우트가 없으면(/me/x, /tasks/a/b 등) NotFound 제목.
+const TITLE_PATTERNS: [string, string][] = [
+  ['/', SCREEN_TITLES[ROUTES.me]], // /me 리다이렉트 중 NotFound 제목이 깜빡이지 않게
+  [ROUTES.me, SCREEN_TITLES[ROUTES.me]],
+  [ROUTES.areas, SCREEN_TITLES[ROUTES.areas]],
+  ['/areas/:areaId', SCREEN_TITLES[ROUTES.areas]],
+  [ROUTES.tasks, SCREEN_TITLES[ROUTES.tasks]],
+  [ROUTES.newTask, SCREEN_TITLES[ROUTES.tasks]],
+  ['/tasks/:id', SCREEN_TITLES[ROUTES.tasks]],
+  [ROUTES.settings, SCREEN_TITLES[ROUTES.settings]],
+];
+
 export function titleFor(pathname: string): string {
-  return SCREEN_TITLES['/' + (pathname.split('/')[1] ?? '')] ?? NOT_FOUND_TITLE;
+  return TITLE_PATTERNS.find(([p]) => matchPath(p, pathname))?.[1] ?? NOT_FOUND_TITLE;
 }
 
 export function AppRoutes() {
