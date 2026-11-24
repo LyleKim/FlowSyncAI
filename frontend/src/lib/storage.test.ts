@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   STORAGE_KEYS,
   getMyLogin,
+  getMyTeams,
+  normalizeTeam,
+  onStorageChange,
+  parseTeams,
+  setMyTeams,
   normalizeLogin,
   purgeLegacyKeys,
   readStorage,
@@ -43,6 +48,55 @@ describe('normalizeLogin', () => {
     expect(normalizeLogin('a b')).toBe('');
     expect(normalizeLogin('-x')).toBe('');
     expect(normalizeLogin('')).toBe('');
+  });
+  it('앞뒤 하이픈은 무효, 길이는 39자까지', () => {
+    expect(normalizeLogin('octocat-')).toBe('');
+    expect(normalizeLogin('-a')).toBe('');
+    expect(normalizeLogin('a')).toBe('a');
+    expect(normalizeLogin('a'.repeat(39))).toBe('a'.repeat(39));
+    expect(normalizeLogin('a'.repeat(40))).toBe('');
+  });
+});
+
+describe('my teams', () => {
+  it('normalizeTeam', () => {
+    expect(normalizeTeam('@Acme/Core-Team')).toBe('acme/core-team');
+    expect(normalizeTeam('acme')).toBe('');
+    expect(normalizeTeam('a b/c')).toBe('');
+  });
+  it('parseTeams', () => {
+    expect(parseTeams('acme/a, acme/a\nacme/b zzz')).toEqual({
+      teams: ['acme/a', 'acme/b'],
+      invalid: ['zzz'],
+    });
+  });
+  it('빈 배열이면 지운다', () => {
+    setMyTeams(['acme/a']);
+    setMyTeams([]);
+    expect(getMyTeams()).toEqual([]);
+  });
+  it('저장소가 throw해도 세션 폴백으로 읽는다', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('x', 'SecurityError');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('x', 'QuotaExceededError');
+    });
+    setMyTeams(['acme/a']);
+    expect(getMyTeams()).toEqual(['acme/a']);
+    setMyTeams([]);
+  });
+});
+
+describe('onStorageChange', () => {
+  it('write 후 1회 호출되고 해제된다', () => {
+    const l = vi.fn();
+    const off = onStorageChange(l);
+    writeStorage(STORAGE_KEYS.myLogin, 'x');
+    expect(l).toHaveBeenCalledTimes(1);
+    off();
+    writeStorage(STORAGE_KEYS.myLogin, 'y');
+    expect(l).toHaveBeenCalledTimes(1);
   });
 });
 
