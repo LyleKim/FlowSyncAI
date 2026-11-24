@@ -59,6 +59,7 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
       loadedRef.current = true;
       // 진행 중 mutation의 낙관적 상태를 폴링 결과로 덮어쓰지 않는다.
       if (inflight.current.size === 0) setTasks(r.tasks);
+      else invalidateTasksCacheHeaders(); // 버린 응답의 ETag로 다음 폴링이 304가 되지 않게
       setLoadState('ready');
     } else if (r.status === 'not-modified') {
       if (loadedRef.current) setLoadState('ready');

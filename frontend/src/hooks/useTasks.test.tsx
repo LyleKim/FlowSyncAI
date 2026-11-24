@@ -149,4 +149,23 @@ describe('useTasks', () => {
     expect(result.current.tasks[0].status).toBe('done');
     await act(async () => { await p; });
   });
+
+  it('진행 중 mutation 동안 받은 폴링이 버려져도, mutation 실패 후 다음 refresh가 서버 데이터를 적용한다', async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    // ETag 서버 흉내: If-None-Match가 일치하면 304
+    fetchMock.mockImplementationOnce(() => new Promise((res) => setTimeout(() => res(json({}, 500)), 30)));
+    fetchMock.mockImplementation(async (_u: string, o?: RequestInit) =>
+      (o?.headers as Record<string, string> | undefined)?.['If-None-Match'] === 'v2'
+        ? new Response(null, { status: 304 })
+        : new Response(JSON.stringify([mk('a', { title: 'server' }), mk('b')]), {
+            status: 200, headers: { ETag: 'v2' },
+          }));
+    let p!: Promise<unknown>;
+    act(() => { p = result.current.moveTask('a', 'done'); });
+    await act(() => result.current.refresh()); // 버려짐 (ETag v2 저장됨)
+    await act(async () => { await p; }); // 실패 -> 롤백
+    await act(() => result.current.refresh());
+    expect(result.current.tasks[0].title).toBe('server');
+  });
 });
