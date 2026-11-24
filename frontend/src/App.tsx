@@ -4,6 +4,7 @@ import { useTheme } from './hooks/useTheme';
 import { ToastProvider, useToasts } from './hooks/useToasts';
 import { TasksProvider, useTasksContext } from './hooks/TasksContext';
 import { PrSyncProvider } from './hooks/PrSyncContext';
+import { ReviewQueueProvider } from './hooks/ReviewQueueContext';
 import { ToastHost } from './components/common/ToastHost';
 import AppShell from './components/layout/AppShell';
 import { AppRoutes } from './routes';
@@ -27,9 +28,11 @@ export default function App() {
     <ToastProvider>
       <TasksWithNotify>
         <PrSyncWithRefresh>
-          <AppShell>
-            <AppRoutes />
-          </AppShell>
+          <ReviewQueueProvider>
+            <AppShell>
+              <AppRoutes />
+            </AppShell>
+          </ReviewQueueProvider>
         </PrSyncWithRefresh>
       </TasksWithNotify>
       <ToastHost />

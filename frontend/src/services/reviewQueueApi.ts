@@ -31,7 +31,8 @@ export async function fetchReviewQueue(
   let body: unknown;
   try {
     body = await res.json();
-  } catch {
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
     throw new QueueFetchError('server', '응답을 읽지 못했어요', res.status);
   }
   const b = body as { items?: unknown } | null;

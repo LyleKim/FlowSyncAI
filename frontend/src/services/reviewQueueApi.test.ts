@@ -43,6 +43,12 @@ describe('fetchReviewQueue', () => {
     expect(await kindOf(fetchReviewQueue({ login: 'x' }))).toBe(abort);
   });
 
+  it('본문을 읽는 중 취소되면 AbortError를 그대로 던진다', async () => {
+    const abort = new DOMException('aborted', 'AbortError');
+    stub(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.reject(abort) } as unknown as Response));
+    expect(await kindOf(fetchReviewQueue({ login: 'x' }))).toBe(abort);
+  });
+
   it('본문이 객체가 아니거나 items가 배열이 아니면 server 오류', async () => {
     for (const body of [[], 'str', null, { items: {} }, {}]) {
       stub(ok(body));
