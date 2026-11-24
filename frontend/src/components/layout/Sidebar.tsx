@@ -1,89 +1,49 @@
-import React from 'react';
-import { Kanban, ListTodo, Network, Users, CheckSquare, Clock } from 'lucide-react';
+import type { FC } from 'react';
+import { NavLink } from 'react-router';
+import { CheckSquare, Inbox, ListTodo, Network, Settings, type LucideIcon } from 'lucide-react';
+import { ROUTES, SCREEN_TITLES } from '../../routes';
 
-interface SidebarProps {
-  activeTab: 'board' | 'list' | 'architecture';
-  setActiveTab: (tab: 'board' | 'list' | 'architecture') => void;
-  taskCounts: {
-    all: number;
-    todo: number;
-    inprogress: number;
-    review: number;
-    done: number;
-  };
-}
+const ITEMS: { to: string; icon: LucideIcon }[] = [
+  { to: ROUTES.me, icon: Inbox },
+  { to: ROUTES.areas, icon: Network },
+  { to: ROUTES.tasks, icon: ListTodo },
+];
 
-export default function Sidebar({ activeTab, setActiveTab, taskCounts }: SidebarProps) {
-  const navItems = [
-    {
-      id: 'board' as const,
-      label: '칸반 보드',
-      icon: Kanban,
-      badge: taskCounts.all - taskCounts.done
-    },
-    {
-      id: 'list' as const,
-      label: '모든 작업',
-      icon: ListTodo,
-      badge: taskCounts.all
-    },
-    {
-      id: 'architecture' as const,
-      label: '아키텍처',
-      icon: Network,
-      badge: null
-    }
-  ];
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  `flex min-h-6 items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-focus-ring ${
+    isActive ? 'bg-surface-sunken text-accent' : 'text-muted hover:text-text'
+  }`;
 
+// FC로 선언해야 key prop이 타입 검사를 통과한다(@types/react 미설치 환경).
+const Item: FC<{ to: string; icon: LucideIcon; badge?: number }> = ({ to, icon: Icon, badge }) => {
   return (
-    <aside className="w-64 bg-slate-900 flex flex-col h-full shrink-0" id="app-sidebar">
-      {/* Brand Logo */}
-      <div className="h-16 flex items-center px-6 border-b gap-3 shrink-0">
-        <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
-          <CheckSquare size={18} strokeWidth={2.5} />
-        </div>
-        <div>
-          <h1 className="font-sans font-bold text-white tracking-tight leading-none text-base">
-            FlowSync AI
-          </h1>
-          <span className="text-[10px] text-slate-500 font-mono tracking-wider uppercase mt-1 block">
-            v1.0.0 Stable
-          </span>
-        </div>
-      </div>
+    <NavLink to={to} className={linkClass}>
+      <Icon size={16} aria-hidden="true" />
+      <span className="flex-1">{SCREEN_TITLES[to]}</span>
+      {badge !== undefined && badge > 0 && (
+        <span aria-label={`리뷰 대기 ${badge}건`} className="rounded bg-accent px-2 text-xs font-bold text-accent-contrast">
+          {badge}
+        </span>
+      )}
+    </NavLink>
+  );
+};
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-1">
-        <div className="px-3 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">메인 메뉴</div>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              id={`sidebar-tab-${item.id}`}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
-                isActive
-                   ? 'bg-blue-600/10 text-blue-400 border-r-4 border-blue-500 rounded-r-none'
-                   : 'text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon size={16} className={isActive ? 'text-blue-400' : 'text-slate-400 opacity-60'} />
-                <span>{item.label}</span>
-              </div>
-              {item.badge !== null && item.badge > 0 && (
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                  isActive ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+// 좁은 폭에서는 상단 가로 내비, md 이상에서만 고정 폭 세로 사이드바.
+export default function Sidebar({ reviewBadge }: { reviewBadge?: number }) {
+  return (
+    <aside className="shrink-0 border-b border-border bg-surface md:flex md:h-full md:w-64 md:flex-col md:border-b-0 md:border-r">
+      <div className="flex items-center gap-2 px-4 py-3 font-bold md:h-16 md:px-6">
+        <CheckSquare size={18} aria-hidden="true" className="text-accent" />
+        <span>FlowSync AI</span>
+      </div>
+      <nav aria-label="주 메뉴" className="flex gap-1 overflow-x-auto px-3 pb-2 md:flex-1 md:flex-col md:py-4">
+        {ITEMS.map((it) => (
+          <Item key={it.to} {...it} badge={it.to === ROUTES.me ? reviewBadge : undefined} />
+        ))}
+        <div className="md:mt-auto">
+          <Item to={ROUTES.settings} icon={Settings} />
+        </div>
       </nav>
     </aside>
   );
