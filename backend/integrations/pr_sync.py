@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from django.db.models import Q
@@ -6,6 +7,9 @@ from django.utils import timezone
 from . import github_client
 from .models import WatchedRepo
 from .pr_ingest import ingest_prs, tracked_open_numbers
+from .task_mirror import mirror_repo
+
+logger = logging.getLogger(__name__)
 
 MIN_INTERVAL = timedelta(seconds=30)
 
@@ -31,6 +35,10 @@ def _sync_one(repo, now):
     WatchedRepo.objects.filter(pk=repo.pk).update(
         last_synced_at=now, last_error_kind='', last_error_message='', last_error_reset_at=None,
         truncated=bool(data['truncated']))
+    try:  # legacy kanban mirror: its failure must not undo the ingest or last_synced_at
+        mirror_repo(repo)
+    except Exception:
+        logger.exception('task mirror failed for %s', repo)
     return res.created, res.updated
 
 

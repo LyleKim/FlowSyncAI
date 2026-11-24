@@ -7,6 +7,7 @@ from django.test import TestCase
 from integrations import github_client as gh
 from integrations.models import PullRequest, WatchedRepo
 from integrations.pr_sync import sync_repos, sync_review_requests
+from tasks.models import Task
 
 FETCH = 'integrations.pr_sync.github_client.fetch_repo_pull_requests'
 T0 = datetime(2026, 11, 24, 5, 0, tzinfo=tz.utc)
@@ -37,6 +38,15 @@ class SyncTests(TestCase):
         self.assertEqual(st['lastAttemptAt'], T0.isoformat())
         self.assertIsNone(st['lastError'])
         self.assertEqual(PullRequest.objects.count(), 1)
+
+    @mock.patch(FETCH)
+    def test_sync_mirrors_task_for_legacy_login(self, fetch):
+        WatchedRepo.objects.filter(pk=self.repo.pk).update(github_login='Me')
+        d = prd(1)
+        d['review_requests'] = [{'kind': 'user', 'login': 'me', 'team_slug': '', 'requested_at': None}]
+        fetch.return_value = {'prs': [d], 'truncated': False}
+        sync_repos(now=T0)
+        self.assertEqual(Task.objects.get(pk='pr-o-r-1').title, '[PR] #1 t1')
 
     @mock.patch(FETCH, return_value=ok(1))
     def test_second_call_within_30s_is_throttled(self, fetch):
