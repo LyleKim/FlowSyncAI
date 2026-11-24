@@ -3,13 +3,9 @@ from datetime import timedelta
 from django.db.models import Prefetch, Q
 
 from .models import PullRequest, PullRequestReview, PullRequestReviewer, WatchedRepo
-from .pr_sync import serialize_repo_status
+from .pr_sync import iso_z, serialize_repo_status
 
 GROUP_ORDER = {'waiting': 0, 'awaiting_author': 1, 'closed': 2}
-
-
-def _z(dt):
-    return dt.strftime('%Y-%m-%dT%H:%M:%SZ') if dt else None
 
 
 def _areas_for(pr):
@@ -21,9 +17,10 @@ def _item(pr, lk, rows, review, cutoff, include_areas):
     """-> item dict, or None when the PR is outside the queue."""
     active = [r for r in rows if r.is_active]
     pool = active or rows
-    requested_at = max(r.requested_at for r in pool)
-    direct = [r for r in pool if r.login_key == lk] or [r for r in rows if r.login_key == lk]
-    team = None if direct else max(pool, key=lambda r: r.requested_at)
+    chosen = max(pool, key=lambda r: r.requested_at)  # row whose requested_at (and estimated flag) is used
+    requested_at = chosen.requested_at
+    direct = any(r.login_key == lk for r in pool)
+    team = None if direct else chosen
     closed_at, closed_reason = None, None
     if pr.state == 'open':
         if active:
@@ -45,18 +42,17 @@ def _item(pr, lk, rows, review, cutoff, include_areas):
         'title': pr.title, 'url': pr.url, 'author': pr.author, 'isDraft': pr.is_draft, 'prState': pr.state,
         'group': group,
         'requestKind': 'direct' if direct else 'team', 'viaTeam': team.team_slug if team else None,
-        'requestedAt': _z(requested_at),
-        # ingest falls back to the PR's createdAt when GitHub gave no request event
-        'requestedAtSource': 'pr_created' if requested_at == pr.pr_created_at else 'event',
+        'requestedAt': iso_z(requested_at),
+        'requestedAtSource': 'pr_created' if chosen.requested_at_estimated else 'event',
         'reRequested': group == 'waiting' and review is not None,
-        'myReview': {'state': review.state, 'submittedAt': _z(review.submitted_at)} if review else None,
+        'myReview': {'state': review.state, 'submittedAt': iso_z(review.submitted_at)} if review else None,
         'size': {'additions': pr.additions, 'deletions': pr.deletions, 'changedFiles': pr.changed_files},
-        'closedAt': _z(pr.closed_at),
-        'mergedAt': _z(pr.merged_at),
+        'closedAt': iso_z(pr.closed_at),
+        'mergedAt': iso_z(pr.merged_at),
         'closedReason': closed_reason,
         'mergedWithoutMyReview': pr.state == 'merged' and review is None,
         'areas': _areas_for(pr) if include_areas else None,
-        'updatedAt': _z(pr.pr_updated_at),
+        'updatedAt': iso_z(pr.pr_updated_at),
     }
 
 

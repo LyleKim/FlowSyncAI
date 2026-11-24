@@ -11,6 +11,7 @@ from tasks.models import Task
 
 FETCH = 'integrations.pr_sync.github_client.fetch_repo_pull_requests'
 T0 = datetime(2026, 11, 24, 5, 0, tzinfo=tz.utc)
+Z0 = T0.strftime('%Y-%m-%dT%H:%M:%SZ')
 KEYS = {'created', 'skipped', 'errors', 'throttled', 'repos'}
 
 
@@ -34,8 +35,8 @@ class SyncTests(TestCase):
         self.assertEqual(set(out), KEYS)
         self.assertEqual((out['created'], out['skipped'], out['errors']), (1, 0, []))
         st = out['repos'][0]
-        self.assertEqual(st['lastSuccessAt'], T0.isoformat())
-        self.assertEqual(st['lastAttemptAt'], T0.isoformat())
+        self.assertEqual(st['lastSuccessAt'], Z0)
+        self.assertEqual(st['lastAttemptAt'], Z0)
         self.assertIsNone(st['lastError'])
         self.assertEqual(PullRequest.objects.count(), 1)
 
@@ -54,7 +55,7 @@ class SyncTests(TestCase):
         out = sync_repos(now=T0 + timedelta(seconds=10))
         fetch.assert_called_once()
         self.assertEqual(out['throttled'], [self.repo.id])
-        self.assertEqual(out['repos'][0]['lastAttemptAt'], T0.isoformat())
+        self.assertEqual(out['repos'][0]['lastAttemptAt'], Z0)
         sync_repos(now=T0 + timedelta(seconds=31))
         self.assertEqual(fetch.call_count, 2)
 
@@ -66,8 +67,8 @@ class SyncTests(TestCase):
         fetch.side_effect = gh.GitHubError(403, 'x', kind='rate_limit', reset_at=R)
         out = sync_repos(now=T0 + timedelta(minutes=1))
         st = out['repos'][0]
-        self.assertEqual(st['lastSuccessAt'], T0.isoformat())
-        self.assertEqual(st['lastError'], {'kind': 'rate_limit', 'message': 'x', 'resetAt': R.isoformat()})
+        self.assertEqual(st['lastSuccessAt'], Z0)
+        self.assertEqual(st['lastError'], {'kind': 'rate_limit', 'message': 'x', 'resetAt': R.strftime('%Y-%m-%dT%H:%M:%SZ')})
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(out['errors'], ['o/r: x'])
 
@@ -81,7 +82,7 @@ class SyncTests(TestCase):
         self.assertEqual(out['created'], 1)
         by = {r['repo']: r for r in out['repos']}
         self.assertIsNone(by['o/r']['lastSuccessAt'])
-        self.assertEqual(by['o/b']['lastSuccessAt'], T0.isoformat())
+        self.assertEqual(by['o/b']['lastSuccessAt'], Z0)
 
     @mock.patch(FETCH)
     def test_unexpected_exception_is_recorded_not_raised(self, fetch):

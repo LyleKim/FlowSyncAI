@@ -15,7 +15,7 @@ def ago(**kw):
     return NOW - timedelta(**kw)
 
 
-def make_pr(repo, n, state='open', reviewers=(), reviews=(), **kw):
+def make_pr(repo, n, state='open', reviewers=(), reviews=(), estimated=True, **kw):
     """reviewers: (login, requested_at[, is_active[, team_slug]]); reviews: (login, state, submitted_at)."""
     vals = dict(title=f't{n}', url=f'https://github.com/{repo}/pull/{n}', author='jun-ho', state=state,
                 pr_created_at=ago(days=10), pr_updated_at=ago(hours=n))
@@ -24,7 +24,8 @@ def make_pr(repo, n, state='open', reviewers=(), reviews=(), **kw):
     for r in reviewers:
         login, at, active, team = (tuple(r) + (True, ''))[:4] if len(r) < 4 else r
         PullRequestReviewer.objects.create(pr=pr, login=login, login_key=login.lower(), team_slug=team,
-                                           requested_at=at, is_active=active)
+                                           requested_at=at, is_active=active,
+                                           requested_at_estimated=(at == pr.pr_created_at and estimated))
     for login, st, at in reviews:
         PullRequestReview.objects.create(pr=pr, login=login, login_key=login.lower(), state=st, submitted_at=at)
     return pr
@@ -53,6 +54,10 @@ class QueueTests(TestCase):
         self.assertEqual((i['requestedAtSource'], i['reRequested'], i['myReview'], i['areas']),
                          ('event', False, None, None))
         self.assertEqual(body['items'][0]['requestedAtSource'], 'pr_created')
+        # an event time equal to the PR's createdAt is still an event
+        make_pr(self.repo, 3, reviewers=[('minji-park', ago(days=10))], estimated=False)
+        by = {i['number']: i for i in self.items()}
+        self.assertEqual(by[3]['requestedAtSource'], 'event')
         self.assertTrue(i['requestedAt'].endswith('Z'))
         self.assertEqual((i['closedAt'], i['mergedAt'], i['closedReason'], i['mergedWithoutMyReview']),
                          (None, None, None, False))
@@ -120,6 +125,12 @@ class QueueTests(TestCase):
         self.assertEqual((by[2]['requestKind'], by[2]['viaTeam']), ('direct', None))
         self.assertEqual(len(by), 2)
 
+    def test_inactive_direct_with_active_team_is_team(self):
+        make_pr(self.repo, 1, reviewers=[('minji-park', ago(days=3), False),
+                                         ('', ago(days=1), True, 'acme/backend')])
+        i = self.items(teams='acme/backend')[0]
+        self.assertEqual((i['group'], i['requestKind'], i['viaTeam']), ('waiting', 'team', 'acme/backend'))
+
     def test_counts_equal_items_by_group(self):
         make_pr(self.repo, 1, reviewers=[('minji-park', ago(days=1))])
         make_pr(self.repo, 2, reviewers=[('minji-park', ago(days=2))],
@@ -141,6 +152,10 @@ class QueueTests(TestCase):
         repos = self.get().json()['repos']
         self.assertEqual(set(repos[0]), {'repoId', 'repo', 'lastAttemptAt', 'lastSuccessAt', 'lastError', 'truncated'})
         self.assertEqual((repos[0]['repo'], repos[0]['lastError']), ('acme/api', None))
+        for k in ('lastAttemptAt', 'lastSuccessAt'):
+            self.assertTrue(repos[0][k].endswith('Z') and len(repos[0][k]) == 20, repos[0][k])
+        self.assertTrue(repos[1]['lastAttemptAt'].endswith('Z'))
+        self.assertTrue(repos[1]['lastError']['resetAt'].endswith('Z'))
         self.assertEqual(repos[1]['lastError']['kind'], 'rate_limit')
         self.assertIsNotNone(repos[1]['lastError']['resetAt'])
         self.assertIsNone(repos[1]['lastSuccessAt'])

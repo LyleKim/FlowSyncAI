@@ -62,6 +62,7 @@ class PullRequestReviewer(models.Model):
     login_key = models.CharField(max_length=100, db_index=True, blank=True, default='')
     team_slug = models.CharField(max_length=200, blank=True, default='')  # 'org/slug'
     requested_at = models.DateTimeField()
+    requested_at_estimated = models.BooleanField(default=False)  # no request event; fell back to PR created_at
     is_active = models.BooleanField(default=True)
     removed_at = models.DateTimeField(null=True, blank=True)
 

@@ -58,6 +58,19 @@ class IngestTests(TestCase):
         ingest_prs(self.repo, [pr(review_requests=[req('a')])], NOW)
         self.assertEqual(self.rv(login_key='a').requested_at.isoformat(), '2026-11-01T00:00:00+00:00')
 
+    def test_estimated_flag_new_and_reactivated(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T2), req('b')])], NOW)
+        self.assertFalse(self.rv(login_key='a').requested_at_estimated)
+        self.assertTrue(self.rv(login_key='b').requested_at_estimated)
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=None)])], NOW)  # a still active: unchanged
+        self.assertFalse(self.rv(login_key='a').requested_at_estimated)
+        ingest_prs(self.repo, [pr(review_requests=[req('b', at=T3)])], NOW)  # b reactivated with event
+        self.assertFalse(self.rv(login_key='b').requested_at_estimated)
+        ingest_prs(self.repo, [pr()], NOW)
+        ingest_prs(self.repo, [pr(review_requests=[req('b')])], NOW)  # reactivated without event
+        self.assertTrue(self.rv(login_key='b').requested_at_estimated)
+        self.assertEqual(self.rv(login_key='b').requested_at.isoformat(), '2026-11-01T00:00:00+00:00')
+
     def test_reviewer_removed_marks_inactive(self):
         ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1), req('b', at=T1)])], NOW)
         ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)

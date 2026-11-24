@@ -76,13 +76,16 @@ def ingest_prs(repo, prs, now):
                     if k == ('', '') or k in seen:
                         continue
                     seen.add(k)
-                    at = _dt(r.get('requested_at')) or created_at
+                    ev = _dt(r.get('requested_at'))
+                    at, est = ev or created_at, ev is None
                     row = reviewers.get(pr.id, {}).get(k)
                     if row is None:
                         new_rv.append(PullRequestReviewer(pr=pr, login=r.get('login') or '', login_key=k[0],
-                                                          team_slug=k[1], requested_at=at))
+                                                          team_slug=k[1], requested_at=at,
+                                                          requested_at_estimated=est))
                     elif not row.is_active:  # re-request
                         row.is_active, row.removed_at, row.requested_at = True, None, at
+                        row.requested_at_estimated = est
                         upd_rv.append(row)
                 for k, row in reviewers.get(pr.id, {}).items():
                     if row.is_active and k not in seen:
@@ -104,7 +107,7 @@ def ingest_prs(repo, prs, now):
                     if row.pk is not None:
                         upd_rw.append(row)
         PullRequestReviewer.objects.bulk_create(new_rv)
-        PullRequestReviewer.objects.bulk_update(upd_rv, ['is_active', 'removed_at', 'requested_at'])
+        PullRequestReviewer.objects.bulk_update(upd_rv, ['is_active', 'removed_at', 'requested_at', 'requested_at_estimated'])
         PullRequestReview.objects.bulk_create(new_rw)
         PullRequestReview.objects.bulk_update(upd_rw, ['login', 'state', 'submitted_at'])
     return res

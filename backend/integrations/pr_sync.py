@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import timedelta, timezone as dt_tz
 
 from django.db.models import Q
 from django.utils import timezone
@@ -14,17 +14,18 @@ logger = logging.getLogger(__name__)
 MIN_INTERVAL = timedelta(seconds=30)
 
 
-def _iso(dt):
-    return dt.isoformat() if dt else None
+def iso_z(dt):
+    """UTC `YYYY-MM-DDTHH:MM:SSZ` (contract format); None passes through."""
+    return dt.astimezone(dt_tz.utc).strftime('%Y-%m-%dT%H:%M:%SZ') if dt else None
 
 
 def serialize_repo_status(repo):
     err = None
     if repo.last_error_kind:
         err = {'kind': repo.last_error_kind, 'message': repo.last_error_message,
-               'resetAt': _iso(repo.last_error_reset_at)}
-    return {'repoId': repo.id, 'repo': str(repo), 'lastAttemptAt': _iso(repo.last_attempt_at),
-            'lastSuccessAt': _iso(repo.last_synced_at), 'lastError': err, 'truncated': repo.truncated}
+               'resetAt': iso_z(repo.last_error_reset_at)}
+    return {'repoId': repo.id, 'repo': str(repo), 'lastAttemptAt': iso_z(repo.last_attempt_at),
+            'lastSuccessAt': iso_z(repo.last_synced_at), 'lastError': err, 'truncated': repo.truncated}
 
 
 def _sync_one(repo, now):
