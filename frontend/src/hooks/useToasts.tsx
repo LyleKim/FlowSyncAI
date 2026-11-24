@@ -9,7 +9,7 @@ export interface UndoAction {
   key?: string;
   hide(): void;
   restore(): void;
-  commit(): Promise<{ ok: boolean; error?: string }>;
+  commit(): Promise<{ ok: boolean; error?: string; notified?: boolean }>;
   windowMs?: number;
 }
 export interface ToastItem {
@@ -65,11 +65,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const commitPending = useCallback(async (id: number) => {
     const p = settle(id);
     if (!p) return;
-    let res: { ok: boolean; error?: string };
+    let res: { ok: boolean; error?: string; notified?: boolean };
     try { res = await p.action.commit(); } catch { res = { ok: false }; }
     if (!res.ok) {
       p.action.restore();
-      notify(res.error ?? `${p.action.label} 처리에 실패해 원래대로 되돌렸어요. 잠시 후 다시 시도해 주세요.`, 'error');
+      // commit 쪽(useTasks 등)이 이미 알렸다면 중복 알림을 내지 않는다.
+      if (!res.notified) notify(res.error ?? `${p.action.label} 처리에 실패해 원래대로 되돌렸어요. 잠시 후 다시 시도해 주세요.`, 'error');
     }
     syncKeys();
   }, [settle, notify, syncKeys]);

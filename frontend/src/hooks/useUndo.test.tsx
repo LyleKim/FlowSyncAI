@@ -52,6 +52,12 @@ describe('useUndo', () => {
     await tick(10000);
     expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.getByRole('alert')).toBeInTheDocument(); expect(ids.has('k')).toBe(false);
   });
+  it('commit이 notified:true로 실패하면 추가 알림 없이 restore만 한다', async () => {
+    const a = mk(); a.commit.mockResolvedValue({ ok: false, error: 'e', notified: true }); wrap(null);
+    act(() => api.schedule({ label: 'x', ...a }));
+    await tick(10000);
+    expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.queryByRole('alert')).toBeNull();
+  });
   it('windowMs를 따른다', async () => {
     const a = mk(); wrap(null);
     act(() => api.schedule({ label: 'x', windowMs: 2000, ...a }));

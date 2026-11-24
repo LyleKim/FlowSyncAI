@@ -133,7 +133,7 @@ describe('TasksScreen', () => {
       await start({ 'DELETE /api/v1/tasks/t1/': () => ({ status: 500 }) });
       await wait();
       expect(await screen.findByRole('link', { name: /로그인/ })).toBeInTheDocument();
-      expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
     });
 
     it('(j) 창 안에서 되돌리면 DELETE 없이 행이 돌아온다', async () => {

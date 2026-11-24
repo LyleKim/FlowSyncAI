@@ -7,7 +7,7 @@ import {
 } from '../services/taskSync';
 import { postJson } from '../services/apiClient';
 
-export type MutationResult<T = void> = { ok: true; value: T } | { ok: false; error: string };
+export type MutationResult<T = void> = { ok: true; value: T } | { ok: false; error: string; notified?: boolean };
 export type TaskDraft = Omit<
   Task,
   'id' | 'createdAt' | 'subtasks' | 'roleReviews' | 'hasUnreflectedReview' | 'lastReviewAddedAt'
@@ -94,7 +94,7 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
     } catch {
       rollback?.();
       notifyRef.current?.(errMsg, 'error');
-      return { ok: false, error: errMsg };
+      return { ok: false, error: errMsg, notified: true };
     } finally {
       inflight.current.delete(key);
     }
