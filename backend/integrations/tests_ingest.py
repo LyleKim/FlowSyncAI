@@ -1,7 +1,9 @@
 import json
 from datetime import datetime, timezone
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from integrations.models import PullRequest, PullRequestReviewer, PullRequestReview, WatchedRepo
 from integrations.pr_ingest import IngestResult, ingest_prs, tracked_open_numbers
@@ -97,3 +99,46 @@ class IngestTests(TestCase):
         del p['files_truncated']
         ingest_prs(self.repo, [p], NOW)
         self.assertEqual(PullRequestReview.objects.count(), 0)
+
+    def test_dismissed_stored_and_absent_review_kept(self):
+        rv = {'login': 'a', 'state': 'DISMISSED', 'submitted_at': T2}
+        ingest_prs(self.repo, [pr(latest_reviews=[rv])], NOW)
+        self.assertEqual(PullRequestReview.objects.get().state, 'DISMISSED')
+        ingest_prs(self.repo, [pr(latest_reviews=[])], NOW)
+        self.assertEqual(PullRequestReview.objects.count(), 1)
+
+    def test_review_updated_in_place(self):
+        ingest_prs(self.repo, [pr(latest_reviews=[{'login': 'a', 'state': 'COMMENTED', 'submitted_at': T1}])], NOW)
+        ingest_prs(self.repo, [pr(latest_reviews=[{'login': 'a', 'state': 'APPROVED', 'submitted_at': T2}])], NOW)
+        self.assertEqual(PullRequestReview.objects.get().state, 'APPROVED')
+
+    def test_absent_pr_untouched(self):
+        ingest_prs(self.repo, [pr(1, review_requests=[req('a', at=T1)]), pr(2)], NOW)
+        ingest_prs(self.repo, [pr(2)], NOW)
+        self.assertEqual(PullRequest.objects.get(number=1).state, 'open')
+        self.assertTrue(self.rv(login_key='a').is_active)
+
+    def test_closed_pr_leaves_reviewers_untouched(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr(state='closed', closed_at=T3)], NOW)
+        a = self.rv(login_key='a')
+        self.assertTrue(a.is_active)
+        self.assertIsNone(a.removed_at)
+
+    def test_review_without_submitted_at_skipped(self):
+        ingest_prs(self.repo, [pr(latest_reviews=[{'login': 'a', 'state': 'PENDING', 'submitted_at': None}])], NOW)
+        self.assertEqual(PullRequestReview.objects.count(), 0)
+
+    def test_query_count_not_proportional(self):
+        def snap(state='open'):
+            return [pr(n, state=state, review_requests=[req(f'u{i}', at=T1) for i in range(3)],
+                       latest_reviews=[{'login': f'u{i}', 'state': 'APPROVED', 'submitted_at': T2}
+                                       for i in range(2)]) for n in range(1, 31)]
+        # per-PR creates are allowed (MySQL bulk_create returns no pks); reviewers/reviews must be bulk
+        with CaptureQueriesContext(connection) as c:
+            ingest_prs(self.repo, snap(), NOW)
+        self.assertLessEqual(len(c), 30 + 10)
+        self.assertEqual(PullRequestReviewer.objects.count(), 90)
+        with CaptureQueriesContext(connection) as c:
+            ingest_prs(self.repo, snap(), NOW)
+        self.assertLessEqual(len(c), 10)
