@@ -32,6 +32,23 @@ export interface Task {
   roleReviews?: RoleReview[];
   hasUnreflectedReview?: boolean;
   lastReviewAddedAt?: string;
+  sourceUrl?: string | null;
+}
+
+export interface WatchedRepo {
+  id: string | number;
+  url: string;
+  owner: string;
+  name: string;
+  githubLogin: string | null;
+  lastSyncedAt: string | null;
+  createdAt: string;
+}
+
+export interface SyncResult {
+  created: number;
+  skipped: number;
+  errors: string[];
 }
 
 export interface Activity {

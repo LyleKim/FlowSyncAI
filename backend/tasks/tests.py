@@ -32,7 +32,7 @@ class TaskCrudTests(ApiMixin, TestCase):
         self.assertEqual(set(data), {
             'id', 'title', 'description', 'status', 'priority', 'category',
             'assigneeId', 'subtasks', 'createdAt', 'roles', 'roleReviews',
-            'hasUnreflectedReview', 'lastReviewAddedAt'})
+            'hasUnreflectedReview', 'lastReviewAddedAt', 'sourceUrl'})
         self.assertEqual(data['status'], 'todo')
         self.assertEqual(data['priority'], 'medium')
         self.assertEqual(data['assigneeId'], 'Unknown')  # creator fallback

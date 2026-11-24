@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Eye, Trash2, Calendar, ClipboardCheck, ArrowUpDown, Filter, Search } from 'lucide-react';
 import { Task, TaskStatus } from '../../types';
+import PrBadge from '../common/PrBadge';
 
 interface TaskListProps {
   tasks: Task[];
@@ -241,6 +242,7 @@ export default function TaskList({
                             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight">
                               {task.title}
                             </span>
+                            <PrBadge url={task.sourceUrl} />
                             {task.priority && (
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black border shrink-0 ${getPriorityBadgeStyle(task.priority)}`}>
                                 {getPriorityLabel(task.priority)}

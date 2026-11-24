@@ -45,6 +45,7 @@ def serialize_task(task, reviews=None):
         'subtasks': [serialize_subtask(subtask) for subtask in task.subtasks.all()],
         'createdAt': task.created_at.isoformat() if task.created_at else None,
         'roles': _parse_roles(task.roles),
+        'sourceUrl': task.source_url,
         'roleReviews': [serialize_review(review) for review in reviews],
         'hasUnreflectedReview': has_unreflected_review,
         'lastReviewAddedAt': latest_review_at.isoformat() if latest_review_at else None,

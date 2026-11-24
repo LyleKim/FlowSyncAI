@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Sun, Moon, Search, Plus, Bell, Sparkles, CheckSquare, History } from 'lucide-react';
+import { Sun, Moon, Search, Plus, Bell, Sparkles, CheckSquare, History, GitBranch } from 'lucide-react';
 import { Task, Activity, TaskStatus, SubTask, RoleReview } from './types';
 import { INITIAL_ACTIVITIES } from './constants/initialData';
 import {
@@ -8,6 +8,8 @@ import {
   TASKS_POLL_INTERVAL_MS,
 } from './services/taskSync';
 import { postJson } from './services/apiClient';
+import { listWatchedRepos, syncPullRequests, formatSyncResult } from './services/integrationsApi';
+import WatchedReposPanel, { SyncInfo } from './components/common/WatchedReposPanel';
 
 // Component Imports
 import Sidebar from './components/layout/Sidebar';
@@ -87,6 +89,43 @@ export default function App() {
       window.clearInterval(intervalId);
     };
   }, [applyTasksFromServer]);
+
+  // GitHub PR auto-sync: on mount + same interval as task poll, only if repos are watched
+  const [isReposPanelOpen, setIsReposPanelOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncInfo, setSyncInfo] = useState<SyncInfo | null>(null);
+  const [syncNotice, setSyncNotice] = useState('');
+  const syncingRef = useRef(false);
+
+  const runPrSync = useCallback(async (force = false) => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      if (!force && (await listWatchedRepos()).length === 0) return;
+      const result = await syncPullRequests();
+      setSyncInfo({ result });
+      if (result.created > 0) {
+        // 캐시된 ETag로 304가 나지 않도록 검증 헤더를 버리고 강제 재조회
+        invalidateTasksCacheHeaders();
+        const fetched = await fetchTasksFromServer();
+        if (fetched.status === 'updated') applyTasksFromServer(fetched.tasks);
+        setSyncNotice(formatSyncResult(result));
+        window.setTimeout(() => setSyncNotice(''), 5000);
+      }
+    } catch (err) {
+      setSyncInfo({ error: (err as Error).message });
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
+  }, [applyTasksFromServer]);
+
+  useEffect(() => {
+    runPrSync();
+    const id = window.setInterval(() => runPrSync(), TASKS_POLL_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [runPrSync]);
 
   // Activities: localStorage only (no backend API)
   useEffect(() => {
@@ -424,6 +463,15 @@ export default function App() {
           {/* Right actions */}
           <div className="flex items-center gap-4" id="header-right-actions">
             
+            <button
+              onClick={() => setIsReposPanelOpen(true)}
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              title="감시 레포"
+              id="watched-repos-btn"
+            >
+              <GitBranch size={17} />
+            </button>
+
             {/* Dark Mode Toggler */}
             <button
               onClick={() => setDarkMode(!darkMode)}
@@ -445,6 +493,20 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {syncNotice && (
+          <div className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold shadow-lg" role="status">
+            PR 동기화: {syncNotice}
+          </div>
+        )}
+        {isReposPanelOpen && (
+          <WatchedReposPanel
+            onClose={() => setIsReposPanelOpen(false)}
+            syncing={syncing}
+            syncInfo={syncInfo}
+            onSync={() => runPrSync(true)}
+          />
+        )}
 
         {/* Dynamic Inner Body Container */}
         <div className="flex-1 p-8 overflow-y-auto" id="app-view-container">

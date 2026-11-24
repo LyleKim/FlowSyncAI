@@ -17,6 +17,7 @@ class Task(models.Model):
     category = models.CharField(max_length=100, blank=True, default="", verbose_name="카테고리")
     assignee_id = models.CharField(max_length=100, blank=True, default="", verbose_name="담당자 ID")
     roles = models.TextField(blank=True, default="[]", verbose_name="관련 역할군들 (JSON)")
+    source_url = models.CharField(max_length=500, null=True, blank=True, verbose_name="출처 URL")
     checklist_generated_at = models.DateTimeField(
         null=True, blank=True, verbose_name="체크리스트 마지막 생성 일시"
     )

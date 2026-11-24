@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/v1/', include('ai_services.urls')),
     path('api/v1/tasks/', include('tasks.urls')),
     path('api/v1/tasks/', include('reviews.urls')),
+    path('api/v1/integrations/', include('integrations.urls')),
 ]
