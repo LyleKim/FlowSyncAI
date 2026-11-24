@@ -10,6 +10,9 @@ from .models import SeenPullRequest, WatchedRepo
 def _sync_repo(repo):
     login = repo.github_login or github_client.get_authenticated_login()
     prs = github_client.search_review_requested_prs(login, repo.owner, repo.name)
+    # 방어: 검색 결과가 감시 대상 레포 밖의 PR이면 버린다 (검색 한정자 주입 대비)
+    own = f'{repo.owner}/{repo.name}'.lower()
+    prs = [pr for pr in prs if pr['repo'].lower() == own]
     seen = set(repo.seen_prs.values_list('number', flat=True))
     created = skipped = 0
     for pr in prs:
@@ -45,6 +48,9 @@ def sync_review_requests():
     for repo in WatchedRepo.objects.all():
         try:
             created, skipped = _sync_repo(repo)
+        except ValueError as e:  # 저장돼 있던 잘못된 githubLogin
+            result['errors'].append(f'{repo}: {e}')
+            continue
         except github_client.GitHubError as e:
             msg = e.message
             if e.status == 401 or (not repo.github_login and e.status in (403, 404)):

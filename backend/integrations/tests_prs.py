@@ -55,7 +55,7 @@ class SyncTests(TestCase):
         def side(login, owner, name):
             if name == 'r':
                 raise gh.GitHubError(500, 'boom')
-            return [pr(7)]
+            return [{**pr(7), 'repo': f'{owner}/{name}'}]  # 실제 검색은 해당 레포 PR만 돌려준다
         search.side_effect = side
         res = sync_review_requests()
         self.assertEqual(res['created'], 1)
@@ -146,3 +146,45 @@ class TaskSourceUrlTests(TestCase):
         self.assertIsNone(serialize_task(Task.objects.create(id='a', title='a'))['sourceUrl'])
         t = Task.objects.create(id='b', title='b', source_url='https://x/y')
         self.assertEqual(serialize_task(t)['sourceUrl'], 'https://x/y')
+
+
+class SearchInjectionTests(TestCase):
+    """githubLogin 은 검색 쿼리에 들어가므로 `repo:` 같은 한정자 주입을 막아야 한다."""
+    EVIL = 'x repo:victim/private'
+
+    def test_validate_login(self):
+        for ok in ('me', 'Lyle-Kim', 'a1', 'a' * 39):
+            self.assertEqual(gh.validate_login(ok), ok)
+        for bad in ('', None, 'x y', self.EVIL, '-lead', 'a' * 40, 'a:b', 'a/b'):
+            with self.assertRaises(ValueError):
+                gh.validate_login(bad)
+
+    @mock.patch('integrations.github_client.requests.get')
+    def test_client_never_sends_injected_query(self, get):
+        with self.assertRaises(ValueError):
+            gh.search_review_requested_prs(self.EVIL, 'o', 'r')
+        get.assert_not_called()
+
+    def test_endpoint_rejects_bad_login(self):
+        r = self.client.post('/api/v1/integrations/watched-repos/',
+                             json.dumps({'url': 'https://github.com/o/r', 'githubLogin': self.EVIL}),
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(WatchedRepo.objects.count(), 0)
+
+    @mock.patch(SEARCH)
+    def test_sync_drops_prs_from_other_repos(self, search):
+        WatchedRepo.objects.create(url='https://github.com/o/r', owner='o', name='r', github_login='me')
+        foreign = {**pr(9, title='secret'), 'repo': 'victim/private'}
+        search.return_value = [pr(1), foreign, {**pr(2), 'repo': 'O/R'}]  # 대소문자는 허용
+        result = sync_review_requests()
+        self.assertEqual(result['created'], 2)
+        self.assertFalse(Task.objects.filter(title__contains='secret').exists())
+
+    @mock.patch(SEARCH)
+    def test_sync_reports_stored_bad_login_without_crashing(self, search):
+        WatchedRepo.objects.create(url='https://github.com/o/r', owner='o', name='r', github_login=self.EVIL)
+        search.side_effect = lambda login, *a: gh.validate_login(login)  # 실제 클라이언트처럼 ValueError
+        result = sync_review_requests()
+        self.assertEqual(result['created'], 0)
+        self.assertEqual(len(result['errors']), 1)
