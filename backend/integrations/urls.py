@@ -6,4 +6,5 @@ urlpatterns = [
     path('', include('integrations.urls_sync')),  # repo sync orchestration
     path('', include('integrations.urls_queue')),  # my review-request queue
     path('', include('integrations.urls_aliases')),  # area aliases
+    path('', include('integrations.urls_areas')),  # area list/detail
 ]

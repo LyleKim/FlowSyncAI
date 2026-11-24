@@ -5,6 +5,7 @@ from api.decorators import api_view
 from api.http import conditional_json_response, json_error
 
 from . import github_client
+from . import areas
 from .activity import compute_activity
 
 CACHE_SECONDS = 300
@@ -27,7 +28,7 @@ def architecture(request):
     payload = None if request.GET.get('refresh') == '1' else cache.get(key)
     if payload is None:
         try:
-            payload = compute_activity(owner, name, days)
+            payload = compute_activity(owner, name, days, paths=areas.get_paths(owner, name, refresh=request.GET.get('refresh') == '1'))
         except github_client.GitHubError as e:
             if e.status == 404:
                 return json_error('Repository not found (or private; set GITHUB_TOKEN)', status=404)

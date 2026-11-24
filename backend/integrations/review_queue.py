@@ -2,18 +2,31 @@ from datetime import timedelta
 
 from django.db.models import Prefetch, Q
 
+from . import areas
+from .architecture import Locator
+from .github_client import GitHubError
 from .models import PullRequest, PullRequestReview, PullRequestReviewer, WatchedRepo
 from .pr_sync import iso_z, serialize_repo_status
 
 GROUP_ORDER = {'waiting': 0, 'awaiting_author': 1, 'closed': 2}
 
 
-def _areas_for(pr):
-    """Hook for include=areas (filled in by the areas task)."""
-    return None
+def _areas_for(pr, cache):
+    """include=areas: map the PR's stored files; groups are fetched once per repo (cache = {repo_id: Locator|None}).
+    A repo whose tree can't be read yields None for its items."""
+    if pr.repo_id not in cache:
+        try:
+            cache[pr.repo_id] = Locator(areas.get_groups(pr.repo.owner, pr.repo.name))
+        except GitHubError:
+            cache[pr.repo_id] = None
+    locate = cache[pr.repo_id]
+    if locate is None:
+        return None
+    m = areas.map_pr_files(locate.groups, areas.pr_files(pr), locate)
+    return {'primaryAreaId': m['primaryAreaId'], 'touched': m['touched'], 'filesTruncated': pr.files_truncated}
 
 
-def _item(pr, lk, rows, review, cutoff, include_areas):
+def _item(pr, lk, rows, review, cutoff, areas_cache):
     """-> item dict, or None when the PR is outside the queue."""
     active = [r for r in rows if r.is_active]
     pool = active or rows
@@ -51,7 +64,7 @@ def _item(pr, lk, rows, review, cutoff, include_areas):
         'mergedAt': iso_z(pr.merged_at),
         'closedReason': closed_reason,
         'mergedWithoutMyReview': pr.state == 'merged' and review is None,
-        'areas': _areas_for(pr) if include_areas else None,
+        'areas': _areas_for(pr, areas_cache) if areas_cache is not None else None,
         'updatedAt': iso_z(pr.pr_updated_at),
     }
 
@@ -65,12 +78,13 @@ def build_queue(login, teams, closed_within_days, include_areas, now):
                              Prefetch('reviews', PullRequestReview.objects.filter(login_key=lk))))
     cutoff = now - timedelta(days=closed_within_days)
     items = []
+    areas_cache = {} if include_areas else None
     for pr in prs:
         # a team row only counts when it is a real team row (direct rows have no team_slug)
         rows = [r for r in pr.reviewers.all() if r.login_key == lk or (r.team_slug and r.team_slug in teams)]
         if not rows:
             continue
-        item = _item(pr, lk, rows, next(iter(pr.reviews.all()), None), cutoff, include_areas)
+        item = _item(pr, lk, rows, next(iter(pr.reviews.all()), None), cutoff, areas_cache)
         if item:
             items.append(item)
     # waiting: oldest request first; others: most recently updated first
