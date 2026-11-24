@@ -1,0 +1,99 @@
+import json
+from datetime import datetime, timezone
+
+from django.test import TestCase
+
+from integrations.models import PullRequest, PullRequestReviewer, PullRequestReview, WatchedRepo
+from integrations.pr_ingest import IngestResult, ingest_prs, tracked_open_numbers
+
+T1, T2, T3 = '2026-11-01T00:00:00Z', '2026-11-02T00:00:00Z', '2026-11-03T00:00:00Z'
+NOW = datetime(2026, 11, 5, tzinfo=timezone.utc)
+
+
+def req(login='', team='', at=None):
+    return {'kind': 'team' if team else 'user', 'login': login, 'team_slug': team, 'requested_at': at}
+
+
+def pr(number=1, **kw):
+    d = {'number': number, 'title': 't', 'url': 'https://github.com/o/r/pull/1', 'author': 'me',
+         'is_draft': False, 'state': 'open', 'created_at': T1, 'updated_at': T1, 'closed_at': None,
+         'merged_at': None, 'additions': 1, 'deletions': 2, 'changed_files': 1, 'files': ['a.py'],
+         'files_truncated': False, 'review_requests': [], 'latest_reviews': []}
+    d.update(kw)
+    return d
+
+
+class IngestTests(TestCase):
+    def setUp(self):
+        self.repo = WatchedRepo.objects.create(url='https://github.com/o/r', owner='o', name='r')
+
+    def rv(self, **f):
+        return PullRequestReviewer.objects.get(**f)
+
+    def test_creates_pr_reviewers_reviews(self):
+        p = pr(review_requests=[req('Alice', at=T2), req('b', at=T2)],
+               latest_reviews=[{'login': 'Alice', 'state': 'APPROVED', 'submitted_at': T3}])
+        self.assertEqual(ingest_prs(self.repo, [p], NOW), IngestResult(created=1, updated=0))
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(json.loads(PullRequest.objects.get().files), ['a.py'])
+        self.assertEqual(PullRequestReviewer.objects.count(), 2)
+        self.assertEqual(self.rv(login_key='alice').login, 'Alice')
+        self.assertEqual(PullRequestReview.objects.get().login_key, 'alice')
+
+    def test_second_ingest_updates_not_duplicates(self):
+        ingest_prs(self.repo, [pr()], NOW)
+        r = ingest_prs(self.repo, [pr(title='new', additions=9)], NOW)
+        self.assertEqual(r, IngestResult(created=0, updated=1))
+        p = PullRequest.objects.get()
+        self.assertEqual((p.title, p.additions), ('new', 9))
+
+    def test_requested_at_stable_when_still_active(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=None)])], NOW)
+        self.assertEqual(self.rv(login_key='a').requested_at.isoformat(), '2026-11-01T00:00:00+00:00')
+
+    def test_missing_requested_at_falls_back_to_pr_created(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a')])], NOW)
+        self.assertEqual(self.rv(login_key='a').requested_at.isoformat(), '2026-11-01T00:00:00+00:00')
+
+    def test_reviewer_removed_marks_inactive(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1), req('b', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
+        b = self.rv(login_key='b')
+        self.assertFalse(b.is_active)
+        self.assertEqual(b.removed_at, NOW)
+        self.assertTrue(self.rv(login_key='a').is_active)
+
+    def test_rerequest_reactivates_with_new_requested_at(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('b', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr()], NOW)
+        ingest_prs(self.repo, [pr(review_requests=[req('b', at=T3)])], NOW)
+        b = self.rv(login_key='b')
+        self.assertTrue(b.is_active)
+        self.assertEqual(b.requested_at.isoformat(), '2026-11-03T00:00:00+00:00')
+        self.assertIsNone(b.removed_at)
+
+    def test_state_transition_open_to_merged(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1)])], NOW)
+        ingest_prs(self.repo, [pr(state='merged', merged_at=T3, closed_at=T3)], NOW)
+        p = PullRequest.objects.get()
+        self.assertEqual(p.state, 'merged')
+        self.assertIsNotNone(p.merged_at)
+        self.assertTrue(self.rv(login_key='a').is_active)
+
+    def test_team_and_direct_rows_coexist(self):
+        ingest_prs(self.repo, [pr(review_requests=[req('a', at=T1), req(team='acme/backend', at=T1)])], NOW)
+        self.assertEqual(PullRequestReviewer.objects.count(), 2)
+        t = PullRequestReviewer.objects.get(team_slug='acme/backend')
+        self.assertEqual((t.login, t.login_key), ('', ''))
+
+    def test_tracked_open_numbers(self):
+        ingest_prs(self.repo, [pr(1), pr(2, state='merged'), pr(3, state='closed'), pr(4)], NOW)
+        self.assertEqual(sorted(tracked_open_numbers(self.repo)), [1, 4])
+
+    def test_robust_to_empty_values(self):
+        p = pr(author='', files=[], review_requests=None, latest_reviews=[
+            {'login': '', 'state': 'APPROVED', 'submitted_at': T1}])
+        del p['files_truncated']
+        ingest_prs(self.repo, [p], NOW)
+        self.assertEqual(PullRequestReview.objects.count(), 0)
