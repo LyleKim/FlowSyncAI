@@ -144,4 +144,16 @@ describe('ChecklistSection', () => {
     expect(await screen.findByText('체크리스트 (1/4) · 새 검토 미반영')).toBeInTheDocument();
     expect(screen.getByLabelText('새 항목')).toHaveValue('');
   });
+  it('(k) 삭제로 항목이 사라지면 다음 → 이전 항목 → summary로 포커스', async () => {
+    const { user } = setup(mk({ subtasks: [subs[0], subs[1]] }), {
+      'DELETE /api/v1/tasks/t1/subtasks/s1/': () => ({ status: 204 }),
+      'DELETE /api/v1/tasks/t1/subtasks/s2/': () => ({ status: 204 }),
+    });
+    await user.click(await screen.findByRole('button', { name: '‘재현 테스트’ 삭제', hidden: true }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: '‘재현 테스트’ 삭제', hidden: true })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole('checkbox', { name: '로그 확인', hidden: true }));
+    await user.click(screen.getByRole('button', { name: '‘로그 확인’ 삭제', hidden: true }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: '‘로그 확인’ 삭제', hidden: true })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByText('체크리스트 (0/0)'));
+  });
 });

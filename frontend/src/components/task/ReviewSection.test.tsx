@@ -157,4 +157,25 @@ describe('ReviewSection', () => {
     await waitFor(() => expect(screen.getByLabelText('내용')).toHaveValue(''));
     expect(screen.getByRole('button', { name: '검토 추가', ...opts })).toHaveAttribute('aria-disabled', 'false');
   });
+  it('(k) 삭제로 행이 사라지면 다음 행 → 이전 행 → summary로 포커스', async () => {
+    const { user } = setup(mk(), {
+      'DELETE /api/v1/tasks/t1/reviews/r1/': () => ({ status: 204 }),
+      'DELETE /api/v1/tasks/t1/reviews/r2/': () => ({ status: 204 }),
+    });
+    await user.click(await screen.findByRole('button', { name: /^‘kim’ 검토 삭제/, ...opts }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^‘kim’ 검토 삭제/, ...opts })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^‘park’ 검토 확인함/, ...opts }));
+    await user.click(screen.getByRole('button', { name: /^‘park’ 검토 삭제/, ...opts }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^‘park’ 검토 삭제/, ...opts })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByText('역할 검토 (0)'));
+  });
+
+  it('(l) 확인함 버튼이 사라지면 같은 행의 삭제 버튼으로 포커스', async () => {
+    const { user } = setup(mk(), {
+      'PATCH /api/v1/tasks/t1/reviews/r2/': () => ({ json: { ...reviews[1], isAccepted: true, acceptedAt: '2026-11-22T00:00:00Z' } }),
+    });
+    await user.click(await screen.findByRole('button', { name: /^‘park’ 검토 확인함/, ...opts }));
+    await screen.findByText(/확인함 · /);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^‘park’ 검토 삭제/, ...opts }));
+  });
 });

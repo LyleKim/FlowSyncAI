@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTasksContext } from '../../hooks/TasksContext';
+import { useFocusRescue } from '../../hooks/useFocusRescue';
 import { formatDate } from '../../lib/date';
 import type { Task } from '../../types';
 
@@ -28,6 +29,10 @@ export function ReviewSection({ task }: { task: Task }) {
     return () => { alive.current = false; };
   }, []);
   const adding = useRef(false);
+  // 행이 지워지면 이웃 행 → summary, '확인함' 버튼이 사라지면 바로 옆 삭제 버튼으로 포커스를 옮긴다.
+  const summary = (el: HTMLElement) => el.closest('details')?.querySelector('summary');
+  const rescueRow = useFocusRescue('button', summary);
+  const rescueAccept = useFocusRescue('button', summary);
 
   const submit = async () => {
     const text = comment.trim();
@@ -61,7 +66,7 @@ export function ReviewSection({ task }: { task: Task }) {
             const who = `${r.reviewerId || r.role}’ 검토`;
             const tag = `${formatDate(r.createdAt)}, ${r.comment.slice(0, 20)}`;
             return (
-              <li key={r.id} className="flex flex-col gap-1 rounded border border-border p-2">
+              <li key={r.id} ref={rescueRow} className="flex flex-col gap-1 rounded border border-border p-2">
                 <div className="flex flex-wrap items-center gap-2 text-caption">
                   <span className="rounded border border-border px-1.5">{r.role}</span>
                   {r.urgency === 'urgent' && <span className="font-medium text-danger">긴급</span>}
@@ -73,7 +78,7 @@ export function ReviewSection({ task }: { task: Task }) {
                   {r.isAccepted ? (
                     <span className="text-caption text-success">확인함{r.acceptedAt && ` · ${formatDate(r.acceptedAt)}`}</span>
                   ) : (
-                    <button type="button" aria-label={`‘${who} 확인함 (${tag})`} onClick={() => void updateReview(task.id, r.id, { isAccepted: true })} className={btn}>확인함</button>
+                    <button type="button" ref={rescueAccept} aria-label={`‘${who} 확인함 (${tag})`} onClick={() => void updateReview(task.id, r.id, { isAccepted: true })} className={btn}>확인함</button>
                   )}
                   <button type="button" aria-label={`‘${who} 삭제 (${tag})`} onClick={() => void deleteReview(task.id, r.id)} className={`${btn} text-danger`}>삭제</button>
                 </div>

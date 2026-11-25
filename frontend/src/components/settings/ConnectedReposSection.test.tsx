@@ -227,6 +227,15 @@ describe('ConnectedReposSection', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
+  it('(l2) 해제로 행이 숨으면 다음 행 → 섹션 제목으로 포커스', async () => {
+    const { user } = setup({ [LIST]: () => ({ json: [API, WEB] }) });
+    await screen.findByText('acme/api');
+    await user.click(screen.getByRole('button', { name: 'acme/api 연결 해제' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'acme/web 연결 해제' }));
+    await user.click(screen.getByRole('button', { name: 'acme/web 연결 해제' }));
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '연결된 레포' }));
+  });
+
   it('(l) 마지막 레포 해제 → 빈 상태', async () => {
     const { user } = setup({ [LIST]: () => ({ json: [API] }), 'DELETE /api/v1/integrations/watched-repos/1/': () => ({ status: 204 }) });
     await screen.findByText('acme/api');

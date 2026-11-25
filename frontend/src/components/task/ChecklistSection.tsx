@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTasksContext } from '../../hooks/TasksContext';
+import { useFocusRescue } from '../../hooks/useFocusRescue';
 import { useChecklistGenerator } from '../../hooks/useChecklistGenerator';
 import type { Task } from '../../types';
 
@@ -11,6 +12,8 @@ export function ChecklistSection({ task }: { task: Task }) {
   const [draft, setDraft] = useState('');
   const done = task.subtasks.filter((s) => s.completed).length;
   const loading = state === 'loading';
+  // 항목이 지워지면 이웃 항목 → 섹션 summary로 포커스를 옮긴다.
+  const rescue = useFocusRescue('input, button', (el) => el.closest('details')?.querySelector('summary'));
 
   const adding = useRef(false);
   const add = async () => {
@@ -34,7 +37,7 @@ export function ChecklistSection({ task }: { task: Task }) {
         )}
         <ul className="flex flex-col gap-1">
           {task.subtasks.map((s) => (
-            <li key={s.id} className="flex items-center gap-2">
+            <li key={s.id} ref={rescue} className="flex items-center gap-2">
               <label className="flex min-h-6 flex-1 items-center gap-2 text-body-sm">
                 <input type="checkbox" checked={s.completed} onChange={(e) => void toggleSubtask(task.id, s.id, e.target.checked)} />
                 <span className={s.completed ? 'text-muted line-through' : ''}>{s.title}</span>

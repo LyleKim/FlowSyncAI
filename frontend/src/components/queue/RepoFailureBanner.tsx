@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { RepoSyncState } from '../../types/repoSync';
 import { describeRepoError, formatClock } from '../../lib/repoCopy';
+import { useFocusRescue } from '../../hooks/useFocusRescue';
 
 const btn =
   'min-h-6 rounded border border-border px-2 text-sm focus-visible:outline-2 focus-visible:outline-focus-ring aria-disabled:text-muted';
@@ -10,11 +11,13 @@ function RepoFailure({
   retrying,
   onRetry,
   now,
+  rowRef,
 }: {
   repo: RepoSyncState;
   retrying: boolean;
   onRetry: (id: number) => void;
   now?: Date;
+  rowRef: (el: HTMLElement | null) => void;
 }) {
   const [fallback, setFallback] = useState(false);
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -33,7 +36,7 @@ function RepoFailure({
     }
   };
   return (
-    <li className="py-2">
+    <li ref={rowRef} className="py-2">
       <p className="font-medium">{v.title}</p>
       <p className="text-sm">{v.body}</p>
       {clock && <p className="text-sm text-muted">{clock} 기준</p>}
@@ -92,6 +95,8 @@ export function RepoFailureBanner({
   now?: Date;
 }) {
   const failed = repos.filter((r) => r.lastError !== null);
+  // 다시 시도가 성공해 포커스된 행이 사라지면 다음 행 → 이전 행 → 화면 제목(h1)으로.
+  const rescue = useFocusRescue('button', () => document.querySelector<HTMLElement>('h1'));
   if (failed.length === 0) return null;
   // key on <RepoFailure> directly gave TS2322; the Fragment carries it instead
   return (
@@ -103,7 +108,7 @@ export function RepoFailureBanner({
       <ul>
         {failed.map((r) => (
           <Fragment key={r.repoId}>
-            <RepoFailure repo={r} retrying={retryingRepoId === r.repoId} onRetry={onRetry} now={now} />
+            <RepoFailure repo={r} retrying={retryingRepoId === r.repoId} onRetry={onRetry} now={now} rowRef={rescue} />
           </Fragment>
         ))}
       </ul>

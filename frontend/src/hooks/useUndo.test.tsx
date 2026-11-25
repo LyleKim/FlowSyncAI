@@ -121,4 +121,19 @@ describe('useUndo', () => {
     fireEvent.click(btn); // 네이티브 button은 Enter가 click으로 변환됨
     expect(a.restore).toHaveBeenCalled();
   });
+  it('되돌리기·시간 만료로 포커스된 토스트가 사라지면 이웃 토스트 → main으로 포커스', async () => {
+    const a = mk(), b = mk(), c = mk(); wrap(<main id="main" tabIndex={-1} />);
+    act(() => { api.schedule({ label: 'a', ...a }); api.schedule({ label: 'b', ...b }); });
+    const [first, second] = screen.getAllByRole('button', { name: '되돌리기' });
+    first.focus();
+    fireEvent.click(first);
+    expect(document.activeElement).toBe(second);
+    fireEvent.click(second);
+    expect(document.activeElement).toBe(document.getElementById('main'));
+    act(() => api.schedule({ label: 'c', ...c }));
+    screen.getByRole('button', { name: '되돌리기' }).focus();
+    await tick(10000);
+    expect(screen.queryByRole('button', { name: '되돌리기' })).toBeNull();
+    expect(document.activeElement).toBe(document.getElementById('main'));
+  });
 });

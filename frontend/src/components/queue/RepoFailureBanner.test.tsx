@@ -81,4 +81,17 @@ describe('RepoFailureBanner', () => {
     await user.click(btn);
     expect(onRetry).not.toHaveBeenCalled();
   });
+  it('다시 시도가 성공해 포커스된 행이 사라지면 다음 행 → h1로 포커스', () => {
+    const a = bad(), b = bad({ repoId: 3, repo: 'acme/web' });
+    const ui = (repos: RepoSyncState[]) => (
+      <><h1 tabIndex={-1}>내 리뷰 요청</h1>
+        <RepoFailureBanner repos={repos} allFailed={false} retryingRepoId={null} onRetry={() => {}} now={now} /></>
+    );
+    const { rerender } = render(ui([a, b]));
+    screen.getAllByRole('button', { name: /이 레포만 다시 시도/ })[0].focus();
+    rerender(ui([{ ...a, lastError: null }, b]));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /이 레포만 다시 시도/ }));
+    rerender(ui([{ ...a, lastError: null }, { ...b, lastError: null }]));
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+  });
 });

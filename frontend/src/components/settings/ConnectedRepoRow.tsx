@@ -8,12 +8,13 @@ interface Props {
   onRetry: (id: number) => void;
   onDisconnect: (repo: ConnectedRepo) => void;
   retrying: boolean;
+  rowRef?: (el: HTMLElement | null) => void;
 }
 
 const BTN = 'min-h-6 rounded border border-border px-2 text-sm aria-disabled:opacity-60';
 
 // FC 타입: 이 저장소에는 @types/react가 없어 함수 선언형 컴포넌트에 key를 넘기면 tsc가 거부한다.
-const ConnectedRepoRow: FC<Props> = ({ repo, now = new Date(), onRetry, onDisconnect, retrying }) => {
+const ConnectedRepoRow: FC<Props> = ({ repo, now = new Date(), onRetry, onDisconnect, retrying, rowRef }) => {
   const id = useId();
   const name = `${repo.owner}/${repo.name}`;
   const view = repo.lastError ? describeRepoError(name, repo.lastError, repo.lastSuccessAt, now) : null;
@@ -33,7 +34,7 @@ const ConnectedRepoRow: FC<Props> = ({ repo, now = new Date(), onRetry, onDiscon
   };
 
   return (
-    <li className="space-y-1 py-3">
+    <li ref={rowRef} className="space-y-1 py-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="min-w-0 truncate text-sm font-medium">{name}</span>
         <span className={`rounded border px-1.5 text-xs ${view ? 'border-danger text-danger' : 'border-success text-success'}`}>

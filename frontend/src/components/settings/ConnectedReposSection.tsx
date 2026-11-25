@@ -5,6 +5,7 @@ import { removeWatchedRepo } from '../../services/integrationsApi';
 import { usePrSyncContext } from '../../hooks/PrSyncContext';
 import { usePendingIds, useUndo } from '../../hooks/useUndo';
 import { useNow } from '../../hooks/useNow';
+import { useFocusRescue } from '../../hooks/useFocusRescue';
 import ConnectRepoForm, { repoPendingKey as pendingKey } from './ConnectRepoForm';
 import ConnectedRepoRow from './ConnectedRepoRow';
 
@@ -21,6 +22,8 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryingId, setRetryingId] = useState<number | null>(null);
   const retryingRef = useRef(false);
+  // 해제로 행이 숨으면 다음 행 → 이전 행 → 섹션 제목으로 포커스.
+  const rescue = useFocusRescue('button', (el) => el.closest('section')?.querySelector('h2'));
 
   const load = useCallback(() =>
     listConnectedRepos()
@@ -85,7 +88,7 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
   return (
     <section aria-labelledby={`${id}-h`} className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 id={`${id}-h`} className="text-base font-semibold">연결된 레포</h2>
+        <h2 id={`${id}-h`} tabIndex={-1} className="text-base font-semibold">연결된 레포</h2>
         {visible.length > 0 && (
           <button type="button" onClick={() => void fetchAll()} aria-disabled={status.syncing}
             className="min-h-9 shrink-0 rounded border border-border px-3 text-sm aria-disabled:opacity-60">
@@ -108,7 +111,7 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
       ) : visible.length > 0 ? (
         <ul className="divide-y divide-border">
           {visible.map((r) => (
-            <ConnectedRepoRow key={r.id} repo={r} now={now} onRetry={(rid) => void retry(rid)} onDisconnect={disconnect} retrying={retryingId === r.id} />
+            <ConnectedRepoRow key={r.id} repo={r} now={now} onRetry={(rid) => void retry(rid)} onDisconnect={disconnect} retrying={retryingId === r.id} rowRef={rescue} />
           ))}
         </ul>
       ) : (
