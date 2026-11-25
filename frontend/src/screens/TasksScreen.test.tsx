@@ -99,6 +99,21 @@ describe('TasksScreen', () => {
     expect(within(pr).queryByLabelText('상태 변경')).not.toBeInTheDocument();
   });
 
+  it.each(['list', 'board'])('(e2) %s: PR 작업은 삭제 없이 완료 처리만, 누르면 PATCH done·알림 1회·포커스는 그 작업 상태 영역', async (view) => {
+    const { user, calls } = setup(`/tasks?view=${view}`, { 'PATCH /api/v1/tasks/pr-1/': () => ({ json: {} }) });
+    await screen.findByRole('link', { name: /결제 PR/ });
+    const pr = () => screen.getByRole('link', { name: /결제 PR/ }).closest('[data-row-id]') as HTMLElement;
+    const manual = screen.getByRole('link', { name: /로그인/ }).closest('[data-row-id]') as HTMLElement;
+    expect(within(pr()).queryByRole('button', { name: /삭제/ })).not.toBeInTheDocument();
+    expect(within(manual).getByRole('button', { name: /로그인 버그 수정.*삭제/ })).toBeInTheDocument();
+    await user.click(within(pr()).getByRole('button', { name: '‘결제 PR’ 완료 처리' }));
+    await waitFor(() => expect(within(pr()).queryByRole('button', { name: /완료 처리/ })).not.toBeInTheDocument());
+    expect(calls.filter((c) => c.method === 'PATCH').map((c) => c.url)).toEqual(['/api/v1/tasks/pr-1/']);
+    expect(screen.getAllByText('‘결제 PR’을 완료로 옮겼어요')).toHaveLength(1); // 알림 1회
+    expect(liveRegions('alert')).toHaveLength(0);
+    await waitFor(() => expect(document.activeElement).toBe(pr().querySelector('[data-status-control="pr-1"]')));
+  });
+
   it('(f) 삭제: 즉시 숨김, 폴링 재수신에도 숨김, 되돌리기로 복귀', async () => {
     const { user } = setup();
     await screen.findByRole('link', { name: /로그인/ });

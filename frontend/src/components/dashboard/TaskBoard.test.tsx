@@ -52,16 +52,28 @@ describe('TaskBoard', () => {
     expect(src).not.toMatch(/<(div|span|li|section)[^>]*onClick/);
   });
 
-  it('(d) PR 카드는 combobox 없이 이동 불가, 수동 카드는 combobox, 컨트롤 이름은 카드마다 다름', async () => {
+  it('(d) PR 카드는 combobox·삭제 없이 완료 처리만, 수동 카드는 combobox·삭제, 컨트롤 이름은 카드마다 다름', async () => {
     const { user, p } = setup();
     expect(within(card('pr-1')).queryByRole('combobox')).toBeNull();
-    expect(within(card('pr-1')).getByText('리뷰 중 · GitHub 기준 · 이동 불가')).toBeInTheDocument();
+    expect(within(card('pr-1')).getByText('리뷰 중 · GitHub 기준 · 완료 처리만 가능해요')).toBeInTheDocument();
+    expect(within(card('pr-1')).queryByRole('button', { name: /삭제/ })).toBeNull();
+    const done = within(card('pr-1')).getByRole('button', { name: '‘결제 PR’ 완료 처리' });
+    expect(done.closest('.z-10')).not.toBeNull(); // 카드 전체 링크 위에 얹힘
+    await user.click(done);
+    expect(p.onMoveTask).toHaveBeenCalledWith('pr-1', 'done');
+    expect(p.onDeleteTask).not.toHaveBeenCalled();
     expect(within(card('t1')).getByRole('combobox', { name: '‘로그인 버그 수정’ 상태 변경' })).toBeInTheDocument();
     const del = within(card('t2')).getByRole('button', { name: '‘문서 정리’ 삭제' });
     expect(del.className).toMatch(/relative/);
     expect(del.className).toMatch(/z-10/);
     await user.click(del);
     expect(p.onDeleteTask).toHaveBeenCalledWith(TASKS[1]);
+  });
+
+  it('(d2) 완료된 PR 카드는 완료 처리·삭제 버튼 모두 없음', () => {
+    setup([mk({ id: 'pr-9', title: '끝난 PR', status: 'done', kind: 'pr' })]);
+    expect(within(card('pr-9')).queryByRole('button')).toBeNull();
+    expect(within(card('pr-9')).getByText('완료 · GitHub 기준 · 이동 불가')).toBeInTheDocument();
   });
 
   it('(e) 상태 이동으로 카드가 다른 열로 가도 포커스는 그 카드의 상태 컨트롤', async () => {

@@ -68,12 +68,21 @@ describe('TaskDetailDialog', () => {
     expect(within(d).getByLabelText('상태')).toHaveValue('done');
   });
 
-  it('(d) PR 작업: 상태 select 없음, 작성자 표시', async () => {
-    setup('/tasks/pr-1');
+  it('(d) PR 작업: 상태 select·작업 삭제 없음, 완료 처리만, 작성자 표시', async () => {
+    const { user, calls } = setup('/tasks/pr-1', { 'PATCH /api/v1/tasks/pr-1/': () => ({ json: {} }) });
     const d = await screen.findByRole('dialog', { name: '결제 PR' });
     expect(within(d).queryByLabelText('상태')).not.toBeInTheDocument();
+    expect(within(d).queryByRole('combobox', { name: /상태/ })).not.toBeInTheDocument();
+    expect(within(d).queryByRole('button', { name: /삭제/ })).not.toBeInTheDocument();
     expect(within(d).getByText('작성자')).toBeInTheDocument();
     expect(within(d).getByText('octocat')).toBeInTheDocument();
+    await user.click(within(d).getByRole('button', { name: '‘결제 PR’ 완료 처리' }));
+    await waitFor(() => expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(1));
+    expect(calls.find((c) => c.method === 'PATCH')!.url).toContain('/api/v1/tasks/pr-1/');
+    await waitFor(() => expect(within(d).queryByRole('button', { name: /완료 처리/ })).not.toBeInTheDocument());
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getAllByText('‘결제 PR’을 완료로 옮겼어요')).toHaveLength(1);
+    expect(document.activeElement).toBe(d.querySelector('[data-status-control="pr-1"]'));
   });
 
   it('(e) 삭제: 되돌리기 토스트 + 목록 검색을 유지한 채 이동, 목록에서 숨김', async () => {

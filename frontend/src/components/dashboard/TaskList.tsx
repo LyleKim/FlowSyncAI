@@ -80,10 +80,13 @@ export default function TaskList({ tasks, sort, onSortChange, linkSearch, onMove
               <td role="cell" data-label="우선순위" className={TD}>{PRIORITY_LABEL[t.priority] ?? PRIORITY_LABEL.medium}</td>
               <td role="cell" data-label="생성" className={TD}>{formatDate(t.createdAt)}</td>
               <td role="cell" className="block px-3 py-1 md:table-cell md:py-2 md:text-right">
-                <button type="button" aria-label={`‘${title}’ 삭제`} onClick={() => onDeleteTask(t)}
-                  className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm p-1 text-muted hover:text-danger focus-visible:outline-2 focus-visible:outline-focus-ring">
-                  <Trash2 size={16} aria-hidden="true" />
-                </button>
+                {/* PR 작업은 삭제하지 않는다(결정 12 개정: 완료 처리만) */}
+                {!pr && (
+                  <button type="button" aria-label={`‘${title}’ 삭제`} onClick={() => onDeleteTask(t)}
+                    className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm p-1 text-muted hover:text-danger focus-visible:outline-2 focus-visible:outline-focus-ring">
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                )}
               </td>
             </tr>
           );

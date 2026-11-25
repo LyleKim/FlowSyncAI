@@ -12,6 +12,7 @@ import { ChecklistSection } from './ChecklistSection';
 import { ReviewSection } from './ReviewSection';
 import { TaskForm } from './TaskForm';
 import { TaskSummary } from './TaskSummary';
+import TaskStatusControl from '../dashboard/TaskStatusControl';
 
 const btn = 'min-h-6 rounded border border-border px-3 py-1.5 text-body-sm focus-visible:outline-2 focus-visible:outline-focus-ring';
 
@@ -74,6 +75,7 @@ export default function TaskDetailDialog() {
     back();
   };
 
+  const pr = task ? isPrTask(task) : false;
   const formProps = { values: form.values, setField: form.setField, onSubmit: () => void save(), errors };
 
   return (
@@ -83,7 +85,10 @@ export default function TaskDetailDialog() {
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            {!isPrTask(task) && (
+            {pr ? (
+              // 결정 12 개정: PR 작업은 select·삭제 없이 완료 처리만(목록·보드와 같은 컨트롤)
+              <TaskStatusControl task={task} onMove={moveTask} showLockNote />
+            ) : (
               <label className="flex items-center gap-2 text-body-sm">
                 상태
                 <select value={task.status} onChange={(e) => void moveTask(task.id, e.target.value as TaskStatus)}
@@ -93,7 +98,7 @@ export default function TaskDetailDialog() {
               </label>
             )}
             <button type="button" aria-pressed={editing} onClick={() => setEditing((v) => !v)} className={btn}>정보 수정</button>
-            <button type="button" onClick={remove} className={`${btn} text-danger`}>작업 삭제</button>
+            {!pr && <button type="button" onClick={remove} className={`${btn} text-danger`}>작업 삭제</button>}
           </div>
           {editing ? (
             <TaskForm {...formProps} showStatus={false} submitLabel="저장"

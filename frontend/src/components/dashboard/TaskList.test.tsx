@@ -45,6 +45,17 @@ describe('TaskList', () => {
     expect(within(row('pr-1')).getByText('리뷰 요청', { selector: 'td *' })).toBeInTheDocument();
   });
 
+  it('(b2) PR 행: 삭제 버튼 없음, 완료 처리 → onMoveTask(id, done), 완료된 PR 행엔 버튼 없음. 수동 행은 그대로', async () => {
+    const { user, p } = setup({ tasks: [...TASKS, mk({ id: 'pr-3', title: '끝난 PR', status: 'done', kind: 'pr' })] });
+    expect(within(row('pr-1')).queryByRole('button', { name: /삭제/ })).toBeNull();
+    await user.click(within(row('pr-1')).getByRole('button', { name: '‘결제 PR’ 완료 처리' }));
+    expect(p.onMoveTask).toHaveBeenCalledTimes(1);
+    expect(p.onMoveTask).toHaveBeenCalledWith('pr-1', 'done');
+    expect(within(row('pr-3')).queryByRole('button')).toBeNull();
+    expect(within(row('t1')).getByRole('button', { name: '‘로그인 버그 수정’ 삭제' })).toBeInTheDocument();
+    expect(within(row('t1')).queryByRole('button', { name: /완료 처리/ })).toBeNull();
+  });
+
   it('(c) 사람 열: 담당/작성/없음', () => {
     setup();
     expect(within(row('t1')).getByText('담당 minji-park')).toBeInTheDocument();

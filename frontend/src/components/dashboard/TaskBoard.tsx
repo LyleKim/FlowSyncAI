@@ -39,10 +39,13 @@ const Card: FC<CardProps> = ({ task, linkSearch, onMoveTask, onDeleteTask }) => 
       <span className="text-caption font-semibold text-muted">우선순위 {PRIORITY_LABEL[task.priority] ?? PRIORITY_LABEL.medium}</span>
       <span className="flex items-center justify-between gap-2">
         <span className="relative z-10"><TaskStatusControl task={task} onMove={onMoveTask} showLockNote /></span>
-        <button type="button" aria-label={`‘${title}’ 삭제`} onClick={() => onDeleteTask(task)}
-          className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm p-1 text-muted hover:text-danger focus-visible:outline-2 focus-visible:outline-focus-ring">
-          <Trash2 size={16} aria-hidden="true" />
-        </button>
+        {/* PR 작업은 삭제하지 않는다(결정 12 개정: 완료 처리만) */}
+        {!pr && (
+          <button type="button" aria-label={`‘${title}’ 삭제`} onClick={() => onDeleteTask(task)}
+            className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm p-1 text-muted hover:text-danger focus-visible:outline-2 focus-visible:outline-focus-ring">
+            <Trash2 size={16} aria-hidden="true" />
+          </button>
+        )}
       </span>
     </li>
   );
