@@ -83,4 +83,15 @@ describe('SyncStatusLine', () => {
     fireEvent.click(screen.getByRole('button'));
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
+  it('g: 시간이 흘러도 live region 내용은 그대로, 상대 시각은 live region 밖', () => {
+    const status = mockSyncStatus({ lastSuccessAt: ago(3) });
+    const { rerender } = render(<SyncStatusLine status={status} onRefresh={() => {}} now={now} />);
+    const live = screen.getByRole('status');
+    const before = live.textContent;
+    rerender(<SyncStatusLine status={status} onRefresh={() => {}} now={new Date(now.getTime() + 60000)} />);
+    expect(screen.getByRole('status').textContent).toBe(before);
+    expect(screen.getByText(/4분 전 가져옴/).closest('[role],[aria-live]')).toBeNull();
+    rerender(<SyncStatusLine status={{ ...status, syncing: true }} onRefresh={() => {}} now={now} />);
+    expect(screen.getByRole('status')).toHaveTextContent('가져오는 중이에요');
+  });
 });

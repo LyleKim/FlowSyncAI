@@ -37,14 +37,18 @@ export default function SyncStatusLine({
     : syncing
       ? '가져오는 중이에요'
       : '';
+  // live region은 가져오기 상태가 바뀔 때만 바뀐다. 오류는 아래 role=alert가 알린다.
+  const live = syncing ? '가져오는 중이에요' : !error && lastSuccessAt ? `가져왔어요${truncated ? ' · 일부만 가져왔어요' : ''}` : '';
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-      <span role="status">
+      {/* 상대 시각은 useNow로 매분 바뀌므로 live region 밖에 둔다(매분 재낭독 방지). */}
+      <span>
         {formatFetched(lastSuccessAt, now)}
         {stale && ' · 오래됨'}
         {truncated && ' · 일부만 가져왔어요'}
       </span>
+      <span role="status" className="sr-only">{live}</span>
       <button
         type="button"
         aria-disabled={disabled}
@@ -55,7 +59,7 @@ export default function SyncStatusLine({
       >
         지금 가져오기
       </button>
-      {hint && <span>{hint}</span>}
+      {hint && <span aria-hidden={hint === live || undefined}>{hint}</span>}
       {view?.retryDisabledReason && <span>{view.retryDisabledReason}</span>}
       {view && (
         <div role="alert" className="w-full text-danger">
