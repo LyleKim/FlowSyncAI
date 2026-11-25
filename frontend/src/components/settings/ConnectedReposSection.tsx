@@ -34,7 +34,7 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
     wasSyncing.current = status.syncing;
   }, [status.syncing, load]);
 
-  useEffect(() => onReposChange?.(repos), [repos, onReposChange]);
+  useEffect(() => { onReposChange?.(repos); }, [repos, onReposChange]);
 
   const visible = repos.filter((r) => !pending.has(pendingKey(r.id)));
 

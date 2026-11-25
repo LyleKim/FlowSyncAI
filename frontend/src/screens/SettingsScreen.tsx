@@ -2,6 +2,8 @@ import { useId, useMemo, useState } from 'react';
 import { useMyLogin, useMyTeams } from '../hooks/useMyLogin';
 import { useTheme, type ThemeMode } from '../hooks/useTheme';
 import { usePrSyncContext } from '../hooks/PrSyncContext';
+import { usePendingIds } from '../hooks/useUndo';
+import { repoPendingKey } from '../components/settings/ConnectRepoForm';
 import type { ConnectedRepo } from '../services/connectedReposApi';
 import MyLoginForm from '../components/settings/MyLoginForm';
 import MyTeamsField from '../components/settings/MyTeamsField';
@@ -20,11 +22,15 @@ export default function SettingsScreen() {
   const { teams } = useMyTeams();
   const { mode, dark, setMode } = useTheme();
   const { syncNow } = usePrSyncContext();
+  const pending = usePendingIds();
   const [repos, setRepos] = useState<ConnectedRepo[]>([]);
   const [saved, setSaved] = useState('');
   const candidates = useMemo(
-    () => [...new Set(repos.flatMap((r) => (r.githubLogin ? [r.githubLogin.toLowerCase()] : [])))],
-    [repos],
+    // 연결 해제 대기 중인 레포는 후보에서 뺀다
+    () => [...new Set(repos
+      .filter((r) => !pending.has(repoPendingKey(r.id)))
+      .flatMap((r) => (r.githubLogin ? [r.githubLogin.toLowerCase()] : [])))],
+    [repos, pending],
   );
 
   const onSaved = (l: string) => {
@@ -42,8 +48,8 @@ export default function SettingsScreen() {
           <p className="text-sm">{login ? `${login}의 큐` : '로그인을 입력하면 내 리뷰 요청을 볼 수 있어요'}</p>
           <MyLoginForm initial={login ?? ''} onSaved={onSaved} variant="settings" candidates={candidates} teams={teams} />
           <p className="text-sm text-muted">저장하면 바로 다시 가져와요.</p>
-          {/* 되돌리기로 로그인이 바뀌면 지난 안내는 숨긴다 */}
-          <p role="status" className="text-sm">{saved && saved === login ? `${saved}의 큐로 바꿨어요` : ''}</p>
+          {/* 알림은 MyLoginForm의 되돌리기 토스트가 맡는다(중복 알림 방지). 되돌리면 이 줄도 숨긴다. */}
+          <p className="text-sm">{saved && saved === login ? `${saved}의 큐로 바꿨어요` : ''}</p>
           <MyTeamsField />
         </section>
         <ConnectedReposSection onReposChange={setRepos} />

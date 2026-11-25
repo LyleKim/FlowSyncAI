@@ -78,11 +78,26 @@ describe('SettingsScreen', () => {
     await user.click(loginSave());
     expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('octocat');
     expect(screen.getByText('octocat의 큐')).toBeInTheDocument();
-    expect(screen.getAllByRole('status').filter((s) => s.textContent === 'octocat의 큐로 바꿨어요')).toHaveLength(1);
+    // 화면 안내 줄은 보이기만 하고, 알림은 되돌리기 토스트 한 번뿐이다.
+    const line = screen.getByText('octocat의 큐로 바꿨어요');
+    expect(line.closest('[role=status],[role=alert],[aria-live]')).toBeNull();
+    const live = [...document.querySelectorAll('[role=status],[role=alert],[aria-live]')].filter((e) => /octocat/.test(e.textContent ?? ''));
+    expect(live).toHaveLength(1);
+    expect(live[0]).toHaveTextContent('내 로그인을 바꿨어요: octocat');
     await vi.waitFor(() => expect(syncs()).toBe(2));
     await new Promise((r) => setTimeout(r, 50));
     expect(syncs()).toBe(2);
     expect(screen.queryByText('로그인을 입력하면 내 리뷰 요청을 볼 수 있어요')).not.toBeInTheDocument();
+  });
+
+  it('(b4) 연결 해제 대기 중인 레포의 로그인은 후보에서 빠진다', async () => {
+    const { user } = setup({ [`GET ${W}/`]: () => ({ json: [{ ...REPO, githubLogin: 'Alice' }] }) });
+    const chips = () => screen.queryByRole('group', { name: '팀에서 찾은 로그인' });
+    expect(await screen.findByRole('button', { name: 'alice' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'acme/api 연결 해제' }));
+    expect(chips()).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '되돌리기' }));
+    expect(within(chips()!).getByRole('button', { name: 'alice' })).toBeInTheDocument();
   });
 
   it('(b2) 무효 입력은 저장 안 되고 aria-invalid + 오류 1회', async () => {
