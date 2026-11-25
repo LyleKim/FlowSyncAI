@@ -18,7 +18,8 @@ export function ReviewSection({ task }: { task: Task }) {
   const [reviewer, setReviewer] = useState('');
   const [urgent, setUrgent] = useState(false);
   const [comment, setComment] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<{ text: string; alert: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
@@ -28,9 +29,10 @@ export function ReviewSection({ task }: { task: Task }) {
     const text = comment.trim();
     const roleName = (role === CUSTOM ? custom : role).trim();
     if (adding.current) return;
-    if (!text || !roleName) { setError(!roleName ? '역할을 입력해 주세요.' : '검토 내용을 입력해 주세요.'); return; }
+    if (!text || !roleName) { setError({ text: !roleName ? '역할을 입력해 주세요.' : '검토 내용을 입력해 주세요.', alert: true }); return; }
     adding.current = true;
-    setError('');
+    setError(null);
+    setBusy(true);
     try {
       const r = await addReview(task.id, {
         role: roleName, comment: text, urgency: urgent ? 'urgent' : 'normal',
@@ -38,9 +40,11 @@ export function ReviewSection({ task }: { task: Task }) {
       });
       if (!alive.current) return;
       if (r.ok) { setComment(''); setReviewer(''); setUrgent(false); setCustom(''); }
-      else setError(`${(r as { error: string }).error} 입력한 내용은 그대로 남아 있어요.`);
+      else if ('notified' in r && r.notified) setError({ text: '입력한 내용은 그대로 두었어요.', alert: false }); // 토스트가 이미 알림
+      else setError({ text: `${'error' in r ? r.error : ''} 입력한 내용은 그대로 두었어요.`, alert: true });
     } finally {
       adding.current = false;
+      if (alive.current) setBusy(false);
     }
   };
 
@@ -50,7 +54,8 @@ export function ReviewSection({ task }: { task: Task }) {
       <div className="mt-3 flex flex-col gap-3">
         <ul className="flex flex-col gap-2">
           {reviews.map((r) => {
-            const who = r.reviewerId || r.role;
+            const who = `${r.reviewerId || r.role}’ 검토`;
+            const tag = `${formatDate(r.createdAt)}, ${r.comment.slice(0, 20)}`;
             return (
               <li key={r.id} className="flex flex-col gap-1 rounded border border-border p-2">
                 <div className="flex flex-wrap items-center gap-2 text-caption">
@@ -64,9 +69,9 @@ export function ReviewSection({ task }: { task: Task }) {
                   {r.isAccepted ? (
                     <span className="text-caption text-success">확인함{r.acceptedAt && ` · ${formatDate(r.acceptedAt)}`}</span>
                   ) : (
-                    <button type="button" aria-label={`‘${who}’ 검토 확인함`} onClick={() => void updateReview(task.id, r.id, { isAccepted: true })} className={btn}>확인함</button>
+                    <button type="button" aria-label={`‘${who} 확인함 (${tag})`} onClick={() => void updateReview(task.id, r.id, { isAccepted: true })} className={btn}>확인함</button>
                   )}
-                  <button type="button" aria-label={`‘${who}’ 검토 삭제`} onClick={() => void deleteReview(task.id, r.id)} className={`${btn} text-danger`}>삭제</button>
+                  <button type="button" aria-label={`‘${who} 삭제 (${tag})`} onClick={() => void deleteReview(task.id, r.id)} className={`${btn} text-danger`}>삭제</button>
                 </div>
               </li>
             );
@@ -98,8 +103,10 @@ export function ReviewSection({ task }: { task: Task }) {
           <label htmlFor="rv-comment" className={lbl}>내용
             <textarea id="rv-comment" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} className={field} />
           </label>
-          {error && <p role="alert" className="text-body-sm text-danger">{error}</p>}
-          <button type="submit" className={`${btn} self-start`}>검토 추가</button>
+          {error && (error.alert
+            ? <p role="alert" className="text-body-sm text-danger">{error.text}</p>
+            : <p className="text-body-sm text-muted">{error.text}</p>)}
+          <button type="submit" aria-disabled={busy} className={`${btn} self-start`}>{busy ? '추가하는 중' : '검토 추가'}</button>
         </form>
       </div>
     </details>
