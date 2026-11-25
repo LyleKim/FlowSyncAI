@@ -22,7 +22,11 @@ export function ReviewSection({ task }: { task: Task }) {
   const [busy, setBusy] = useState(false);
 
   const alive = useRef(true);
-  useEffect(() => () => { alive.current = false; }, []);
+  // StrictMode의 마운트→정리→재마운트에서도 다시 true가 되도록 effect 본문에서 켠다.
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
   const adding = useRef(false);
 
   const submit = async () => {

@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { ToastProvider, useToasts } from '../../hooks/useToasts';
@@ -27,10 +28,11 @@ function Wrap() {
   const { notify } = useToasts();
   return <TasksProvider notify={notify}><Inner /></TasksProvider>;
 }
-const setup = (task: Task, extra: Parameters<typeof routeFetch>[0] = {}) => {
+const setup = (task: Task, extra: Parameters<typeof routeFetch>[0] = {}, strict = false) => {
   list = [task];
   const r = routeFetch({ 'GET /api/v1/tasks/': () => ({ json: list }), ...extra });
-  return { ...r, ...renderWithRouter(<ToastProvider><Wrap /><ToastHost /></ToastProvider>) };
+  const ui = <ToastProvider><Wrap /><ToastHost /></ToastProvider>;
+  return { ...r, ...renderWithRouter(strict ? <StrictMode>{ui}</StrictMode> : ui) };
 };
 afterEach(() => vi.unstubAllGlobals());
 const opts = { hidden: true } as const;
@@ -144,5 +146,15 @@ describe('ReviewSection', () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(err).not.toHaveBeenCalled();
     err.mockRestore();
+  });
+
+  it('(j) StrictMode에서도 추가 성공 시 폼을 비우고 busy를 푼다', async () => {
+    const { user } = setup(mk(), {
+      'POST /api/v1/tasks/t1/reviews/': () => ({ json: { id: 'r3', role: '개발자', comment: 'x', createdAt: '2026-11-22T00:00:00Z' } }),
+    }, true);
+    await user.type(await screen.findByLabelText('내용'), 'x');
+    await user.click(screen.getByRole('button', { name: '검토 추가', ...opts }));
+    await waitFor(() => expect(screen.getByLabelText('내용')).toHaveValue(''));
+    expect(screen.getByRole('button', { name: '검토 추가', ...opts })).toHaveAttribute('aria-disabled', 'false');
   });
 });
