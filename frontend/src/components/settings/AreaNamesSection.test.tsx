@@ -7,6 +7,7 @@ import { routeFetch, type RouteHandler } from '../../test/routeFetch';
 import { AreasApiError, fetchAreaAliases, fetchAreas } from '../../services/areasApi';
 import type { AreaAlias, AreasResponse } from '../../types/areas';
 import AreaNamesSection from './AreaNamesSection';
+import { liveRegions } from '../../test/live';
 
 vi.mock('../../services/areasApi', async (orig) => ({
   ...(await orig<typeof import('../../services/areasApi')>()),
@@ -284,13 +285,14 @@ describe('AreaNamesSection', () => {
   it('(m) 레포 목록 조회 실패 → 실패 안내(빈 상태 아님)와 다시 시도', async () => {
     let fail = true;
     const { user } = setup({ [REPOS]: () => (fail ? { status: 500 } : { json: [repo(1, 'api')] }) });
-    const alert = await screen.findByRole('alert');
+    await waitFor(() => expect(liveRegions('alert')).toHaveLength(1));
+    const alert = liveRegions('alert')[0];
     expect(alert).toHaveTextContent('레포 목록을 읽지 못했어요');
     expect(screen.queryByText('연결된 레포가 있으면 영역 이름을 붙일 수 있어요')).not.toBeInTheDocument();
     fail = false;
     await user.click(within(alert).getByRole('button', { name: '다시 시도' }));
     expect(await input('backend/payments')).toHaveValue('결제');
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(liveRegions('alert')).toHaveLength(0);
   });
 
   it('(o) 연결된 행의 지우기 대기 중엔 편집·저장 막힘(요청 0회)', async () => {

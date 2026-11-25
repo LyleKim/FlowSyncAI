@@ -12,6 +12,7 @@ import { setMyLogin } from '../lib/storage';
 import { renderWithRouter } from '../test/render';
 import { routeFetch } from '../test/routeFetch';
 import type { Task } from '../types';
+import { liveRegions } from '../test/live';
 
 // 기본은 실제 Provider. 오류+이전 데이터는 실제 훅으로 만들 수 없어 그 테스트만 값을 덮어쓴다.
 const ctx = vi.hoisted(() => ({ override: null as Partial<TasksApi> | null }));
@@ -148,7 +149,7 @@ describe('TasksScreen', () => {
       await start({ 'DELETE /api/v1/tasks/t1/': () => ({ status: 500 }) });
       await wait();
       expect(await screen.findByRole('link', { name: /로그인/ })).toBeInTheDocument();
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(liveRegions('alert')).toHaveLength(1);
     });
 
     it('(j) 창 안에서 되돌리면 DELETE 없이 행이 돌아온다', async () => {
@@ -221,7 +222,7 @@ describe('TasksScreen', () => {
       const { user, calls } = setup('/tasks', { 'GET /api/v1/tasks/': () => ({ status: 500 }) });
       expect(await screen.findByText('서버에 연결할 수 없어요')).toBeInTheDocument();
       expect(screen.queryByText('아직 작업이 없어요')).not.toBeInTheDocument();
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(liveRegions('alert')).toHaveLength(1);
       await user.click(screen.getByRole('button', { name: '다시 시도' }));
       await waitFor(() => expect(calls.filter((c) => c.method === 'GET')).toHaveLength(2));
     });
@@ -229,7 +230,7 @@ describe('TasksScreen', () => {
     it('(T-e2) 오류인데 이전 데이터가 있으면 안내 하나와 목록을 함께', async () => {
       ctx.override = { loadState: 'error', tasks: BASE };
       setup();
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(liveRegions('alert')).toHaveLength(1);
       expect(screen.getByText('아래 목록은 마지막으로 가져온 내용이에요.')).toBeInTheDocument();
       expect(rowIds()).toHaveLength(3);
     });

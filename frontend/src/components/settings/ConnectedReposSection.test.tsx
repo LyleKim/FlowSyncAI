@@ -8,6 +8,7 @@ import { ToastProvider } from '../../hooks/useToasts';
 import { ToastHost } from '../common/ToastHost';
 import { routeFetch, type RouteHandler } from '../../test/routeFetch';
 import ConnectedReposSection from './ConnectedReposSection';
+import { liveRegions } from '../../test/live';
 
 const sync = vi.hoisted(() => ({ syncing: false, syncNow: undefined as unknown as ReturnType<typeof vi.fn> }));
 vi.mock('../../hooks/PrSyncContext', () => ({
@@ -94,7 +95,7 @@ describe('ConnectedReposSection', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockResolvedValue(undefined) } });
     await screen.findByText('acme/core');
     await user.click(screen.getByRole('button', { name: '관리자에게 보낼 내용 복사' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('복사했어요');
+    expect((await screen.findByText('복사했어요')).closest('[role="status"]')).not.toBeNull();
   });
 
   it('(d) rate_limit + 미래 resetAt → 다시 시도 aria-disabled, 사유, 클릭 무시', async () => {
@@ -130,9 +131,9 @@ describe('ConnectedReposSection', () => {
     await screen.findByText('acme/api');
     await user.type(screen.getByLabelText('레포 추가'), 'https://github.com/acme/api');
     await user.click(screen.getByRole('button', { name: '추가' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('이미 연결된 레포예요');
+    expect((await screen.findByText(/이미 연결된 레포예요/)).closest('[role="status"]')).not.toBeNull();
     expect(screen.getAllByText('acme/api')).toHaveLength(1);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(liveRegions('alert')).toHaveLength(0);
   });
 
   it('(g) 400 invalid_url → 인라인 aria-invalid, 입력 유지', async () => {

@@ -7,6 +7,7 @@ import { renderWithRouter } from '../../test/render';
 import { routeFetch } from '../../test/routeFetch';
 import type { Task } from '../../types';
 import { ChecklistSection } from './ChecklistSection';
+import { liveRegions } from '../../test/live';
 
 const subs = [
   { id: 's1', title: '로그 확인', completed: true },
@@ -68,7 +69,8 @@ describe('ChecklistSection', () => {
     const { user, calls } = setup(mk(), { 'POST /api/v1/generate-checklist/': () => ({ status: 502, json: { error: 'x' } }) });
     const btn = await screen.findByRole('button', { name: '체크리스트 제안받기', hidden: true });
     await user.click(btn);
-    expect((await screen.findByRole('alert')).textContent).toBe('AI 서버가 응답하지 않았어요. 잠시 뒤에 다시 시도해 주세요.');
+    await waitFor(() => expect(liveRegions('alert')).toHaveLength(1));
+    expect(liveRegions('alert')[0].textContent).toBe('AI 서버가 응답하지 않았어요. 잠시 뒤에 다시 시도해 주세요.');
     expect(btn).not.toHaveAttribute('aria-disabled', 'true');
     await user.click(btn);
     await waitFor(() => expect(calls.filter((c) => c.url.includes('generate-checklist'))).toHaveLength(2));

@@ -7,6 +7,7 @@ import { ToastHost } from '../common/ToastHost';
 import { routeFetch } from '../../test/routeFetch';
 import { STORAGE_KEYS } from '../../lib/storage';
 import MyLoginForm from './MyLoginForm';
+import { liveRegions } from '../../test/live';
 
 const RQ = 'GET /api/v1/integrations/review-queue/';
 const PROBE_UNKNOWN = { login: 'minji', knownLogin: false, repos: [{ lastSuccessAt: '2026-11-20T00:00:00Z' }], counts: {} };
@@ -43,7 +44,8 @@ describe('MyLoginForm', () => {
     const { user, input, onSaved } = setup();
     await user.type(input, bad);
     await user.click(screen.getByRole('button', { name: '로그인 저장' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('영문·숫자·하이픈만');
+    expect(liveRegions('alert')).toHaveLength(1);
+    expect(liveRegions('alert')[0]).toHaveTextContent('영문·숫자·하이픈만');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription(/영문·숫자·하이픈만 쓸 수 있어요 \(최대 39자\)/);
     expect(input).toHaveValue(bad);

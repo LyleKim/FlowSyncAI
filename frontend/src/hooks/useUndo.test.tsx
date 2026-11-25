@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { ToastProvider } from './useToasts';
 import { useUndo, usePendingIds } from './useUndo';
 import { ToastHost } from '../components/common/ToastHost';
+import { liveRegions } from '../test/live';
 
 const mk = (ok = true) => ({ hide: vi.fn(), restore: vi.fn(), commit: vi.fn().mockResolvedValue(ok ? { ok: true } : { ok: false }) });
 let api: ReturnType<typeof useUndo>;
@@ -56,7 +57,7 @@ describe('useUndo', () => {
     const a = mk(); a.commit.mockResolvedValue({ ok: false, error: 'e', notified: true }); wrap(null);
     act(() => api.schedule({ label: 'x', ...a }));
     await tick(10000);
-    expect(a.restore).toHaveBeenCalledTimes(1); expect(screen.queryByRole('alert')).toBeNull();
+    expect(a.restore).toHaveBeenCalledTimes(1); expect(liveRegions('alert')).toHaveLength(0);
   });
   it('windowMs를 따른다', async () => {
     const a = mk(); wrap(null);
