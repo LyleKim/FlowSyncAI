@@ -1,6 +1,7 @@
 import { useMyLogin } from '../hooks/useMyLogin';
 import { useTheme } from '../hooks/useTheme';
 import MyLoginForm from '../components/settings/MyLoginForm';
+import MyTeamsField from '../components/settings/MyTeamsField';
 import ConnectedReposSection from '../components/settings/ConnectedReposSection';
 
 const THEMES = [
@@ -19,6 +20,7 @@ export default function SettingsScreen() {
           <h2 id="set-me" className="text-base font-semibold">나</h2>
           <MyLoginForm initial={login ?? ''} onSaved={() => {}} />
           {login && <p className="text-sm">{login}의 큐</p>}
+          <MyTeamsField />
         </section>
         <ConnectedReposSection />
         <section aria-labelledby="set-view" className="space-y-3">

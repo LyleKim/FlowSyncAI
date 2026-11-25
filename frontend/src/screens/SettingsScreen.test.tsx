@@ -17,6 +17,7 @@ const setup = () => {
   return { ...r, ...renderWithRouter(
     <ToastProvider><PrSyncProvider onCreated={async () => {}}><SettingsScreen /></PrSyncProvider><ToastHost /></ToastProvider>) };
 };
+const loginSave = () => within(screen.getByLabelText('내 GitHub 로그인').closest('form')!).getByRole('button', { name: '저장' });
 beforeEach(() => { localStorage.clear(); document.documentElement.classList.remove('dark'); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
@@ -25,7 +26,7 @@ describe('SettingsScreen', () => {
     const { user } = setup();
     await user.type(screen.getByLabelText('내 GitHub 로그인'), '@Octocat ');
     expect(screen.getByText('octocat 으로 확인해요 (대소문자는 구분하지 않아요)')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(loginSave());
     expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('octocat');
     expect(screen.getByText('octocat의 큐')).toBeInTheDocument();
   });
@@ -34,16 +35,21 @@ describe('SettingsScreen', () => {
     const { user } = setup();
     const input = screen.getByLabelText('내 GitHub 로그인');
     await user.type(input, 'a b');
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(loginSave());
     expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBeNull();
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription(/영문·숫자·하이픈만 쓸 수 있어요 \(최대 39자\)/);
   });
 
-  it('(d) /settings에는 SyncStatusLine(role=status)이 없다', async () => {
+  it('(d) /settings에는 SyncStatusLine(가져오기 상태 role=status)이 없다', async () => {
     setup();
     await screen.findByText('acme/api');
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    for (const s of screen.queryAllByRole('status')) expect(s).not.toHaveTextContent(/가져/);
+  });
+
+  it('(d2) 내 팀 입력이 마운트돼 있다', () => {
+    setup();
+    expect(screen.getByLabelText('내 팀 (선택)')).toBeInTheDocument();
   });
 
   it('(e) 연결 해제 → 행 숨김 → 되돌리기 복귀, 10초 후 DELETE 1회', async () => {
@@ -51,7 +57,7 @@ describe('SettingsScreen', () => {
     await screen.findByText('acme/api');
     await user.click(screen.getByRole('button', { name: 'acme/api 연결 해제' }));
     expect(screen.queryByText('acme/api')).not.toBeInTheDocument();
-    expect(screen.getByText(/연결을 해제했어요. 팀 모두에게 적용돼요/)).toBeInTheDocument();
+    expect(screen.getByText('acme/api 연결을 해제했어요 · 팀 모두에게 적용돼요')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '되돌리기' }));
     expect(screen.getByText('acme/api')).toBeInTheDocument();
     expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
