@@ -30,7 +30,7 @@ export default function TaskDetailDialog() {
   const [errors, setErrors] = useState<{ title?: string }>({});
 
   // 목록에서 열었으면 뒤로(필터·검색 유지, R13), 딥링크로 열었으면 목록으로 교체.
-  const back = () => (location.key === 'default' ? navigate(ROUTES.tasks, { replace: true }) : navigate(-1));
+  const back = () => (location.key === 'default' ? navigate({ pathname: ROUTES.tasks, search: location.search }, { replace: true }) : navigate(-1));
 
   // 로드 후 없는 id, 또는 열어 둔 작업이 폴링으로 사라진 경우(Review Focus 2).
   const missing = !isNew && loadState === 'ready' && !task;
