@@ -66,7 +66,8 @@ export default function FirstRunFlow({ onFinished }: { onFinished: () => void })
   const [syncedAttempt, setSyncedAttempt] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const box = useRef<HTMLDivElement>(null);
-  const mounted = useRef(false);
+  // 마지막으로 포커스를 맞춘 단계. StrictMode의 effect 재실행에도 첫 마운트를 이동으로 보지 않게 값으로 비교한다.
+  const shownStep = useRef(`${s.step}:${s.attempt}`);
 
   // 합류자 안내·후보 칩용. 실패하면 안내를 생략한다(가져오기 단계에서 다시 확인).
   useEffect(() => {
@@ -77,7 +78,9 @@ export default function FirstRunFlow({ onFinished }: { onFinished: () => void })
 
   // 단계 전환(재시도 포함)마다 새 단계 제목으로 포커스(커밋과 같은 틱에).
   useLayoutEffect(() => {
-    if (!mounted.current) { mounted.current = true; return; }
+    const key = `${s.step}:${s.attempt}`;
+    if (shownStep.current === key) return;
+    shownStep.current = key;
     box.current?.querySelector<HTMLElement>('h1')?.focus();
   }, [s.step, s.attempt]);
 

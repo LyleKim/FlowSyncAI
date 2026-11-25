@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -108,6 +109,17 @@ async function runFirstPerson() {
 
 describe('FirstRunFlow', () => {
   it('(a)(k)(n) 첫 사람: 로그인 → 레포 추가 → 가져오기 → 결과 → children', runFirstPerson);
+
+  it('(s) StrictMode 첫 마운트에서는 제목으로 포커스를 옮기지 않는다', async () => {
+    routeFetch({ [LIST]: () => ({ json: [] }) });
+    render(
+      <StrictMode><MemoryRouter initialEntries={['/me']}><ToastProvider>
+        <FirstRunGate><h1>내 리뷰 요청 화면</h1></FirstRunGate>
+      </ToastProvider></MemoryRouter></StrictMode>,
+    );
+    const h = await h1('누구의 리뷰 요청을 보여드릴까요?');
+    expect(document.activeElement).not.toBe(h);
+  });
 
   it('(l) 저장소가 throw해도 (a)가 끝까지 진행', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
