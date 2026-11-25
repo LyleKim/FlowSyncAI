@@ -3,6 +3,7 @@ import { useTheme } from '../hooks/useTheme';
 import MyLoginForm from '../components/settings/MyLoginForm';
 import MyTeamsField from '../components/settings/MyTeamsField';
 import ConnectedReposSection from '../components/settings/ConnectedReposSection';
+import AreaNamesSection from '../components/settings/AreaNamesSection';
 
 const THEMES = [
   { mode: 'light', label: '밝게' },
@@ -23,6 +24,7 @@ export default function SettingsScreen() {
           <MyTeamsField />
         </section>
         <ConnectedReposSection />
+        <AreaNamesSection />
         <section aria-labelledby="set-view" className="space-y-3">
           <h2 id="set-view" className="text-base font-semibold">화면</h2>
           <div role="radiogroup" aria-label="테마" className="flex gap-4">

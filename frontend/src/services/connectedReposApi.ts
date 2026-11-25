@@ -42,7 +42,7 @@ function normalize(r: Partial<ConnectedRepo> & WatchedRepo): ConnectedRepo {
   };
 }
 
-async function errorFrom(res: Response): Promise<ApiError> {
+export async function errorFrom(res: Response): Promise<ApiError> {
   let body: unknown;
   try {
     body = await res.json();
