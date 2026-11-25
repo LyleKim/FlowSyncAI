@@ -34,10 +34,11 @@ export default function TaskDetailDialog() {
 
   // 로드 후 없는 id, 또는 열어 둔 작업이 폴링으로 사라진 경우(Review Focus 2).
   const missing = !isNew && loadState === 'ready' && !task;
-  const handled = useRef(false);
+  // 처리한 id를 기억한다: 같은 대화상자 인스턴스에서 다른 없는 id로 이동해도 다시 안내한다.
+  const handled = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!missing || handled.current) return;
-    handled.current = true;
+    if (!missing || handled.current === id) return;
+    handled.current = id;
     notify('작업을 찾을 수 없어요. 이미 삭제됐을 수 있어요.');
     back();
     // /tasks/* 사이 이동은 라우트 안내가 포커스를 옮기지 않으므로 직접 main으로.

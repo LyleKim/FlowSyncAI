@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import type { ReactNode } from 'react';
 import { ToastProvider, useToasts } from '../../hooks/useToasts';
 import { TasksProvider, useTasksContext } from '../../hooks/TasksContext';
@@ -24,7 +24,9 @@ function Wrap({ children }: { children: ReactNode }) {
 function Probe() {
   const { refresh } = useTasksContext();
   const loc = useLocation();
-  return <><button onClick={() => void refresh()}>폴링</button><output data-testid="loc">{loc.pathname + loc.search}</output></>;
+  const nav = useNavigate();
+  return <><button onClick={() => void refresh()}>폴링</button>
+    <button onClick={() => nav('/tasks/없는1')}>없는1로</button><button onClick={() => nav('/tasks/없는2')}>없는2로</button><output data-testid="loc">{loc.pathname + loc.search}</output></>;
 }
 
 let list: Task[] = [];
@@ -126,6 +128,22 @@ describe('TaskDetailDialog', () => {
     expect(title).toHaveAttribute('aria-invalid', 'true');
     expect(title).toHaveAccessibleDescription('제목을 입력해 주세요.');
     expect(calls.some((c) => c.method === 'PATCH')).toBe(false);
+    // 오류는 알리고 포커스는 제목 입력으로
+    expect(title).toHaveFocus();
+    expect(within(d).getByRole('alert')).toHaveTextContent('제목을 입력해 주세요.');
+    await user.click(within(d).getByRole('button', { name: '저장' }));
+    expect(title).toHaveFocus();
+  });
+
+  it('(f3) 같은 대화상자에서 없는 id를 두 번 만나도 매번 안내하고 돌아간다', async () => {
+    const { user } = setup('/tasks/t1');
+    await screen.findByRole('dialog', { name: '로그인 버그 수정' });
+    await user.click(screen.getByRole('button', { name: '없는1로', hidden: true }));
+    await waitFor(() => expect(loc()).toBe('/tasks/t1'));
+    expect(screen.getAllByText('작업을 찾을 수 없어요. 이미 삭제됐을 수 있어요.')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: '없는2로', hidden: true }));
+    await waitFor(() => expect(screen.getAllByText('작업을 찾을 수 없어요. 이미 삭제됐을 수 있어요.')).toHaveLength(2));
+    await waitFor(() => expect(loc()).toBe('/tasks/t1'));
   });
 
   it('(i) /tasks/new: "새 작업", 체크리스트·역할 검토 없음, 만들면 새 id로 replace', async () => {

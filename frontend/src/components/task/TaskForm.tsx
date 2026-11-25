@@ -1,4 +1,4 @@
-import { useId, type FormEvent } from 'react';
+import { useEffect, useId, useRef, type FormEvent } from 'react';
 import type { TaskDraft } from '../../hooks/useTasks';
 import type { TaskPriority, TaskStatus } from '../../types';
 import { PRIORITY_LABEL, STATUS_LABEL, STATUS_ORDER } from '../../lib/taskLabels';
@@ -19,6 +19,11 @@ const lbl = 'mb-1 block text-body-sm font-semibold';
 
 export function TaskForm({ values, setField, onSubmit, onCancel, submitLabel, errors, showStatus = true }: TaskFormProps) {
   const id = useId();
+  const titleRef = useRef<HTMLInputElement>(null);
+  // 제출마다 새 errors 객체가 오므로, 제목 오류가 있으면 매번 제목 입력으로 포커스를 옮긴다.
+  useEffect(() => {
+    if (errors?.title) titleRef.current?.focus();
+  }, [errors]);
   const submit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit();
@@ -28,9 +33,9 @@ export function TaskForm({ values, setField, onSubmit, onCancel, submitLabel, er
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       <div>
         <label htmlFor={`${id}-title`} className={lbl}>제목 (필수)</label>
-        <input id={`${id}-title`} className={input} value={values.title} onChange={(e) => setField('title', e.target.value)}
+        <input id={`${id}-title`} ref={titleRef} className={input} value={values.title} onChange={(e) => setField('title', e.target.value)}
           required aria-invalid={errors?.title ? true : undefined} aria-describedby={errors?.title ? `${id}-title-err` : undefined} />
-        {errors?.title && <p id={`${id}-title-err`} className="mt-1 text-body-sm text-danger">{errors.title}</p>}
+        {errors?.title && <p id={`${id}-title-err`} role="alert" className="mt-1 text-body-sm text-danger">{errors.title}</p>}
       </div>
       <div>
         <label htmlFor={`${id}-desc`} className={lbl}>설명</label>
