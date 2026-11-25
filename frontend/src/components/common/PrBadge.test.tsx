@@ -10,8 +10,14 @@ describe('PrBadge', () => {
     expect(a).toHaveAttribute('target', '_blank');
     expect(a).toHaveAttribute('rel', 'noopener noreferrer');
   });
-  it('url 없으면 글자만', () => {
-    render(<PrBadge />);
+  it('url 없으면 숨김(undefined/null)', () => {
+    const { container, rerender } = render(<PrBadge />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<PrBadge url={null} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+  it('showWithoutLink면 링크 없는 배지', () => {
+    render(<PrBadge showWithoutLink />);
     expect(screen.getByText('리뷰 요청')).toBeInTheDocument();
     expect(screen.queryByRole('link')).toBeNull();
   });

@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import type { MutationResult } from '../../hooks/useTasks';
 import { useToasts } from '../../hooks/useToasts';
@@ -16,10 +16,11 @@ export default function TaskStatusControl({ task, onMove, showLockNote }: {
   showLockNote?: boolean;
 }) {
   const { notify } = useToasts();
+  const ref = useRef<HTMLSelectElement>(null);
   useLayoutEffect(() => {
     if (pendingFocus !== task.id) return;
-    const el = document.querySelector<HTMLElement>(`[data-status-control="${CSS.escape(task.id)}"]`);
-    if (el) { el.focus(); pendingFocus = null; }
+    pendingFocus = null; // 요소가 없어도 항상 해제: 오래된 id가 나중 마운트의 포커스를 훔치지 않게
+    ref.current?.focus();
   });
 
   if (isPrTask(task)) {
@@ -29,14 +30,19 @@ export default function TaskStatusControl({ task, onMove, showLockNote }: {
   return (
     <select
       aria-label={`‘${title}’ 상태 변경`}
+      ref={ref}
       data-status-control={task.id}
       value={task.status}
       onChange={async (e) => {
         const s = e.target.value as TaskStatus;
         pendingFocus = task.id;
-        const r = await onMove(task.id, s);
-        if (r.ok) notify(`‘${title}’을 ${STATUS_MOVED[s]} 옮겼어요`, 'info');
-        else pendingFocus = null;
+        try {
+          const r = await onMove(task.id, s);
+          if (r.ok) notify(`‘${title}’을 ${STATUS_MOVED[s]} 옮겼어요`, 'info');
+        } finally {
+          // 리마운트 커밋이 끝난 뒤에도 남아 있으면 해제(뷰를 벗어난 경우 포함)
+          setTimeout(() => { if (pendingFocus === task.id) pendingFocus = null; }, 0);
+        }
       }}
       className="min-h-6 rounded border border-border bg-surface px-1 text-body-sm"
     >
