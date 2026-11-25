@@ -48,7 +48,7 @@ describe('TasksScreen', () => {
     expect(screen.getByRole('button', { name: '목록' })).toHaveAttribute('aria-pressed', 'true');
     const link = await screen.findByRole('link', { name: /로그인 버그 수정/ });
     expect(link).toHaveAttribute('href', '/tasks/t1');
-    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-row-id]')).toHaveLength(3);
     expect(screen.getByRole('link', { name: '새 작업' })).toHaveAttribute('href', '/tasks/new');
   });
 
@@ -84,7 +84,7 @@ describe('TasksScreen', () => {
     await screen.findByRole('link', { name: /로그인/ });
     const manual = screen.getByRole('link', { name: /로그인/ }).closest('[data-row-id]') as HTMLElement;
     const pr = screen.getByRole('link', { name: /결제 PR/ }).closest('[data-row-id]') as HTMLElement;
-    expect(within(manual).getByLabelText('상태 변경')).toBeInTheDocument();
+    expect(within(manual).getByLabelText(/상태 변경/)).toBeInTheDocument();
     expect(within(pr).queryByLabelText('상태 변경')).not.toBeInTheDocument();
   });
 
@@ -105,9 +105,9 @@ describe('TasksScreen', () => {
     const { user } = setup('/tasks', { 'PATCH /api/v1/tasks/t1/': () => ({ status: 500 }) });
     await screen.findByRole('link', { name: /로그인/ });
     const row = screen.getByRole('link', { name: /로그인/ }).closest('[data-row-id]') as HTMLElement;
-    await user.selectOptions(within(row).getByLabelText('상태 변경'), 'done');
+    await user.selectOptions(within(row).getByLabelText(/상태 변경/), 'done');
     expect(await screen.findByRole('alert')).toHaveTextContent('작업 상태를 변경하지 못했습니다.');
-    expect(within(row).getByLabelText('상태 변경')).toHaveValue('todo');
+    expect(within(row).getByLabelText(/상태 변경/)).toHaveValue('todo');
   });
 
   describe('지연 DELETE', () => {

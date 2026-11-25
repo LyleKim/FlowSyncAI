@@ -1,7 +1,8 @@
 import { Link, Outlet, useSearchParams } from 'react-router';
 import { useTasksContext } from '../hooks/TasksContext';
 import { usePendingIds, useUndo } from '../hooks/useUndo';
-import { searchTasks, sortByCreatedAt } from '../lib/taskFilters';
+import { filterTasks, searchTasks } from '../lib/taskFilters';
+import { nextSort, parseTaskViewParams, sortTasks, type TaskSortKey } from '../lib/taskView';
 import { STATUS_ORDER } from '../lib/taskLabels';
 import { ROUTES } from '../routes';
 import type { TaskStatus } from '../types';
@@ -22,7 +23,13 @@ export default function TasksScreen() {
   const set = (key: string, value: string | null) =>
     setParams((p) => { const n = new URLSearchParams(p); if (value) n.set(key, value); else n.delete(key); return n; }, { replace: true });
 
-  const visible = sortByCreatedAt(searchTasks(tasks.filter((t) => !pending.has(t.id)), q), 'desc');
+  // ponytail: T-T7이 useTaskView/TaskFilterBar로 교체할 임시 배선
+  const vs = parseTaskViewParams(params);
+  const sort = { key: vs.sort, dir: vs.dir };
+  const onSortChange = (k: TaskSortKey) => setParams((p) => {
+    const n = new URLSearchParams(p); const s2 = nextSort(sort, k); n.set('sort', s2.key); n.set('dir', s2.dir); return n;
+  }, { replace: true });
+  const visible = sortTasks(searchTasks(tasks.filter((t) => !pending.has(t.id)), q), vs.sort, vs.dir);
 
   const onDeleteTask = (id: string) => {
     const t = tasks.find((x) => x.id === id);
@@ -54,7 +61,9 @@ export default function TasksScreen() {
       <div className="mt-4">
         {loadState === 'loading' ? <p className="text-sm text-muted">불러오는 중이에요.</p>
           : loadState === 'error' ? <p role="alert" className="text-sm text-danger">작업을 불러오지 못했어요.</p>
-          : view === 'board' ? <TaskBoard {...shared} /> : <TaskList {...shared} />}
+          : view === 'board' ? <TaskBoard {...shared} />
+          : <TaskList tasks={filterTasks(visible, { status: status ?? undefined })} sort={sort} onSortChange={onSortChange}
+              linkSearch={params.toString()} onMoveTask={moveTask} onDeleteTask={(t) => onDeleteTask(t.id)} />}
       </div>
       <Outlet />{/* /tasks/new, /tasks/:id 대화상자 */}
     </>
