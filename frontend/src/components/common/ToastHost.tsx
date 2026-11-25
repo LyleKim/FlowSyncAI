@@ -7,7 +7,7 @@ function Remaining({ deadline }: { deadline: number }) {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  return <span aria-hidden="true" data-testid="undo-countdown" className="text-xs text-text-muted">{Math.max(0, Math.ceil((deadline - now) / 1000))}초 남음</span>;
+  return <span aria-hidden="true" data-testid="undo-countdown" className="text-xs text-muted">{Math.max(0, Math.ceil((deadline - now) / 1000))}초 남음</span>;
 }
 
 const Toast: FC<{ t: ToastItem; dismiss(id: number): void }> = ({ t, dismiss }) => {
