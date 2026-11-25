@@ -286,6 +286,35 @@ describe('MyReviewsScreen 큐', () => {
     expect(notify).toHaveBeenCalledWith('업데이트 1건을 반영했어요', 'info');
   });
 
+  it('(k4) 호버 중 반영으로 목록 컨테이너가 사라져도 보류가 풀린다', async () => {
+    await ready();
+    fireEvent.pointerEnter(section(/^리뷰 대기/).parentElement!, { pointerType: 'mouse' });
+    setLive(queue({ items: [], knownLogin: false }));
+    await poll();
+    fireEvent.click(screen.getByRole('button', { name: /반영하기/ }));
+    await flush();
+    expect(screen.getByText(/로그인이 다른 이름일 수도/)).toBeInTheDocument();
+    setLive(queue({ items: [pr(8, { title: 'PR 8' })] }));
+    await poll();
+    expect(screen.queryByRole('button', { name: /반영하기/ })).not.toBeInTheDocument();
+    expect(waitingTitles()).toEqual(['PR 8']);
+  });
+
+  it('(b2) truncated 레포가 있으면 요약에 일부만 가져옴', async () => {
+    setLive(queue({ repos: [makeRepo({ lastSuccessAt: ago(2), truncated: true })] }));
+    await ready();
+    expect(screen.getByText(/^리뷰 대기 2건 · .*\(일부만 가져옴\)$/)).toBeInTheDocument();
+  });
+
+  it('(d2) 대기가 숨긴 초안뿐이면 빈 안내 대신 요약과 초안 토글', async () => {
+    setLive(queue({ items: [pr(5, { isDraft: true }), pr(3, { group: 'awaiting_author', myReview: reviewed })] }));
+    const { user } = await ready();
+    expect(screen.queryByText('지금 리뷰 대기 PR이 없어요')).not.toBeInTheDocument();
+    expect(screen.getByText(/^리뷰 대기 0건/)).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: '초안 1건 보기' }));
+    expect(waitingTitles()).toEqual(['PR 5']);
+  });
+
   it('(l) 지금 가져오기는 보류 없이 즉시 반영', async () => {
     await ready();
     fireEvent.pointerEnter(section(/^리뷰 대기/).parentElement!, { pointerType: 'mouse' });

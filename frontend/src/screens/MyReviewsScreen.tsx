@@ -52,7 +52,6 @@ const Queue: FC<{ login: string; h1: RefObject<HTMLHeadingElement | null> }> = (
   // "지금 가져오기"로 시작한 갱신은 새 데이터가 렌더된 뒤 바로 반영. 첫 로드는 Provider 몫(R9: 마운트 refresh 없음)
   useEffect(() => {
     if (applyTick) apply();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyTick]);
   const onRefresh = () => void refresh().then(() => setApplyTick((t) => t + 1));
   useTabReturn(() => void refresh());
