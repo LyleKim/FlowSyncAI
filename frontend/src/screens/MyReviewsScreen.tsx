@@ -15,7 +15,7 @@ export default function MyReviewsScreen() {
       {!login ? (
         <div className="mt-4 space-y-3">
           <p className="text-sm text-muted">내 GitHub 로그인을 알려 주면 나에게 요청된 리뷰를 모아 보여 줘요.</p>
-          <MyLoginForm onSaved={() => {}} />
+          <MyLoginForm variant="first-run" onSaved={() => {}} />
         </div>
       ) : (
         <>

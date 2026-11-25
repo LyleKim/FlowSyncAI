@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import { ToastProvider } from '../hooks/useToasts';
 import { PrSyncProvider } from '../hooks/PrSyncContext';
 import { renderWithRouter } from '../test/render';
 import { routeFetch } from '../test/routeFetch';
@@ -8,7 +9,7 @@ import MyReviewsScreen from './MyReviewsScreen';
 
 const setup = () => {
   routeFetch({ 'GET /api/v1/integrations/watched-repos/': () => ({ json: [] }) });
-  return renderWithRouter(<PrSyncProvider onCreated={async () => {}}><MyReviewsScreen /></PrSyncProvider>);
+  return renderWithRouter(<ToastProvider><PrSyncProvider onCreated={async () => {}}><MyReviewsScreen /></PrSyncProvider></ToastProvider>);
 };
 beforeEach(() => localStorage.clear());
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -20,7 +21,7 @@ describe('MyReviewsScreen', () => {
     expect(screen.queryByText(/의 큐/)).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('내 GitHub 로그인'), 'octocat');
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(screen.getByRole('button', { name: '저장하고 내 리뷰 요청 보기' }));
     expect(screen.getByText('octocat의 큐')).toBeInTheDocument();
   });
 
@@ -29,7 +30,7 @@ describe('MyReviewsScreen', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
     const { user } = setup();
     await user.type(screen.getByLabelText('내 GitHub 로그인'), 'octocat');
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(screen.getByRole('button', { name: '저장하고 내 리뷰 요청 보기' }));
     expect(screen.getByText('octocat의 큐')).toBeInTheDocument();
   });
 

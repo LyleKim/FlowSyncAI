@@ -1,40 +1,142 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import { normalizeLogin } from '../../lib/storage';
-import { useMyLogin } from '../../hooks/useMyLogin';
+import { useMyLogin, useMyTeams } from '../../hooks/useMyLogin';
+import { useUndo } from '../../hooks/useUndo';
+import { probeReviewQueue } from '../../services/connectedReposApi';
 
-export default function MyLoginForm({ initial = '', onSaved }: { initial?: string; onSaved: (login: string) => void }) {
+const PROBE_TIMEOUT_MS = 3000;
+
+// 서버가 이 팀에서 이 로그인을 본 적이 없고, 이미 가져온 적 있는 서버일 때만 true(오경보 방지).
+async function looksUnknown(login: string, teams: string[]): Promise<boolean> {
+  const ctl = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((res) => { timer = setTimeout(() => { ctl.abort(); res(null); }, PROBE_TIMEOUT_MS); });
+  const probe = await Promise.race([probeReviewQueue(login, teams, ctl.signal), timeout]);
+  clearTimeout(timer);
+  return !!probe && probe.knownLogin === false && probe.repos.some((r) => r.lastSuccessAt);
+}
+
+interface Props {
+  initial?: string;
+  onSaved: (login: string) => void;
+  variant?: 'first-run' | 'settings';
+  candidates?: string[];
+  teams?: string[];
+}
+
+export default function MyLoginForm({ initial = '', onSaved, variant = 'settings', candidates = [], teams }: Props) {
   const id = useId();
-  const { save } = useMyLogin();
+  const { login: current, save, clear } = useMyLogin();
+  const { teams: myTeams } = useMyTeams();
+  const { schedule } = useUndo();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(initial);
   const [invalid, setInvalid] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [unknown, setUnknown] = useState('');
   const preview = normalizeLogin(value);
+  const firstRun = variant === 'first-run';
 
-  const submit = (e: FormEvent) => {
+  const commitSave = (login: string) => {
+    save(login);
+    onSaved(login);
+  };
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const login = save(value);
+    if (busy) return;
+    const login = normalizeLogin(value);
     setInvalid(!login);
-    if (login) onSaved(login);
+    setConfirm('');
+    setUnknown('');
+    if (!login) return;
+    const known = candidates.some((c) => c.toLowerCase() === login);
+    const probeTeams = teams ?? myTeams;
+
+    if (!firstRun) {
+      const prev = current;
+      commitSave(login);
+      if (prev !== login) {
+        schedule({
+          label: `내 로그인을 ${login}로 바꿨어요`,
+          hide: () => {},
+          restore: () => {
+            if (prev) save(prev); else clear();
+            setValue(prev ?? '');
+            setUnknown('');
+          },
+          commit: async () => ({ ok: true }),
+          windowMs: 10_000,
+        });
+      }
+      if (!known && (await looksUnknown(login, probeTeams))) setUnknown(login);
+      return;
+    }
+
+    if (known) return commitSave(login);
+    setBusy(true);
+    const suspicious = await looksUnknown(login, probeTeams);
+    setBusy(false);
+    if (suspicious) setConfirm(login);
+    else commitSave(login);
   };
 
   return (
     <form onSubmit={submit} className="space-y-2">
       <label htmlFor={id} className="block text-sm font-medium">내 GitHub 로그인</label>
+      <p id={`${id}-hint`} className="text-sm text-muted">github.com/ 뒤에 오는 이름이에요.</p>
       <div className="flex gap-2">
         <input
+          ref={inputRef}
           id={id}
           value={value}
-          onChange={(e) => { setValue(e.target.value); setInvalid(false); }}
+          onChange={(e) => { setValue(e.target.value); setInvalid(false); setConfirm(''); setUnknown(''); }}
           aria-invalid={invalid}
-          aria-describedby={`${id}-hint`}
+          aria-describedby={`${id}-hint ${id}-preview ${id}-err`}
           className="min-h-9 w-64 rounded border border-border bg-surface-raised px-3 text-sm"
         />
-        <button type="submit" className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast">저장</button>
+        <button
+          type="submit"
+          aria-disabled={busy}
+          className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast"
+        >
+          {busy ? '확인하는 중…' : firstRun ? '저장하고 내 리뷰 요청 보기' : '저장'}
+        </button>
       </div>
-      <p id={`${id}-hint`} className={invalid ? 'text-sm text-danger' : 'text-sm text-muted'}>
-        {invalid
-          ? 'GitHub 로그인은 영문·숫자·하이픈만 쓸 수 있어요'
-          : preview ? `${preview}으로 저장돼요` : ' '}
+      <p id={`${id}-preview`} className="text-sm text-muted">
+        {preview ? `${preview} 으로 확인해요 (대소문자는 구분하지 않아요)` : ''}
       </p>
+      <p id={`${id}-err`} className="text-sm text-danger">
+        {invalid ? '영문·숫자·하이픈만 쓸 수 있어요 (최대 39자)' : ''}
+      </p>
+      {candidates.length > 0 && (
+        <div role="group" aria-label="팀에서 찾은 로그인" className="flex flex-wrap gap-2">
+          {candidates.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => { setValue(c); setInvalid(false); setConfirm(''); }}
+              className="min-h-9 rounded border border-border bg-surface-sunken px-3 text-sm"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+      {confirm && (
+        <div role="status" className="space-y-2 rounded border border-border bg-surface-sunken p-3 text-sm">
+          <p>“{confirm}”은 이 팀에서 본 적 없는 이름이에요. 맞나요?</p>
+          <p className="text-muted">철자와 대문자는 상관없어요.</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => commitSave(confirm)} className="min-h-9 rounded bg-accent px-3 font-medium text-accent-contrast">맞아요</button>
+            <button type="button" onClick={() => { setConfirm(''); inputRef.current?.focus(); }} className="min-h-9 rounded border border-border px-3">수정</button>
+          </div>
+        </div>
+      )}
+      {unknown && (
+        <p role="status" className="text-sm text-muted">“{unknown}”은 이 팀에서 본 적 없는 이름이에요. 철자를 확인해 주세요.</p>
+      )}
     </form>
   );
 }

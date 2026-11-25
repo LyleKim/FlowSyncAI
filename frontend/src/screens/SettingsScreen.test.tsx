@@ -24,7 +24,7 @@ describe('SettingsScreen', () => {
   it('(a) "@Octocat " 저장 → octocat, "octocat의 큐"', async () => {
     const { user } = setup();
     await user.type(screen.getByLabelText('내 GitHub 로그인'), '@Octocat ');
-    expect(screen.getByText('octocat으로 저장돼요')).toBeInTheDocument();
+    expect(screen.getByText('octocat 으로 확인해요 (대소문자는 구분하지 않아요)')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '저장' }));
     expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('octocat');
     expect(screen.getByText('octocat의 큐')).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe('SettingsScreen', () => {
     await user.click(screen.getByRole('button', { name: '저장' }));
     expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBeNull();
     expect(input).toHaveAttribute('aria-invalid', 'true');
-    expect(input).toHaveAccessibleDescription(/GitHub 로그인은 영문·숫자·하이픈만 쓸 수 있어요/);
+    expect(input).toHaveAccessibleDescription(/영문·숫자·하이픈만 쓸 수 있어요 \(최대 39자\)/);
   });
 
   it('(d) /settings에는 SyncStatusLine(role=status)이 없다', async () => {
