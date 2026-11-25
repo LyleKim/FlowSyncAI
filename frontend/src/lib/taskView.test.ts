@@ -4,6 +4,7 @@ import {
   applyTaskFilter, sortTasks, nextSort, assigneeOptions, displayTitle, TaskViewState,
 } from './taskView';
 import { Task } from '../types';
+import { normalizeTask } from '../services/taskSync';
 
 const mk = (o: Partial<Task>): Task => ({
   id: 'x', title: 't', description: '', status: 'todo', priority: 'low',
@@ -105,5 +106,16 @@ describe('displayTitle', () => {
     expect(displayTitle({ title: '[PR]' })).toBe('[PR]');
     expect(displayTitle({ title: '' })).toBe('');
     expect(displayTitle({ title: 'a [PR] b' })).toBe('a [PR] b');
+  });
+});
+
+describe('normalizeTask', () => {
+  it('assigneeId "Unknown"/빈 값 → "" (담당자 없음)', () => {
+    expect(normalizeTask(mk({ assigneeId: 'Unknown' })).assigneeId).toBe('');
+    expect(normalizeTask(mk({ assigneeId: ' unknown ' })).assigneeId).toBe('');
+    expect(normalizeTask(mk({ assigneeId: 'kim' })).assigneeId).toBe('kim');
+    const t = [normalizeTask(mk({ assigneeId: 'Unknown' }))];
+    expect(applyTaskFilter(t, { ...DEFAULT_VIEW_STATE, assignee: 'none' }, { me: null })).toHaveLength(1);
+    expect(assigneeOptions(t)).toEqual([]);
   });
 });

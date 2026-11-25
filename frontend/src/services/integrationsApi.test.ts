@@ -24,19 +24,26 @@ describe('integrationsApi', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/integrations/watched-repos/');
   });
 
+  it('removeWatchedRepo: 404(HTML 본문)는 이미 삭제됨 → 성공', async () => {
+    fetchMock.mockResolvedValue(new Response('<html>404</html>', { status: 404 }));
+    await expect(removeWatchedRepo(1)).resolves.toBeUndefined();
+    fetchMock.mockResolvedValue(new Response('boom', { status: 500 }));
+    await expect(removeWatchedRepo(1)).rejects.toThrow('500');
+  });
+
   it('falls back to status message for non-JSON errors', async () => {
     fetchMock.mockResolvedValue(new Response('boom', { status: 500 }));
     await expect(listWatchedRepos()).rejects.toThrow('500');
   });
 
-  it('remove handles 204 and 404', async () => {
+  it('remove handles 204 and 404(이미 삭제됨)', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
     await expect(removeWatchedRepo(3)).resolves.toBeUndefined();
     expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/integrations/watched-repos/3/');
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE');
     expect(fetchMock.mock.calls[0][1].keepalive).toBe(true);
     fetchMock.mockResolvedValueOnce(json({ error: 'Not found' }, 404));
-    await expect(removeWatchedRepo(9)).rejects.toThrow('Not found');
+    await expect(removeWatchedRepo(9)).resolves.toBeUndefined();
   });
 
   it('sync POSTs with Idempotency-Key and returns result', async () => {

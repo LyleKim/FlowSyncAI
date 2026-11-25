@@ -3,6 +3,7 @@ import type { RoleReview, SubTask, Task, TaskStatus } from '../types';
 import {
   fetchTasksFromServer,
   invalidateTasksCacheHeaders,
+  normalizeTask,
   TASKS_POLL_INTERVAL_MS,
 } from '../services/taskSync';
 import { postJson } from '../services/apiClient';
@@ -41,7 +42,7 @@ const send = async (method: string, url: string, body?: unknown, post = false) =
         // 지연 커밋(useUndo)의 DELETE는 pagehide에서 나갈 수 있어 페이지가 내려가도 살아남게.
         keepalive: method === 'DELETE',
       });
-  if (!res.ok) throw new Error(`${method} ${url} ${res.status}`);
+  if (!res.ok && !(method === 'DELETE' && res.status === 404)) throw new Error(`${method} ${url} ${res.status}`);
   return res;
 };
 
@@ -118,14 +119,14 @@ export function useTasks(deps: { notify?: Notify } = {}): TasksApi {
   const createTask: TasksApi['createTask'] = (d) =>
     mutate('create', '작업을 만들지 못했습니다.', async () => {
       const created: Task = await (await send('POST', '/api/v1/tasks/', d, true)).json();
-      setTasks((prev) => [created, ...prev]);
+      setTasks((prev) => [normalizeTask(created), ...prev]);
       return created;
     });
 
   const updateTask: TasksApi['updateTask'] = (id, patch) =>
     mutate(`update:${id}`, '작업을 저장하지 못했습니다.', async () => {
       const updated: Task = await (await send('PATCH', base(id), patch)).json();
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      setTasks((prev) => prev.map((t) => (t.id === id ? normalizeTask(updated) : t)));
       return updated;
     });
 

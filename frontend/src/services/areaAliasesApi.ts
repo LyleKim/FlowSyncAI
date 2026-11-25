@@ -44,5 +44,5 @@ export async function updateAreaAlias(
 
 export async function deleteAreaAlias(repoId: number, id: number): Promise<void> {
   const res = await fetch(url(repoId, id), { method: 'DELETE', keepalive: true });
-  if (!res.ok) await fail(res);
+  if (!res.ok && res.status !== 404) await fail(res); // 404 = 이미 삭제됨
 }

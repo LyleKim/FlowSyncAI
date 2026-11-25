@@ -22,7 +22,9 @@ export async function listWatchedRepos(): Promise<WatchedRepo[]> {
 }
 
 export async function removeWatchedRepo(id: number): Promise<void> {
-  await parse<void>(await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE', keepalive: true }));
+  const res = await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE', keepalive: true });
+  if (res.status === 404) return; // 이미 삭제됨(본문이 HTML이어도 파싱하지 않는다)
+  await parse<void>(res);
 }
 
 export async function syncPullRequests(repoId?: number): Promise<SyncResult> {

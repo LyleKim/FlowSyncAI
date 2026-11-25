@@ -58,8 +58,12 @@ describe('areaAliasesApi', () => {
     await expect(deleteAreaAlias(1, 7)).resolves.toBeUndefined();
     expect(calls[0].method).toBe('DELETE');
     expect(vi.mocked(fetch).mock.calls[0][1]?.keepalive).toBe(true);
-    routeFetch({ [`DELETE ${BASE}7/`]: () => ({ status: 404, json: { error: 'nf' } }) });
+    routeFetch({ [`DELETE ${BASE}7/`]: () => ({ status: 500, json: { error: 'x' } }) });
     await expect(deleteAreaAlias(1, 7)).rejects.toBeInstanceOf(ApiError);
+  });
+  it('deleteAreaAlias: 404는 이미 삭제됨 → 성공(HTML 본문이어도)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>404</html>', { status: 404 })));
+    await expect(deleteAreaAlias(1, 7)).resolves.toBeUndefined();
   });
   it('updateAreaAlias 404 → 실제 클라이언트가 ApiError(status 404)를 던짐(충돌 아님)', async () => {
     routeFetch({ [`PATCH ${BASE}7/`]: () => ({ status: 404, json: { error: 'Not found' } }) });

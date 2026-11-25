@@ -27,6 +27,10 @@ export function invalidateTasksCacheHeaders() {
   removeStorage(STORAGE_KEYS.tasksLastModified);
 }
 
+// 서버가 담당자 없는 수동 작업에 "Unknown"을 채워 보내므로 "담당자 없음"(빈 값)으로 맞춘다.
+export const normalizeTask = (t: Task): Task =>
+  (t.assigneeId ?? '').trim().toLowerCase() === 'unknown' ? { ...t, assigneeId: '' } : t;
+
 export type TaskSyncResult =
   | { status: 'updated'; tasks: Task[] }
   | { status: 'not-modified' }
