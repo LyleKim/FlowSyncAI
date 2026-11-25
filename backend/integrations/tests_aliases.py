@@ -57,6 +57,11 @@ class AliasTests(TestCase):
         self.assertEqual(r.json()['code'], 'alias_exists')
         self.assertEqual(r.json()['existing']['id'], first['id'])
 
+    def test_list_304(self):
+        self.post({'pathPrefix': 'docs', 'displayName': 'd'})
+        etag = self.client.get(self.url)['ETag']
+        self.assertEqual(self.client.get(self.url, HTTP_IF_NONE_MATCH=etag).status_code, 304)
+
     def test_invalid_name_400(self):
         for n in ('', '   ', 'x' * 81):
             r = self.post({'pathPrefix': 'a', 'displayName': n})

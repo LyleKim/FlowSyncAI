@@ -1,9 +1,8 @@
-from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from api.decorators import api_view
-from api.http import json_error
+from api.http import conditional_json_response, json_error
 
 from . import areas
 from .architecture import group_paths
@@ -53,7 +52,7 @@ def area_list(request, repo_id):
     by_id = {g.id: g for g in groups}
     aliases = {a.path_prefix: a for a in repo.area_aliases.all()}
     waiting = areas.review_waiting_by_area(repo, groups, timezone.now())
-    return JsonResponse({
+    return conditional_json_response(request, {
         'repoId': repo.id, 'generatedAt': activity['generatedAt'], 'days': days,
         'truncated': activity['truncated'], 'analyzedCommits': activity['analyzedCommits'],
         'areas': [_area(d, by_id[d['id']], aliases, waiting) for d in activity['groups'] if d['id'] in by_id],
@@ -75,7 +74,7 @@ def area_detail(request, repo_id, area_id):
     now = timezone.now()
     aliases = {a.path_prefix: a for a in repo.area_aliases.all()}
     waiting = areas.review_waiting_by_area(repo, groups, now)
-    return JsonResponse({
+    return conditional_json_response(request, {
         **_area(data, group, aliases, waiting),
         'recentCommits': data['recentCommits'],
         'waitingPullRequests': areas.waiting_prs_for_area(repo, groups, area_id, now),

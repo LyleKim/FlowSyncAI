@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from api.decorators import api_view
-from api.http import json_error, parse_json_body
+from api.http import conditional_json_response, json_error, parse_json_body
 from api.idempotency import finalize_idempotent_response, replay_idempotent_response
 
 from . import areas
@@ -46,7 +46,7 @@ def alias_list_create(request, repo_id):
     if request.method == 'GET':
         items = list(repo.area_aliases.order_by('id'))
         st = areas.alias_status(items, _groups(repo))
-        return JsonResponse([areas.serialize_alias(a, st[a.id]) for a in items], safe=False)
+        return conditional_json_response(request, [areas.serialize_alias(a, st[a.id]) for a in items], safe=False)
 
     body, error_response = parse_json_body(request)
     if error_response:

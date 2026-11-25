@@ -105,6 +105,15 @@ class ListTests(ViewBase):
         self.assertEqual(self.mocks[0].call_count, 1)
 
 
+class ConditionalGetTests(ViewBase):
+    def test_list_detail_304(self):
+        for get in (self.list, lambda: self.detail(B)):
+            r = get()
+            etag = r['ETag']
+            r2 = self.client.get(r.wsgi_request.path, HTTP_IF_NONE_MATCH=etag)
+            self.assertEqual((r.status_code, r2.status_code), (200, 304))
+
+
 class CacheDivergenceTests(ViewBase):
     def test_tree_cache_expiring_alone_does_not_500(self):
         self.assertEqual(self.list().status_code, 200)  # primes tree + activity caches

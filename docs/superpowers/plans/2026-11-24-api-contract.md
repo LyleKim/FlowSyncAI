@@ -22,7 +22,7 @@
 |---|---|---|
 | `login` | 예 | 없거나 빈 값이면 400 `login_required` |
 | `teams` | 아니오 | 내가 속한 팀 slug(`org/slug`). 이 팀이 요청된 PR만 `requestKind:"team"`로 포함. 서버는 팀 멤버십을 모른다(08 미확인 4) |
-| `closedWithinDays` | 아니오 | 머지/닫힘 PR 보관 기간. 기본 7, 1~30 |
+| `closedWithinDays` | 아니오 | 머지/닫힘 PR 보관 기간. 기본 7, 1~30. 정수가 아니거나 범위 밖이면 400 `invalid_closed_within_days`(clamp 하지 않음) |
 | `include=areas` | 아니오 | 항목에 `areas`를 채운다(레포 트리를 읽으므로 느릴 수 있음). 없으면 `areas: null` |
 
 draft는 **항상 포함**하고 `isDraft`로 알린다. 숨김과 "draft N건 숨김" 개수는 프런트가 계산한다(07 R17).
@@ -125,10 +125,11 @@ draft는 **항상 포함**하고 `isDraft`로 알린다. 숨김과 "draft N건 �
 | `DELETE /integrations/watched-repos/<id>/` | | 204 | 호환(상태 코드 동일). **즉시 실제 삭제.** 10초 되돌리기는 클라이언트가 DELETE 호출을 10초 미루는 방식(결정 30)이며 서버 논리 삭제·`restore` 엔드포인트는 이번 범위 밖 |
 
 - 잘못된 URL은 400 `invalid_url`(기존 문구 유지).
+- 이미 지워진(없는) id의 DELETE는 **404**(멱등 204 아님). 클라이언트는 되돌리기 지연 삭제의 중복 호출 등에서 404를 성공(이미 삭제됨)으로 취급해도 된다. 영역 별칭 DELETE(§5)도 같다.
 
 ## 4. 영역(아키텍처 그룹)
 
-영역 id는 레포 안에서 유일(`architecture.py`의 그룹 id). 응답의 분석 기간·커밋 한도는 기존 `architecture/`와 같다(`days` 7~180, 커밋 최대 60, 서버 캐시 5분).
+영역 id는 레포 안에서 유일(`architecture.py`의 그룹 id). 응답의 분석 기간·커밋 한도는 기존 `architecture/`와 같다(`days`는 7~180으로 clamp되며 범위 밖 정수도 오류가 아니다, 정수가 아니면 400 `invalid_days`; 커밋 최대 60, 서버 캐시 5분).
 
 ### 4.1 목록
 
@@ -157,6 +158,8 @@ draft는 **항상 포함**하고 `isDraft`로 알린다. 숨김과 "draft N건 �
 - `weekly[]`: 분석 기간의 모든 주(월요일 시작)를 빠짐없이, 커밋 0인 주도 `0`으로 포함한다. "데이터 없음"(영역이 기간 중 생김)은 구분하지 않는다.
 - `reviewWaiting`: 이 영역이 **주 영역**(`primaryAreaId`)인 열린·비draft PR 중 현재 요청된 리뷰어가 1명 이상인 PR 수와, 그 PR들의 가장 이른 `requestedAt`(최장 대기의 기준 시각). 없으면 `{ "prCount": 0, "oldestRequestedAt": null }`. 한 PR은 한 영역에만 센다(영역 합 = 매핑된 대기 PR 수, 07 R17).
 - `pathPrefix`: 디렉터리 영역은 `/`로 이은 경로. 특수 영역은 `@infra-config`, `@docs`, `@root`, `@tests`, `@misc`.
+- `authors`는 커밋 수 상위 5명(동률은 로그인 사전순), 최상위 `couplings`는 함께 바뀐 횟수 상위 10쌍(동률은 id 순). 상세 `coupledWith`는 이 상위 10쌍 중 해당 영역이 낀 것만이라 10개 밖의 결합은 보이지 않는다.
+- 영역 목록·상세와 별칭 목록 GET은 ETag/304를 지원한다(공통 규칙). 목록의 `generatedAt`은 서버 캐시(5분) 생성 시각이라 캐시 안에서는 ETag가 유지된다.
 - `displayName`: 별칭이 있으면 별칭, 없으면 `name`. `alias`는 연결된 별칭 또는 null.
 - 레포 트리를 못 읽으면 502 `code:"github_unavailable"`(`error`에 사유). 404 `code:"repo_not_found"`(연결 안 된 repoId). `groups`가 0개면 200 + `areas: []`.
 - `architecture/`(url 기반)는 **변경 없음**. 이 엔드포인트가 그 위의 상위 집합이며 같은 5분 캐시를 공유한다.
