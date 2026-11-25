@@ -39,7 +39,7 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('TasksScreen', () => {
   it('(a) 상태 라벨은 "리뷰 중"', async () => {
     setup('/tasks?view=board');
-    expect(await screen.findByRole('button', { name: /리뷰 중/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /리뷰 중/ })).toBeInTheDocument();
     expect(screen.queryByText('검토 중')).not.toBeInTheDocument();
   });
 
@@ -60,12 +60,10 @@ describe('TasksScreen', () => {
     expect(screen.getByRole('link', { name: /문서 정리/ })).toBeInTheDocument();
   });
 
-  it('(c) 보드 포털 카드는 button이고 Enter로 ?status= 가 바뀐다', async () => {
-    const { user } = setup('/tasks?view=board');
-    const card = await screen.findByRole('button', { name: /리뷰 중/ });
-    card.focus();
-    await user.keyboard('{Enter}');
-    expect(screen.getByTestId('search')).toHaveTextContent('status=review');
+  it('(c) 보드는 포털 없이 4열을 함께 보이고 ?status= 필터 후 개수를 센다', async () => {
+    setup('/tasks?view=board&status=review');
+    await screen.findByRole('link', { name: /결제 PR/ });
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['할 일 0', '진행 중 0', '리뷰 중 1', '완료 0']);
     expect(screen.queryByRole('link', { name: /로그인/ })).not.toBeInTheDocument();
   });
 

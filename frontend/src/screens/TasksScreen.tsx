@@ -5,7 +5,7 @@ import { filterTasks, searchTasks } from '../lib/taskFilters';
 import { nextSort, parseTaskViewParams, sortTasks, type TaskSortKey } from '../lib/taskView';
 import { STATUS_ORDER } from '../lib/taskLabels';
 import { ROUTES } from '../routes';
-import type { TaskStatus } from '../types';
+import type { Task, TaskStatus } from '../types';
 import TaskBoard from '../components/dashboard/TaskBoard';
 import TaskList from '../components/dashboard/TaskList';
 
@@ -37,8 +37,8 @@ export default function TasksScreen() {
     // 숨김은 Provider의 pendingIds가 담당하므로 hide/restore는 할 일이 없다.
     schedule({ label: `‘${t.title}’ 작업을 삭제했어요`, key: id, hide: () => {}, restore: () => {}, commit: () => deleteTask(id) });
   };
-  const shared = { tasks: visible, onMoveTask: (id: string, st: TaskStatus) => void moveTask(id, st), onDeleteTask,
-    selectedStatus: status, onSelectedStatusChange: (st: TaskStatus | null) => set('status', st) };
+  const shown = filterTasks(visible, { status: status ?? undefined });
+  const common = { tasks: shown, linkSearch: params.toString(), onMoveTask: moveTask, onDeleteTask: (t: Task) => onDeleteTask(t.id) };
 
   return (
     <>
@@ -61,9 +61,8 @@ export default function TasksScreen() {
       <div className="mt-4">
         {loadState === 'loading' ? <p className="text-sm text-muted">불러오는 중이에요.</p>
           : loadState === 'error' ? <p role="alert" className="text-sm text-danger">작업을 불러오지 못했어요.</p>
-          : view === 'board' ? <TaskBoard {...shared} />
-          : <TaskList tasks={filterTasks(visible, { status: status ?? undefined })} sort={sort} onSortChange={onSortChange}
-              linkSearch={params.toString()} onMoveTask={moveTask} onDeleteTask={(t) => onDeleteTask(t.id)} />}
+          : view === 'board' ? <TaskBoard {...common} />
+          : <TaskList {...common} sort={sort} onSortChange={onSortChange} />}
       </div>
       <Outlet />{/* /tasks/new, /tasks/:id 대화상자 */}
     </>

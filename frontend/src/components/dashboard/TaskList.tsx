@@ -36,7 +36,7 @@ function SortHeader({ k, label, sort, onSortChange }: { k: TaskSortKey; label: s
   );
 }
 
-function Person({ task }: { task: Task }) {
+export function Person({ task }: { task: Task }) {
   const pr = isPrTask(task);
   const name = ((pr ? task.author : task.assigneeId) ?? '').trim();
   if (name) return <>{pr ? '작성' : '담당'} {name}</>;
