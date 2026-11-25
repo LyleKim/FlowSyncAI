@@ -181,7 +181,8 @@ describe('TasksScreen', () => {
     it('(T-b2) 보드는 ?status=를 무시하고 4열을 모두 센다', async () => {
       setup('/tasks?view=board&status=review');
       await screen.findByRole('link', { name: /결제 PR/ });
-      const cols = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent).filter((t) => t !== '작업 목록');
+      expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['작업 목록']);
+      const cols = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
       expect(cols).toEqual(['할 일 1', '진행 중 0', '리뷰 중 1', '완료 1']);
     });
 

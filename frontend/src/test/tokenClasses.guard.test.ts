@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
  * 커스텀 토큰 머리말(surface/text/muted/border/accent/danger/success/warning/status/priority/focus)로
  * 시작할 때만 검사하고, 그 외(text-sm, border-t, bg-white, 팔레트 색 등)는 건드리지 않는다.
  * 문자열을 이어 붙여 만든 클래스, 임의값(bg-[...])은 보지 못한다.
- * 죽은 코드(TaskModal, 아키텍처 화면)는 A-T7에서 삭제되므로 제외한다.
+ * 죽은 코드 TaskModal.tsx(어디서도 import하지 않지만 아직 남아 있음)만 제외한다. 아키텍처 화면은 이미 삭제됐다.
  */
 const SRC = join(__dirname, '..');
 const EXCLUDE = [/\.test\./, /^components\/common\/TaskModal\.tsx$/];

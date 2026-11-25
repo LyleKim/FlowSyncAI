@@ -30,7 +30,7 @@ const card = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as 
 describe('TaskBoard', () => {
   it('(a) 4열 머리가 항상 동시에 있고 개수 포함', () => {
     setup();
-    const hs = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+    const hs = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(hs).toEqual(['할 일 2', '진행 중 0', '리뷰 중 1', '완료 0']);
     expect(screen.getByRole('region', { name: '리뷰 중 1' })).toBeInTheDocument();
   });

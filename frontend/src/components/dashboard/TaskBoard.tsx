@@ -57,9 +57,10 @@ export default function TaskBoard({ tasks, ...rest }: TaskBoardProps) {
         const hid = `${id}-${s}`;
         return (
           <section key={s} aria-labelledby={hid} className="rounded-md bg-surface-sunken p-2">
-            <h2 id={hid} className={`mb-2 px-1 text-body-sm font-semibold ${STATUS_COLOR[s]}`}>
+            {/* 화면의 sr-only h2 '작업 목록' 아래 단계 */}
+            <h3 id={hid} className={`mb-2 px-1 text-body-sm font-semibold ${STATUS_COLOR[s]}`}>
               {STATUS_LABEL[s]} <span className="text-muted">{cards.length}</span>
-            </h2>
+            </h3>
             {cards.length === 0
               ? <p className="px-1 text-body-sm text-muted">작업이 없어요</p>
               : <ul className="flex flex-col gap-2">{cards.map((t) => <Card key={t.id} task={t} {...rest} />)}</ul>}
