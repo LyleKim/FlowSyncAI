@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithRouter } from '../../test/render';
+import { STORAGE_KEYS } from '../../lib/storage';
 import AppShell from './AppShell';
 import Sidebar from './Sidebar';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
 
 const shell = (route = '/me') => renderWithRouter(<AppShell><h1>화면</h1></AppShell>, { route });
 
@@ -26,6 +27,22 @@ describe('AppShell', () => {
     const current = nav.querySelectorAll('[aria-current="page"]');
     expect(current).toHaveLength(1);
     expect(current[0]).toHaveTextContent('설정');
+  });
+
+  it('(m) 로그인 없음+/me → nav 없음, main·h1 1개 / 로그인 있음 → nav / 로그인 없음+/settings → nav', () => {
+    const { unmount } = shell('/me');
+    expect(screen.queryByRole('navigation', { name: '주 메뉴' })).not.toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    unmount();
+    shell('/settings');
+    expect(screen.getByRole('navigation', { name: '주 메뉴' })).toBeInTheDocument();
+  });
+
+  it('(m) 로그인 있음+/me → nav 있음', () => {
+    localStorage.setItem(STORAGE_KEYS.myLogin, 'minji');
+    shell('/me');
+    expect(screen.getByRole('navigation', { name: '주 메뉴' })).toBeInTheDocument();
   });
 
   it('저장소가 정상이면 배너 없음', () => {

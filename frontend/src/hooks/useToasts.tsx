@@ -23,6 +23,8 @@ interface ToastApi {
   notify(message: string, kind?: ToastKind): void;
   dismiss(id: number): void;
   schedule(a: UndoAction): void;
+  /** key가 같은 대기를 commit 없이 되돌린다(없으면 아무것도 안 함). */
+  cancel(key: string): void;
   pendingIds: ReadonlySet<string>;
   toasts: ToastItem[];
 }
@@ -88,6 +90,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     syncKeys();
   }, [commitPending, settle, syncKeys]);
 
+  const cancel = useCallback((key: string) => {
+    for (const [pid, p] of pending.current) if (p.action.key === key && settle(pid)) p.action.restore();
+    syncKeys();
+  }, [settle, syncKeys]);
+
   // 탭을 떠날 때만 대기 항목을 즉시 commit한다(언마운트에서는 하지 않음).
   useEffect(() => {
     const flush = () => [...pending.current.keys()].forEach((id) => void commitPending(id));
@@ -98,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   // Provider가 사라질 때 타이머만 정리한다(commit 안 함).
   useEffect(() => () => pending.current.forEach((p) => clearTimeout(p.timer)), []);
 
-  const value = useMemo(() => ({ notify, dismiss, schedule, pendingIds, toasts }), [notify, dismiss, schedule, pendingIds, toasts]);
+  const value = useMemo(() => ({ notify, dismiss, schedule, cancel, pendingIds, toasts }), [notify, dismiss, schedule, cancel, pendingIds, toasts]);
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
 

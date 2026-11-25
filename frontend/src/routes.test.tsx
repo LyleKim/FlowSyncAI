@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, screen } from '@testing-library/react';
 import { renderWithRouter } from './test/render';
 import { ROUTES, titleFor } from './routes';
+import { removeStorage, setMyLogin, STORAGE_KEYS } from './lib/storage';
 
 vi.mock('./services/taskSync', () => ({
   fetchTasksFromServer: vi.fn().mockResolvedValue({ status: 'error' }),
@@ -24,7 +25,9 @@ async function renderApp(route: string) {
   return r;
 }
 
-afterEach(() => vi.restoreAllMocks());
+// /me는 로그인이 없으면 첫 실행 흐름(FirstRunGate)이라, 화면 골격 테스트는 로그인이 있는 상태에서 본다.
+beforeEach(() => { setMyLogin('minji'); });
+afterEach(() => { vi.restoreAllMocks(); removeStorage(STORAGE_KEYS.myLogin); });
 
 describe('routes', () => {
   it('(a) / 는 /me 로 치환되고 h1 "내 리뷰 요청"', async () => {
@@ -81,6 +84,7 @@ describe('routes', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('SecurityError'); });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('SecurityError'); });
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    setMyLogin('minji'); // 세션 폴백에 저장
     await renderApp('/');
     expect(screen.getByRole('heading', { level: 1, name: '내 리뷰 요청' })).toBeInTheDocument();
     expect(screen.getByText('이 브라우저에서는 설정을 저장하지 못해요. 새로고침하면 처음 상태로 돌아가요.')).toHaveAttribute('role', 'status');
@@ -92,6 +96,14 @@ describe('routes', () => {
     await user.click(screen.getByRole('link', { name: /전체 작업/ }));
     expect(document.title).toBe('전체 작업 · FlowSyncAI');
     expect(document.activeElement).toBe(screen.getByRole('main'));
+  });
+
+  it('로그인이 없으면 /me는 첫 실행 흐름, 내비 없음', async () => {
+    removeStorage(STORAGE_KEYS.myLogin);
+    await renderApp('/me');
+    expect(screen.getByRole('heading', { level: 1, name: '누구의 리뷰 요청을 보여드릴까요?' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: '주 메뉴' })).not.toBeInTheDocument();
+    expect(h1s()).toHaveLength(1);
   });
 
   it('(c) 첫 마운트에서는 포커스를 옮기지 않는다', async () => {

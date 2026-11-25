@@ -188,6 +188,23 @@ describe('ConnectedReposSection', () => {
     expect(count(calls, 'DELETE')).toBe(0);
   });
 
+  it('(i2) 해제 대기 중 같은 레포를 다시 추가(409) → 해제 취소, 행 복귀, DELETE 0회', async () => {
+    const { user, calls } = setup({
+      [LIST]: () => ({ json: [API] }),
+      [POST]: () => ({ status: 409, json: { error: 'dup', code: 'already_connected', existing: API } }),
+    });
+    await screen.findByText('acme/api');
+    await user.click(screen.getByRole('button', { name: 'acme/api 연결 해제' }));
+    expect(screen.queryByText('acme/api')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('레포 추가'), 'https://github.com/acme/api');
+    await user.click(screen.getByRole('button', { name: '추가' }));
+    expect(await screen.findByText('acme/api')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '되돌리기' })).not.toBeInTheDocument();
+    await act(async () => { await vi.advanceTimersByTimeAsync(11_000); });
+    expect(count(calls, 'DELETE')).toBe(0);
+    expect(screen.getByText('acme/api')).toBeInTheDocument();
+  });
+
   it('(j) 대기 중 재조회가 같은 레포를 내려줘도 숨김 유지', async () => {
     const { user, calls } = setup({ [LIST]: () => ({ json: [API, WEB] }) });
     await screen.findByText('acme/api');

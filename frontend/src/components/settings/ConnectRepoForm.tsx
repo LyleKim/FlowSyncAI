@@ -1,5 +1,9 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ApiError, connectRepo, type ConnectedRepo } from '../../services/connectedReposApi';
+import { useUndo } from '../../hooks/useUndo';
+
+/** 연결 해제 10초 대기의 useUndo key. */
+export const repoPendingKey = (id: number) => `repo:${id}`;
 
 interface Props {
   onConnected: (repo: ConnectedRepo, alreadyConnected: boolean) => void;
@@ -12,6 +16,7 @@ const SAVE_FAILED_BODY = '입력한 내용은 그대로 두었어요. 잠시 후
 export default function ConnectRepoForm({ onConnected, autoFocus }: Props) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { cancel } = useUndo();
   const [url, setUrl] = useState('');
   const [adding, setAdding] = useState(false);
   const [invalid, setInvalid] = useState('');
@@ -39,6 +44,8 @@ export default function ConnectRepoForm({ onConnected, autoFocus }: Props) {
     try {
       const { repo, alreadyConnected } = await connectRepo(url.trim());
       setUrl('');
+      // 해제 대기 중인 레포를 다시 연결하면 그 해제를 취소한다(10초 뒤 DELETE가 나가지 않게).
+      cancel(repoPendingKey(repo.id));
       if (alreadyConnected) setNotice('이미 연결된 레포예요');
       onConnected(repo, alreadyConnected);
     } catch (err) {

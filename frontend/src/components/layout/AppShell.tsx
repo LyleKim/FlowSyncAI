@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import Sidebar from './Sidebar';
 import { isStorageAvailable } from '../../lib/storage';
-import { titleFor } from '../../routes';
+import { ROUTES, titleFor } from '../../routes';
+import { useMyLogin } from '../../hooks/useMyLogin';
 import { useRouteAnnouncer } from '../../hooks/useRouteAnnouncer';
 import { useReviewBadge } from '../../hooks/useReviewBadge';
 
@@ -10,6 +11,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [storageOk] = useState(isStorageAvailable);
   const reviewBadge = useReviewBadge();
+  const { login } = useMyLogin();
+  // 첫 실행(로그인 없음+/me)에서는 흐름에만 집중하도록 내비를 숨긴다.
+  const firstRun = !login && location.pathname === ROUTES.me;
   useRouteAnnouncer(titleFor);
 
   return (
@@ -25,7 +29,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       >
         본문으로 건너뛰기
       </Link>
-      <Sidebar reviewBadge={reviewBadge} />
+      {!firstRun && <Sidebar reviewBadge={reviewBadge} />}
       <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto p-4 md:p-8">
         {!storageOk && (
           <p role="status" className="mb-4 rounded-lg border border-warning px-4 py-2 text-sm">

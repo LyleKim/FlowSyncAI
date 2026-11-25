@@ -5,10 +5,8 @@ import { removeWatchedRepo } from '../../services/integrationsApi';
 import { usePrSyncContext } from '../../hooks/PrSyncContext';
 import { usePendingIds, useUndo } from '../../hooks/useUndo';
 import { useNow } from '../../hooks/useNow';
-import ConnectRepoForm from './ConnectRepoForm';
+import ConnectRepoForm, { repoPendingKey as pendingKey } from './ConnectRepoForm';
 import ConnectedRepoRow from './ConnectedRepoRow';
-
-const pendingKey = (id: number) => `repo:${id}`;
 
 export default function ConnectedReposSection() {
   const id = useId();

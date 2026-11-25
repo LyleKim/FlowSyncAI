@@ -6,6 +6,7 @@ import TasksScreen from './screens/TasksScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import NotFoundScreen from './screens/NotFoundScreen';
 import TaskDetailDialog from './components/task/TaskDetailDialog';
+import FirstRunGate from './components/firstrun/FirstRunGate';
 
 export const ROUTES = {
   me: '/me',
@@ -46,7 +47,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={ROUTES.me} replace />} />
-      <Route path={ROUTES.me} element={<MyReviewsScreen />} />
+      <Route path={ROUTES.me} element={<FirstRunGate><MyReviewsScreen /></FirstRunGate>} />
       <Route path={ROUTES.areas} element={<AreasScreen />} />
       <Route path="/areas/:areaId" element={<AreaDetailScreen />} />
       {/* 상세는 목록 위 대화상자(TasksScreen의 Outlet, R1). */}
