@@ -9,6 +9,7 @@ import { STATUS_LABEL, STATUS_ORDER, isPrTask } from '../../lib/taskLabels';
 import { ROUTES } from '../../routes';
 import type { TaskStatus } from '../../types';
 import { ChecklistSection } from './ChecklistSection';
+import { ReviewSection } from './ReviewSection';
 import { TaskForm } from './TaskForm';
 import { TaskSummary } from './TaskSummary';
 
@@ -100,7 +101,7 @@ export default function TaskDetailDialog() {
             <TaskSummary task={task} />
           )}
           <ChecklistSection task={task} />
-          {/* Task 15: ReviewSection */}
+          <ReviewSection task={task} />
         </>
       )}
     </Dialog>
