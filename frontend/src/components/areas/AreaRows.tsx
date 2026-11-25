@@ -113,7 +113,8 @@ export function AreaRows({ areas, disconnected, generatedAt, days, repoId, now =
         {areas.map((a) => (
           <li key={a.id} className="space-y-2 py-3">
             <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-              <Link to={href(a)} className={`${linkCls} basis-full`}>{a.displayName}</Link>
+              {/* 이름·막대·리뷰 대기가 한 줄, 폭이 모자라면 줄바꿈 */}
+              <Link to={href(a)} className={`${linkCls} min-w-0`}>{a.displayName}</Link>
               {bars(a)}
               <WaitCount a={a} now={now} />
             </div>

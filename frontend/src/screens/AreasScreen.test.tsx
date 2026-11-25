@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
-import { Route, Routes, useLocation } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { renderWithRouter } from '../test/render';
 import { makeArea, makeAreasResponse } from '../test/fixtures/areas';
 import type { WatchedRepo } from '../types';
@@ -34,7 +34,7 @@ const RESP = makeAreasResponse({
 type AreasState = ReturnType<typeof useAreas>;
 const setAreas = (over: Partial<AreasState> = {}) =>
   areasMock.mockReturnValue({
-    status: 'ready', data: RESP, aliases: [], aliasesFailed: false, error: null, stale: false, refresh, canRefresh: true, ...over,
+    status: 'ready', data: RESP, aliases: [], aliasesFailed: false, error: null, stale: false, refresh, canRefresh: true, pending: false, failSeq: 0, ...over,
   });
 
 function Loc() {
@@ -118,6 +118,51 @@ describe('AreasScreen', () => {
     expect(alerts[0]).toHaveTextContent('내 리뷰 요청은 그대로예요');
     await user.click(within(alerts[0]).getByRole('button', { name: '다시 시도' }));
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('(m2) 다시 시도 진행 중 → status 문구, alert 없음', () => {
+    setAreas({ status: 'error', data: null, error: { status: 502, code: 'github_unavailable', message: 'x' }, pending: true, canRefresh: false, failSeq: 1 });
+    show();
+    expect(screen.getByRole('status')).toHaveTextContent('다시 시도하는 중이에요');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('(m3) 다시 실패하면 새 alert 노드로 다시 알리고 alert는 1개', () => {
+    const err = { status: 502, code: 'github_unavailable', message: 'x' };
+    setAreas({ status: 'error', data: null, error: err, failSeq: 1 });
+    const { rerender } = show();
+    const before = screen.getByRole('alert');
+    setAreas({ status: 'error', data: null, error: err, failSeq: 2 });
+    rerender(
+      <MemoryRouter initialEntries={['/areas?repo=1']}>
+        <Routes>
+          <Route path="/areas" element={<><AreasScreen /><Loc /></>} />
+          <Route path="*" element={<Loc />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const after = screen.getAllByRole('alert');
+    expect(after).toHaveLength(1);
+    expect(after[0]).not.toBe(before);
+  });
+
+  it('(m4) 오류 상태 다시 시도가 막혔으면 이유와 연결', () => {
+    setAreas({ status: 'error', data: null, error: { status: 500, code: null, message: 'x' }, canRefresh: false, failSeq: 1 });
+    show();
+    const btn = within(screen.getByRole('alert')).getByRole('button', { name: '다시 시도' });
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toHaveAccessibleDescription(/잠시 뒤에 다시 할 수 있어요/);
+  });
+
+  it('별칭 조회 실패 → 한 줄 안내(status)', () => {
+    setAreas({ aliasesFailed: true });
+    show();
+    expect(screen.getByRole('status')).toHaveTextContent(/연결 끊김.*빠졌을 수 있어요/);
+  });
+
+  it('표로 보기 스크롤 영역은 탭 순서에 강제로 넣지 않는다', () => {
+    const { container } = show();
+    expect(container.querySelector('details [tabindex="0"]')).toBeNull();
   });
 
   it('그 외 오류 → 일반 문구', () => {

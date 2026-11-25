@@ -136,6 +136,22 @@ describe('useAreas', () => {
     expect(fetchA).not.toHaveBeenCalled();
   });
 
+  it('(j) 실패 후 다시 시도: 진행 중 pending, 실패마다 failSeq 증가', async () => {
+    fetchA.mockRejectedValue(new AreasApiError('깃허브', 502, 'github_unavailable'));
+    const { result } = renderHook(() => useAreas(1, 30));
+    await flush();
+    expect(result.current.pending).toBe(false);
+    expect(result.current.failSeq).toBe(1);
+    let reject!: (e: unknown) => void;
+    fetchA.mockImplementation(() => new Promise((_, rej) => (reject = rej)));
+    await act(async () => result.current.refresh());
+    expect(result.current.pending).toBe(true);
+    expect(result.current.status).toBe('error');
+    await act(async () => reject(new AreasApiError('깃허브', 502, 'github_unavailable')));
+    expect(result.current.pending).toBe(false);
+    expect(result.current.failSeq).toBe(2);
+  });
+
   it('(i) 언마운트 시 abort', async () => {
     let sig: AbortSignal | undefined;
     fetchA.mockImplementation((_r, _d, o) => {

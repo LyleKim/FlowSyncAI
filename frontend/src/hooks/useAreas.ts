@@ -14,7 +14,7 @@ export function toAreaError(e: unknown): AreaError {
 
 export { isAbort } from '../lib/abort';
 
-type Result = { key: string; data: AreasResponse | null; error: AreaError | null };
+type Result = { key: string; data: AreasResponse | null; error: AreaError | null; fails: number };
 type Aliases = { repoId: number; list: AreaAlias[]; failed: boolean };
 
 export function useAreas(repoId: number | null, days: number): {
@@ -26,9 +26,13 @@ export function useAreas(repoId: number | null, days: number): {
   stale: boolean;
   refresh(): void;
   canRefresh: boolean;
+  // 요청 진행 중(오류 화면에서 다시 시도 중 표시용)
+  pending: boolean;
+  // 실패할 때마다 1씩 증가: 같은 문구의 알림을 다시 마운트해 재낭독시키는 키
+  failSeq: number;
 } {
   const key = `${repoId}:${days}`;
-  const [result, setResult] = useState<Result>({ key: '', data: null, error: null });
+  const [result, setResult] = useState<Result>({ key: '', data: null, error: null, fails: 0 });
   const [aliasState, setAliasState] = useState<Aliases | null>(null);
   const [nonce, setNonce] = useState(0);
   const [cooling, setCooling] = useState(false);
@@ -46,11 +50,11 @@ export function useAreas(repoId: number | null, days: number): {
     inflightRef.current = true;
     setInflight(true);
     fetchAreas(repoId, days, { refresh, signal: ctl.signal }).then(
-      (data) => !ctl.signal.aborted && setResult({ key, data, error: null }),
+      (data) => !ctl.signal.aborted && setResult((r) => ({ key, data, error: null, fails: r.fails })),
       (e) => {
         if (ctl.signal.aborted || isAbort(e)) return;
         // 같은 키의 직전 데이터는 유지(stale), 키가 바뀐 경우엔 null로 시작
-        setResult((r) => ({ key, data: r.key === key ? r.data : null, error: toAreaError(e) }));
+        setResult((r) => ({ key, data: r.key === key ? r.data : null, error: toAreaError(e), fails: r.fails + 1 }));
       },
     ).finally(() => {
       if (ctl.signal.aborted) return;
@@ -98,5 +102,7 @@ export function useAreas(repoId: number | null, days: number): {
     stale: !!data && !!error,
     refresh,
     canRefresh: repoId !== null && !cooling && !inflight,
+    pending: repoId !== null && inflight,
+    failSeq: result.fails,
   };
 }

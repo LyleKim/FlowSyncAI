@@ -17,6 +17,7 @@ const SORT_OPTIONS: { value: AreaSort; label: string }[] = [
   { value: 'name', label: '이름 순' },
 ];
 
+const REFRESH_HINT = '분석 중이거나 방금 분석했어요. 잠시 뒤에 다시 할 수 있어요.';
 const focus = 'focus-visible:outline-2 focus-visible:outline-focus-ring';
 const btn = `min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-medium aria-disabled:text-muted ${focus}`;
 const linkBtn = `inline-flex min-h-9 items-center rounded border border-border px-3 text-body-sm font-medium hover:bg-surface-sunken ${focus}`;
@@ -55,8 +56,8 @@ function WeeklyTable({ areas }: { areas: Area[] }) {
   return (
     <details className="mt-4">
       <summary className={`inline-block min-h-6 cursor-pointer text-body-sm font-semibold ${focus}`}>표로 보기</summary>
-      {/* 주가 많으면(180일=26주) 이 영역 안에서만 가로로 움직인다 */}
-      <div role="region" aria-label="영역별 주간 커밋 수 표" tabIndex={0} className={`mt-2 overflow-x-auto ${focus}`}>
+      {/* 주가 많으면(180일=26주) 이 영역 안에서만 가로로 움직인다. 최신 브라우저는 넘칠 때만 스크롤 영역을 포커스 가능하게 한다 */}
+      <div className="mt-2 overflow-x-auto">
         <table className="border-collapse text-body-sm tabular-nums">
           <caption className="sr-only">영역별 주간 커밋 수(왼쪽이 가장 오래된 주, 열 머리글은 주 시작일)</caption>
           <thead>
@@ -142,18 +143,34 @@ export default function AreasScreen() {
   const unreadable = areas.error?.code === 'github_unavailable';
 
   let body: ReactNode;
-  if (!data && areas.status === 'error') {
+  if (!data && areas.status === 'error' && areas.pending) {
+    // 다시 시도 중: 알림 대신 진행 상태만(알림은 한 번에 하나)
     body = (
-      <div role="alert" className="mt-4 rounded border border-danger bg-surface-raised p-4 text-body-sm">
+      <div className="mt-4 space-y-2">
+        <p role="status" className="text-body-sm text-muted">다시 시도하는 중이에요</p>
+        <Skeleton rows={6} />
+      </div>
+    );
+  } else if (!data && areas.status === 'error') {
+    body = (
+      // 실패할 때마다 새 노드로 마운트해 같은 문구도 다시 알린다
+      <div key={areas.failSeq} role="alert" className="mt-4 rounded border border-danger bg-surface-raised p-4 text-body-sm">
         <h2 className="text-title font-semibold">{unreadable ? '이 레포를 읽을 수 없어요' : '영역을 분석하지 못했어요'}</h2>
         <p className="mt-1">영역 흐름만 볼 수 없고 내 리뷰 요청은 그대로예요.</p>
         <p className="mt-1">
           {unreadable && '레포 접근 권한이 바뀌었거나 GitHub에 잠시 닿지 않을 수 있어요. '}
           잠시 뒤에 다시 시도해 주세요. 위에서 다른 레포를 고를 수도 있어요.
         </p>
-        <button type="button" aria-disabled={!canRefresh} onClick={() => canRefresh && refresh()} className={`mt-3 ${btn}`}>
+        <button
+          type="button"
+          aria-disabled={!canRefresh}
+          aria-describedby={canRefresh ? undefined : 'areas-retry-hint'}
+          onClick={() => canRefresh && refresh()}
+          className={`mt-3 ${btn}`}
+        >
           다시 시도
         </button>
+        {!canRefresh && <p id="areas-retry-hint" className="mt-1 text-caption text-muted">{REFRESH_HINT}</p>}
       </div>
     );
   } else if (!data) {
@@ -176,6 +193,9 @@ export default function AreasScreen() {
           1칸 = 커밋 2개예요. 모든 영역이 같은 눈금이고 최대 8칸(16개)까지 그려요. 넘으면 맨 위에 짧은 선을 그어요.
           속이 빈 막대는 아직 끝나지 않은 이번 주예요. 점선은 데이터가 없다는 뜻이에요. 왼쪽이 가장 오래된 주, 오른쪽이 이번 주예요.
         </p>
+        {areas.aliasesFailed && (
+          <p role="status" className="mt-3 text-body-sm text-muted">붙인 영역 이름을 읽지 못해서 연결 끊김 이름이 빠졌을 수 있어요.</p>
+        )}
         <p className="mt-3 text-body-sm">{summarizeAreas(data.areas, data.days, data.analyzedCommits, now)}</p>
         <div className="mt-4">
           <AreaRows
@@ -227,7 +247,7 @@ export default function AreasScreen() {
         </button>
       </div>
       {!canRefresh && (
-        <p id="areas-refresh-hint" className="mt-1 text-caption text-muted">분석 중이거나 방금 분석했어요. 잠시 뒤에 다시 할 수 있어요.</p>
+        <p id="areas-refresh-hint" className="mt-1 text-caption text-muted">{REFRESH_HINT}</p>
       )}
       <div className="mt-4 space-y-1 rounded border border-border bg-surface-sunken p-3 text-body-sm">
         <p className="font-semibold">활동이에요. 진행률이 아니에요.</p>
