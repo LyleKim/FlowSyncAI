@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  * 죽은 코드(TaskModal, 아키텍처 화면)는 A-T7에서 삭제되므로 제외한다.
  */
 const SRC = join(__dirname, '..');
-const EXCLUDE = [/\.test\./, /^components\/common\/TaskModal\.tsx$/, /^components\/dashboard\/architecture\//, /ArchitectureView\.tsx$/];
+const EXCLUDE = [/\.test\./, /^components\/common\/TaskModal\.tsx$/];
 const CUSTOM_HEAD = /^(surface|text|muted|border|accent|danger|success|warning|status|priority|focus)(-|$)/;
 const CLASS_RE = /(?<![\w-])(?:[\w[\]-]+:)*(?:bg|text|border|ring|divide|fill|stroke|outline|from|to)-([a-z][a-z0-9-]*)(?:\/[\w.[\]]+)?(?![\w-])/g;
 
