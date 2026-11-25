@@ -13,7 +13,7 @@ export function TaskSummary({ task }: { task: Task }) {
     <div className="flex flex-col gap-4">
       <p className="flex items-center gap-2 text-caption text-muted">
         <span>만든 날 {formatDate(task.createdAt)}</span>
-        <PrBadge url={pr ? task.sourceUrl : null} />
+        <PrBadge url={pr ? task.sourceUrl : null} showWithoutLink={pr} />
       </p>
       <p className="whitespace-pre-wrap text-body-sm">{task.description || <span className="text-muted">설명이 없어요.</span>}</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">

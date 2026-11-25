@@ -21,7 +21,7 @@ export function TaskTitle({ task, onSelectTask }: { task: Task; onSelectTask?: (
       <Link to={ROUTES.task(task.id)} onClick={() => onSelectTask?.(task)} className="inline-block min-h-6 truncate font-medium hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
         {task.title}
       </Link>
-      <PrBadge url={isPrTask(task) ? task.sourceUrl : null} />
+      <PrBadge url={isPrTask(task) ? task.sourceUrl : null} showWithoutLink={isPrTask(task)} />
     </span>
   );
 }
