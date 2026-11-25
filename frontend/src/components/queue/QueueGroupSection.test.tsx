@@ -55,4 +55,16 @@ describe('QueueGroupSection', () => {
     setup(50);
     expect(screen.queryByRole('button', { name: /더 보기/ })).toBeNull();
   });
+
+  it('51번째 행에 링크/버튼이 없으면 h2로 포커스', async () => {
+    const user = userEvent.setup();
+    setup(60, { renderItem: (it: { id: string }) => <li key={it.id}>{it.id}</li> });
+    await user.click(screen.getByRole('button', { name: /더 보기/ }));
+    expect(screen.getByRole('heading', { level: 2 })).toHaveFocus();
+  });
+
+  it('닫힌 동안 더 보기 없음', () => {
+    setup(60, { defaultOpen: false });
+    expect(screen.queryByRole('button', { name: /더 보기/ })).toBeNull();
+  });
 });

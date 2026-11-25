@@ -45,7 +45,7 @@ export function QueueGroupSection<T extends { id: string }>({
           aria-expanded={open}
           aria-controls={listId}
           onClick={() => setOpen((v) => !v)}
-          className="rounded focus-visible:outline-2 focus-visible:outline-focus-ring"
+          className="min-h-6 min-w-6 rounded focus-visible:outline-2 focus-visible:outline-focus-ring"
         >
           {title} {items.length}건{hint ? ` · ${hint}` : ''}
         </button>
@@ -60,7 +60,7 @@ export function QueueGroupSection<T extends { id: string }>({
             focusFrom.current = shown.length;
             setAll(true);
           }}
-          className="mt-2 rounded text-sm text-accent underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+          className="mt-2 min-h-6 min-w-6 rounded text-sm text-accent underline focus-visible:outline-2 focus-visible:outline-focus-ring"
         >
           더 보기 ({rest}건 더)
         </button>

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { RepoSyncState } from '../../types/repoSync';
 import { describeRepoError, formatClock } from '../../lib/repoCopy';
 
@@ -17,6 +17,10 @@ function RepoFailure({
   now?: Date;
 }) {
   const [fallback, setFallback] = useState(false);
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (fallback) areaRef.current?.focus();
+  }, [fallback]);
   const v = describeRepoError(repo.repo, repo.lastError!, repo.lastSuccessAt, now);
   const clock = repo.lastSuccessAt ? formatClock(repo.lastSuccessAt) : '';
   const note = retrying ? '다시 확인하는 중' : v.retryDisabledReason;
@@ -62,6 +66,7 @@ function RepoFailure({
       </div>
       {fallback && (
         <textarea
+          ref={areaRef}
           readOnly
           aria-label="관리자에게 보낼 내용"
           value={v.adminCopy}
@@ -88,6 +93,7 @@ export function RepoFailureBanner({
 }) {
   const failed = repos.filter((r) => r.lastError !== null);
   if (failed.length === 0) return null;
+  // key on <RepoFailure> directly gave TS2322; the Fragment carries it instead
   return (
     <div
       role={allFailed ? 'group' : 'alert'}

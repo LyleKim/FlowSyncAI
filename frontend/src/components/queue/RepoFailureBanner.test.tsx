@@ -54,7 +54,9 @@ describe('RepoFailureBanner', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     await user.click(screen.getByRole('button', { name: '관리자에게 보낼 내용 복사' }));
     expect(writeText).toHaveBeenCalled();
-    expect(await screen.findByRole('textbox')).toHaveAttribute('readonly');
+    const box = await screen.findByRole('textbox');
+    expect(box).toHaveAttribute('readonly');
+    expect(box).toHaveFocus();
   });
 
   it('k/l: 일부 실패 alert 1개(리렌더 유지), 전체 실패는 group', () => {
