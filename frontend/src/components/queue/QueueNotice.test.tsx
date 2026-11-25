@@ -14,6 +14,7 @@ describe('QueueNotice', () => {
     r('loading');
     expect(screen.getByText('리뷰 요청을 확인하는 중이에요')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+    expect(document.querySelector('[aria-hidden="true"] > div')).toHaveClass('bg-surface-sunken');
     act(() => { vi.advanceTimersByTime(9000); });
     expect(screen.queryByText(/계속 확인하는 중/)).toBeNull();
     act(() => { vi.advanceTimersByTime(1500); });

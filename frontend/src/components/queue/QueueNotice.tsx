@@ -30,7 +30,7 @@ function Loading() {
       <p>{slow ? '계속 확인하는 중이에요. 다른 화면으로 가도 돼요' : '리뷰 요청을 확인하는 중이에요'}</p>
       <div aria-hidden="true" className="mt-3 space-y-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-4 rounded bg-surface-muted" />
+          <div key={i} className="h-4 rounded bg-surface-sunken" />
         ))}
       </div>
     </div>

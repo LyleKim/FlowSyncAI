@@ -17,7 +17,7 @@ export function EmptyQueueAreaSummary({ repoId, repoName }: { repoId: number; re
     fetchAreas(repoId, 30, { signal: ac.signal })
       .then((r) => {
         const areas = [...r.areas]
-          .sort((a, b) => Date.parse(b.lastChangeAt ?? '') - Date.parse(a.lastChangeAt ?? '') || 0)
+          .sort((a, b) => (b.lastChangeAt ? Date.parse(b.lastChangeAt) : -Infinity) - (a.lastChangeAt ? Date.parse(a.lastChangeAt) : -Infinity) || 0)
           .slice(0, 3);
         setState({ s: 'ok', areas });
       })
@@ -27,12 +27,12 @@ export function EmptyQueueAreaSummary({ repoId, repoName }: { repoId: number; re
     return () => ac.abort();
   }, [repoId]);
 
-  if (state.s === 'ok' && state.areas.length === 0) return null;
+  if ((state.s === 'ok' && state.areas.length === 0)) return null;
   const all = (
     <Link to={ROUTES.areas} className={link}>영역 흐름 전체 보기</Link>
   );
   return (
-    <section aria-busy={state.s === 'loading'} className="mt-4 border-t border-border pt-3">
+    <section aria-busy={state.s === 'loading'} className={state.s === 'loading' ? undefined : 'mt-4 border-t border-border pt-3'}>
       {state.s === 'error' && (
         <p className="text-sm"><span>영역 흐름을 불러오지 못했어요</span> {all}</p>
       )}

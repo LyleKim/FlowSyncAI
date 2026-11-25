@@ -36,6 +36,17 @@ describe('EmptyQueueAreaSummary', () => {
     expect(screen.getByRole('link', { name: '영역 흐름 전체 보기' })).toHaveAttribute('href', '/areas');
   });
 
+  it('lastChangeAt이 null인 영역은 맨 뒤', async () => {
+    mocked.mockResolvedValue(resp([
+      area('n', null), area('a', '2026-11-01T00:00:00Z'), area('b', '2026-11-02T00:00:00Z'),
+      area('c', '2026-11-03T00:00:00Z'),
+    ]));
+    renderWithRouter(<EmptyQueueAreaSummary repoId={1} repoName="acme/api" />);
+    await screen.findByRole('heading', { level: 2 });
+    expect(screen.queryByText('영역n')).toBeNull();
+    expect(screen.getAllByRole('link').slice(0, 3).map((l) => l.getAttribute('href'))).toEqual(['/areas/c', '/areas/b', '/areas/a']);
+  });
+
   it('0개면 렌더 없음', async () => {
     mocked.mockResolvedValue(resp([]));
     const { container } = renderWithRouter(<EmptyQueueAreaSummary repoId={1} repoName="acme/api" />);
@@ -56,6 +67,7 @@ describe('EmptyQueueAreaSummary', () => {
     mocked.mockImplementation((_i, _d, o) => { sig = o?.signal; return new Promise(() => {}); });
     const { container, unmount } = renderWithRouter(<EmptyQueueAreaSummary repoId={1} repoName="acme/api" />);
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(container.querySelector('.border-t')).toBeNull();
     unmount();
     expect(sig?.aborted).toBe(true);
   });
