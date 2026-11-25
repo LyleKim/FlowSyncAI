@@ -40,7 +40,7 @@ export default function MyTeamsField() {
         />
         <button type="submit" className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast">저장</button>
       </div>
-      <p id={`${id}-err`} className="text-sm text-danger">{error}</p>
+      {error && <p id={`${id}-err`} role="alert" className="text-sm text-danger">{error}</p>}
       <p role="status" className="text-sm text-muted">{status}</p>
     </form>
   );

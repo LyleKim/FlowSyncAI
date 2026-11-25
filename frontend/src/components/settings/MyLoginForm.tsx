@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
-import { normalizeLogin } from '../../lib/storage';
+import { getMyLogin, normalizeLogin } from '../../lib/storage';
 import { useMyLogin, useMyTeams } from '../../hooks/useMyLogin';
 import { useUndo } from '../../hooks/useUndo';
 import { probeReviewQueue } from '../../services/connectedReposApi';
@@ -59,7 +59,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
       commitSave(login);
       if (prev !== login) {
         schedule({
-          label: `내 로그인을 ${login}로 바꿨어요`,
+          label: `내 로그인을 바꿨어요: ${login}`,
           hide: () => {},
           restore: () => {
             if (prev) save(prev); else clear();
@@ -70,7 +70,8 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
           windowMs: 10_000,
         });
       }
-      if (!known && (await looksUnknown(login, probeTeams))) setUnknown(login);
+      // 프로브가 돌아오기 전에 되돌렸다면 오래된 안내는 띄우지 않는다.
+      if (!known && (await looksUnknown(login, probeTeams)) && getMyLogin() === login) setUnknown(login);
       return;
     }
 
@@ -107,9 +108,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
       <p id={`${id}-preview`} className="text-sm text-muted">
         {preview ? `${preview} 으로 확인해요 (대소문자는 구분하지 않아요)` : ''}
       </p>
-      <p id={`${id}-err`} className="text-sm text-danger">
-        {invalid ? '영문·숫자·하이픈만 쓸 수 있어요 (최대 39자)' : ''}
-      </p>
+      {invalid && <p id={`${id}-err`} role="alert" className="text-sm text-danger">영문·숫자·하이픈만 쓸 수 있어요 (최대 39자)</p>}
       {candidates.length > 0 && (
         <div role="group" aria-label="팀에서 찾은 로그인" className="flex flex-wrap gap-2">
           {candidates.map((c) => (

@@ -43,6 +43,7 @@ describe('MyLoginForm', () => {
     const { user, input, onSaved } = setup();
     await user.type(input, bad);
     await user.click(screen.getByRole('button', { name: '저장' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('영문·숫자·하이픈만');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription(/영문·숫자·하이픈만 쓸 수 있어요 \(최대 39자\)/);
     expect(input).toHaveValue(bad);
@@ -74,6 +75,19 @@ describe('MyLoginForm', () => {
       await user.type(input, 'old');
       await user.click(screen.getByRole('button', { name: '저장' }));
       expect(screen.queryByRole('button', { name: '되돌리기' })).not.toBeInTheDocument();
+    });
+
+    it('되돌리기를 프로브 응답보다 먼저 누르면 오래된 안내를 띄우지 않는다', async () => {
+      const { user, input } = setup();
+      let release!: () => void;
+      vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((res) => {
+        release = () => res(new Response(JSON.stringify(PROBE_UNKNOWN), { status: 200 }));
+      })));
+      await user.type(input, 'minji');
+      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '되돌리기' }));
+      await act(async () => { release(); });
+      expect(screen.queryByText(/본 적 없는 이름/)).not.toBeInTheDocument();
     });
 
     it('(d0) 본 적 없는 이름이면 저장은 유지되고 한 줄 안내', async () => {
@@ -117,6 +131,14 @@ describe('MyLoginForm', () => {
       await user.click(screen.getByRole('button', { name: '저장하고 내 리뷰 요청 보기' }));
       await waitFor(() => expect(onSaved).toHaveBeenCalledWith('minji'));
       expect(screen.queryByText(/맞나요/)).not.toBeInTheDocument();
+    });
+
+    it('(f) 네트워크 오류 → 확인 없이 저장', async () => {
+      const { user, input, onSaved } = setup({ variant: 'first-run' });
+      vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('network'))));
+      await user.type(input, 'minji');
+      await user.click(screen.getByRole('button', { name: '저장하고 내 리뷰 요청 보기' }));
+      await waitFor(() => expect(onSaved).toHaveBeenCalledWith('minji'));
     });
 
     it('(f) 3초 초과 → 확인 없이 저장', async () => {

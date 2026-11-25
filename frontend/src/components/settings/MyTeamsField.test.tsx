@@ -25,7 +25,7 @@ describe('MyTeamsField', () => {
     const { user, input } = setup();
     await user.type(input, 'acme');
     await save(user);
-    expect(screen.getByText('‘acme’은 org/팀이름 형식이 아니에요')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('‘acme’은 org/팀이름 형식이 아니에요');
     expect(getMyTeams()).toEqual([]);
     expect(input).toHaveValue('acme');
   });
