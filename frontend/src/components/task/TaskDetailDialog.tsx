@@ -8,6 +8,7 @@ import { useTaskForm } from '../../hooks/useTaskForm';
 import { STATUS_LABEL, STATUS_ORDER, isPrTask } from '../../lib/taskLabels';
 import { ROUTES } from '../../routes';
 import type { TaskStatus } from '../../types';
+import { ChecklistSection } from './ChecklistSection';
 import { TaskForm } from './TaskForm';
 import { TaskSummary } from './TaskSummary';
 
@@ -98,7 +99,8 @@ export default function TaskDetailDialog() {
           ) : (
             <TaskSummary task={task} />
           )}
-          {/* Task 14·15: ChecklistSection / ReviewSection */}
+          <ChecklistSection task={task} />{/* F-T14 */}
+          {/* Task 15: ReviewSection */}
         </>
       )}
     </Dialog>
