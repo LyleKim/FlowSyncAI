@@ -24,4 +24,19 @@ describe('ToastHost', () => {
     fireEvent.click(screen.getByRole('button', { name: '알림 닫기' }));
     expect(alert).toBeEmptyDOMElement();
   });
+
+  it('토스트가 없어도 두 live region이 DOM에 남고(숨김 없음), 빈 래퍼는 클릭을 막지 않는다', () => {
+    render(<ToastProvider><Probe /><ToastHost /></ToastProvider>);
+    const status = screen.getByRole('status');
+    const alert = screen.getByRole('alert');
+    for (const region of [status, alert]) {
+      expect(region).toBeInTheDocument();
+      expect(region.className).not.toMatch(/empty:hidden|\bhidden\b/);
+    }
+    const wrapper = status.parentElement!;
+    expect(wrapper).toBe(alert.parentElement);
+    expect(wrapper).toHaveClass('pointer-events-none');
+    act(() => { n.notify('안내'); });
+    expect(status.firstElementChild).toHaveClass('pointer-events-auto');
+  });
 });
