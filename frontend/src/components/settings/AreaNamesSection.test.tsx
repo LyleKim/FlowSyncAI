@@ -205,9 +205,9 @@ describe('AreaNamesSection', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });
 
-  it('(i3) 저장 중에 레포를 바꾸면 응답이 새 레포 목록에 섞이지 않음', async () => {
+  it('(i3) 저장 중에 레포를 바꾸면 응답이 새 레포(같은 경로 행이 있음)에 섞이지 않음', async () => {
     vi.mocked(fetchAreaAliases).mockImplementation(async (rid) => (rid === 2 ? [] : [alias()]));
-    vi.mocked(fetchAreas).mockImplementation(async (rid) => (rid === 2 ? areasOf('web/ui') : areasOf('backend/payments', 'frontend')));
+    vi.mocked(fetchAreas).mockImplementation(async () => areasOf('backend/payments', 'frontend'));
     const { user } = setup({ [`POST ${A}`]: () => ({ status: 201, json: alias({ id: 8, pathPrefix: 'frontend', displayName: '화면' }) }) }, [repo(1, 'api'), repo(2, 'web')]);
     let open!: () => void;
     const gate = new Promise<void>((r) => { open = r; });
@@ -217,10 +217,14 @@ describe('AreaNamesSection', () => {
     await user.type(fe, '화면');
     await user.click(within(rowOf(fe)).getByRole('button', { name: /이름 저장$/ }));
     await user.selectOptions(screen.getByRole('combobox', { name: '레포' }), '2');
-    await input('web/ui');
+    await waitFor(() => expect(fetchAreaAliases).toHaveBeenCalledWith(2, expect.anything()));
+    await waitFor(async () => expect(await input('backend/payments')).toHaveValue(''));
+    const fe2 = await input('frontend');
+    expect(fe2).toHaveValue('');
     await act(async () => { open(); await gate; });
     await act(async () => {});
-    expect(screen.queryByRole('textbox', { name: 'frontend 표시 이름' })).not.toBeInTheDocument();
+    expect(await input('frontend')).toHaveValue('');
+    expect(within(rowOf(await input('frontend'))).queryByRole('button', { name: /이름 지우기$/ })).not.toBeInTheDocument();
     expect(screen.queryByText('저장했어요')).not.toBeInTheDocument();
   });
 

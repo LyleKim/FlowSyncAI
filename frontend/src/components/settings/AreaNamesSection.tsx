@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { listConnectedRepos, type ConnectedRepo } from '../../services/connectedReposApi';
+import { ApiError, listConnectedRepos, type ConnectedRepo } from '../../services/connectedReposApi';
 import { fetchAreaAliases, fetchAreas } from '../../services/areasApi';
-import { ApiError } from '../../services/connectedReposApi';
 import { AliasConflictError, createAreaAlias, deleteAreaAlias, updateAreaAlias } from '../../services/areaAliasesApi';
 import { usePendingIds, useUndo } from '../../hooks/useUndo';
 import type { AreaAlias } from '../../types/areas';
@@ -171,6 +170,7 @@ export default function AreaNamesSection() {
                   const changed = value !== original;
                   const valid = len >= 1 && len <= 80;
                   // 연결된 행의 이름 지우기 대기 중엔 편집을 막는다(저장하면 409로 되살아나는 루프 방지).
+                  // alias는 대기 중인 것을 뺀 byPath에서 오므로, 지우기 대기 중이면 undefined다 → 원본 aliases에서 대기 여부를 본다.
                   const deleting = !alias && aliases.some((a) => a.pathPrefix === path && pending.has(pendingKey(a.id)));
                   const canSave = changed && valid && !deleting;
                   const why = deleting ? '이름을 지우는 중이에요. 되돌리려면 알림의 되돌리기를 눌러 주세요.'

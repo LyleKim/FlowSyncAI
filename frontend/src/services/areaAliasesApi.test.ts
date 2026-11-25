@@ -60,4 +60,11 @@ describe('areaAliasesApi', () => {
     routeFetch({ [`DELETE ${BASE}7/`]: () => ({ status: 404, json: { error: 'nf' } }) });
     await expect(deleteAreaAlias(1, 7)).rejects.toBeInstanceOf(ApiError);
   });
+  it('updateAreaAlias 404 → 실제 클라이언트가 ApiError(status 404)를 던짐(충돌 아님)', async () => {
+    routeFetch({ [`PATCH ${BASE}7/`]: () => ({ status: 404, json: { error: 'Not found' } }) });
+    const e = await updateAreaAlias(1, 7, 'x', '2026-11-02T00:00:00Z').catch((x) => x);
+    expect(e).toBeInstanceOf(ApiError);
+    expect(e).not.toBeInstanceOf(AliasConflictError);
+    expect(e.status).toBe(404);
+  });
 });
