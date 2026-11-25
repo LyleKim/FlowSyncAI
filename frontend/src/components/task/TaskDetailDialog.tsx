@@ -99,7 +99,7 @@ export default function TaskDetailDialog() {
           ) : (
             <TaskSummary task={task} />
           )}
-          <ChecklistSection task={task} />{/* F-T14 */}
+          <ChecklistSection task={task} />
           {/* Task 15: ReviewSection */}
         </>
       )}

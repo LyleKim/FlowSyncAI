@@ -97,11 +97,11 @@ describe('ChecklistSection', () => {
   });
 
   it('(f) 폴링으로 task가 갱신돼도 추가 입력값 유지', async () => {
-    const { user } = setup(mk());
+    const { user, calls } = setup(mk());
     const input = await screen.findByLabelText('새 항목', { selector: 'input' });
     await user.type(input, '작성 중');
     await user.click(screen.getByRole('button', { name: '폴링' }));
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(calls.filter((c) => c.method === 'GET')).toHaveLength(2));
     expect(screen.getByLabelText('새 항목')).toHaveValue('작성 중');
   });
 
@@ -112,6 +112,23 @@ describe('ChecklistSection', () => {
     expect(del).toHaveFocus();
     await user.click(del);
     await waitFor(() => expect(calls.some((c) => c.method === 'DELETE')).toBe(true));
+  });
+
+  it('(i) 미반영 검토는 접힌 summary에도 정적 힌트로 보인다', async () => {
+    setup(mk({ hasUnreflectedReview: true }));
+    expect(await screen.findByText('체크리스트 (1/3) · 새 검토 미반영')).toBeInTheDocument();
+  });
+
+  it('(j) Enter 두 번 빠르게: POST는 한 번', async () => {
+    const { user, calls } = setup(mk(), {
+      'POST /api/v1/tasks/t1/subtasks/': (r) => ({ json: { id: 'n1', ...(r.body as object) } }),
+    });
+    const input = await screen.findByLabelText('새 항목');
+    await user.type(input, '문서화');
+    fireEvent.submit(input.closest('form')!);
+    fireEvent.submit(input.closest('form')!);
+    await screen.findByText('체크리스트 (1/4)');
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1);
   });
 
   it('(h) 미반영 검토 문구는 정적, 항목 추가 가능', async () => {

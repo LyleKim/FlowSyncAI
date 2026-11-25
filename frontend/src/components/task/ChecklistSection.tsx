@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTasksContext } from '../../hooks/TasksContext';
 import { useChecklistGenerator } from '../../hooks/useChecklistGenerator';
 import type { Task } from '../../types';
@@ -12,16 +12,22 @@ export function ChecklistSection({ task }: { task: Task }) {
   const done = task.subtasks.filter((s) => s.completed).length;
   const loading = state === 'loading';
 
+  const adding = useRef(false);
   const add = async () => {
     const title = draft.trim();
-    if (!title) return;
-    const r = await addSubtask(task.id, title);
-    if (r.ok) setDraft('');
+    if (!title || adding.current) return;
+    adding.current = true;
+    try {
+      const r = await addSubtask(task.id, title);
+      if (r.ok) setDraft('');
+    } finally {
+      adding.current = false;
+    }
   };
 
   return (
     <details className="mt-4 border-t border-border pt-3">
-      <summary className="min-h-6 cursor-pointer text-body-sm font-medium">체크리스트 ({done}/{task.subtasks.length})</summary>
+      <summary className="min-h-6 cursor-pointer text-body-sm font-medium">체크리스트 ({done}/{task.subtasks.length}){task.hasUnreflectedReview && ' · 새 검토 미반영'}</summary>
       <div className="mt-3 flex flex-col gap-3">
         {task.hasUnreflectedReview && (
           <p className="text-body-sm text-warning">새 역할 검토가 아직 체크리스트에 반영되지 않았어요</p>

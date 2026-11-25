@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AiChecklistError, generateChecklist } from '../services/aiApi';
 import { useTasksContext } from './TasksContext';
 import type { Task } from '../types';
@@ -12,6 +12,11 @@ export function useChecklistGenerator(task: Task) {
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   const generate = async () => {
     if (busy.current) return;
@@ -21,8 +26,9 @@ export function useChecklistGenerator(task: Task) {
     try {
       const items = await generateChecklist({ title: task.title, description: task.description, roleReviews: task.roleReviews ?? [] });
       await replaceSubtasks(task.id, items);
-      setState('idle');
+      if (alive.current) setState('idle');
     } catch (e) {
+      if (!alive.current) return;
       setError(e instanceof AiChecklistError && e.kind === 'upstream' ? MSG_UPSTREAM : MSG_OTHER);
       setState('error');
     } finally {
