@@ -1,4 +1,4 @@
-import type { Area, AreaAlias, AreasResponse } from '../../types/areas';
+import type { Area, AreaAlias, AreaDetail, AreasResponse, WaitingPr } from '../../types/areas';
 
 // 마지막 주(11/23 시작)가 GENERATED_AT의 현재 주
 export const AREAS_NOW = new Date('2026-11-25T03:00:00Z');
@@ -49,5 +49,43 @@ export function makeAlias(over: Partial<AreaAlias> = {}): AreaAlias {
     createdAt: '2026-11-01T00:00:00Z',
     updatedAt: '2026-11-01T00:00:00Z',
     ...over,
+  };
+}
+
+export function makeWaitingPr(over: Partial<WaitingPr> = {}): WaitingPr {
+  return {
+    repo: 'acme/api',
+    number: 58,
+    title: '결제 재시도 정리',
+    url: 'https://github.com/acme/api/pull/58',
+    author: 'jun-ho',
+    isDraft: false,
+    requestedReviewers: ['minji-park', 'sora'],
+    oldestRequestedAt: '2026-11-22T03:00:00Z',
+    size: { additions: 40, deletions: 10, changedFiles: 5 },
+    primaryAreaId: 'backend-payments',
+    isPrimary: true,
+    touchedAreas: [
+      { areaId: 'backend-payments', displayName: '결제 흐름', fileCount: 4 },
+      { areaId: 'frontend-checkout', displayName: '결제 화면', fileCount: 1 },
+    ],
+    unmapped: 0,
+    filesTruncated: false,
+    ...over,
+  };
+}
+
+export function makeAreaDetail(over: Partial<AreaDetail> & { commits?: number[] } = {}): AreaDetail {
+  const { recentCommits, waitingPullRequests, coupledWith, ...rest } = over;
+  return {
+    ...makeArea(rest),
+    recentCommits: recentCommits ?? [
+      { sha7: 'a1b2c3d', message: '결제 재시도 횟수 조정\n\n본문', author: 'jun-ho', date: '2026-11-24T08:00:00Z' },
+    ],
+    waitingPullRequests: waitingPullRequests ?? [makeWaitingPr()],
+    coupledWith: coupledWith ?? [
+      { areaId: 'frontend-checkout', count: 2 },
+      { areaId: 'backend-ledger', count: 7 },
+    ],
   };
 }

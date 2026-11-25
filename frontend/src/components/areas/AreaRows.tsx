@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from 'react';
 import { Link } from 'react-router';
 import { ROUTES } from '../../routes';
 import { areaHref } from '../../lib/areaRoute';
@@ -15,6 +14,7 @@ import {
 } from '../../lib/areaChart';
 import type { Area, AreaAlias } from '../../types/areas';
 import { WeeklyBars } from './WeeklyBars';
+import { useWide } from '../../hooks/useWide';
 
 interface Props {
   areas: Area[];
@@ -24,15 +24,6 @@ interface Props {
   repoId: number;
   now?: Date;
 }
-
-// 표와 카드 중 하나만 렌더한다: CSS로 숨기면 jsdom에서 검증할 수 없고, 낭독 중복도 막는다
-const WIDE = '(min-width: 768px)';
-const subscribe = (cb: () => void) => {
-  const mq = window.matchMedia(WIDE);
-  mq.addEventListener('change', cb);
-  return () => mq.removeEventListener('change', cb);
-};
-const useWide = () => useSyncExternalStore(subscribe, () => window.matchMedia(WIDE).matches);
 
 const linkCls =
   'inline-block min-h-6 font-semibold underline underline-offset-2 wrap-anywhere focus-visible:outline-2 focus-visible:outline-focus-ring';
