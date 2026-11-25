@@ -1,11 +1,12 @@
 import { useState, type FocusEvent, type PointerEvent } from 'react';
 
-/** 컨테이너 안 포커스 또는 마우스 호버 중 true. 터치는 무시. */
+/** 컨테이너 안 포커스 또는 마우스 호버 중 true. 터치는 무시. release: 포커스된 요소가 사라져 blur 없이 포커스가 빠졌을 때 보류 해제. */
 export function useHold() {
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
   return {
     held: focused || hovered,
+    release: () => setFocused(false),
     holdProps: {
       onFocusCapture: () => setFocused(true),
       onBlurCapture: (e: FocusEvent<HTMLElement>) => {
