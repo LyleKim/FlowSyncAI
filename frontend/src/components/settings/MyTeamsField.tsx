@@ -29,16 +29,16 @@ export default function MyTeamsField() {
       <p id={`${id}-hint`} className="text-sm text-muted">
         팀에게 요청된 리뷰도 내 리뷰 요청에 보여요. 예: acme/backend, acme/core. 서버가 팀 멤버십을 알지 못해서 직접 알려 주셔야 해요. 이 브라우저에만 저장돼요.
       </p>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           id={id}
           value={value}
           onChange={(e) => { setValue(e.target.value); setError(''); setStatus(''); }}
           aria-invalid={!!error}
           aria-describedby={`${id}-hint ${id}-err`}
-          className="min-h-9 w-64 rounded border border-border bg-surface-raised px-3 text-sm"
+          className="min-h-9 min-w-40 max-w-64 flex-1 rounded border border-border bg-surface-raised px-3 text-sm"
         />
-        <button type="submit" className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast">저장</button>
+        <button type="submit" className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast">팀 저장</button>
       </div>
       {error && <p id={`${id}-err`} role="alert" className="text-sm text-danger">{error}</p>}
       <p role="status" className="text-sm text-muted">{status}</p>

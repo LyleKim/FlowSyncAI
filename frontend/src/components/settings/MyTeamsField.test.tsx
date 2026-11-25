@@ -10,7 +10,7 @@ const setup = () => {
   render(<MyTeamsField />);
   return { user, input: screen.getByLabelText('내 팀 (선택)') };
 };
-const save = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: '저장' }));
+const save = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: '팀 저장' }));
 
 describe('MyTeamsField', () => {
   it('정규화해 저장하고 상태 문구', async () => {

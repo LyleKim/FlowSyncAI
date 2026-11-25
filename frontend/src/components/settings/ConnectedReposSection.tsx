@@ -8,7 +8,8 @@ import { useNow } from '../../hooks/useNow';
 import ConnectRepoForm, { repoPendingKey as pendingKey } from './ConnectRepoForm';
 import ConnectedRepoRow from './ConnectedRepoRow';
 
-export default function ConnectedReposSection() {
+// onReposChange: 설정 화면이 같은 목록으로 로그인 후보를 만들도록 알린다(추가 GET 없이).
+export default function ConnectedReposSection({ onReposChange }: { onReposChange?: (repos: ConnectedRepo[]) => void }) {
   const id = useId();
   const [params] = useSearchParams();
   const { status, syncNow } = usePrSyncContext();
@@ -32,6 +33,8 @@ export default function ConnectedReposSection() {
     if (wasSyncing.current === null || (wasSyncing.current && !status.syncing)) void load();
     wasSyncing.current = status.syncing;
   }, [status.syncing, load]);
+
+  useEffect(() => onReposChange?.(repos), [repos, onReposChange]);
 
   const visible = repos.filter((r) => !pending.has(pendingKey(r.id)));
 

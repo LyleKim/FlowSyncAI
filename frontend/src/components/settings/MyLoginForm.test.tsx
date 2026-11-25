@@ -42,7 +42,7 @@ describe('MyLoginForm', () => {
   it.each(['a b', 'octocat-'])('(c) 무효 입력 %s', async (bad) => {
     const { user, input, onSaved } = setup();
     await user.type(input, bad);
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(screen.getByRole('button', { name: '로그인 저장' }));
     expect(screen.getByRole('alert')).toHaveTextContent('영문·숫자·하이픈만');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAccessibleDescription(/영문·숫자·하이픈만 쓸 수 있어요 \(최대 39자\)/);
@@ -54,7 +54,7 @@ describe('MyLoginForm', () => {
     it('(d0) 즉시 저장 + 되돌리기(이전 없음 → 비움), 10초 후에도 유지', async () => {
       const { user, input, onSaved } = setup({}, () => ({ status: 500 }));
       await user.type(input, 'minji');
-      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '로그인 저장' }));
       expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('minji');
       expect(onSaved).toHaveBeenCalledWith('minji');
       await user.click(screen.getByRole('button', { name: '되돌리기' }));
@@ -68,12 +68,12 @@ describe('MyLoginForm', () => {
       const { user, input } = setup({ initial: 'old' }, () => ({ status: 500 }));
       await user.clear(input);
       await user.type(input, 'minji');
-      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '로그인 저장' }));
       await user.click(screen.getByRole('button', { name: '되돌리기' }));
       expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('old');
       await user.clear(input);
       await user.type(input, 'old');
-      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '로그인 저장' }));
       expect(screen.queryByRole('button', { name: '되돌리기' })).not.toBeInTheDocument();
     });
 
@@ -84,7 +84,7 @@ describe('MyLoginForm', () => {
         release = () => res(new Response(JSON.stringify(PROBE_UNKNOWN), { status: 200 }));
       })));
       await user.type(input, 'minji');
-      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '로그인 저장' }));
       await user.click(screen.getByRole('button', { name: '되돌리기' }));
       await act(async () => { release(); });
       expect(screen.queryByText(/본 적 없는 이름/)).not.toBeInTheDocument();
@@ -93,7 +93,7 @@ describe('MyLoginForm', () => {
     it('(d0) 본 적 없는 이름이면 저장은 유지되고 한 줄 안내', async () => {
       const { user, input } = setup({}, () => ({ json: PROBE_UNKNOWN }));
       await user.type(input, 'minji');
-      await user.click(screen.getByRole('button', { name: '저장' }));
+      await user.click(screen.getByRole('button', { name: '로그인 저장' }));
       expect(await screen.findByText('“minji”은 이 팀에서 본 적 없는 이름이에요. 철자를 확인해 주세요.')).toBeInTheDocument();
       expect(localStorage.getItem(STORAGE_KEYS.myLogin)).toBe('minji');
     });
@@ -162,7 +162,7 @@ describe('MyLoginForm', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
     const { user, input, onSaved } = setup({}, () => ({ status: 500 }));
     await user.type(input, 'minji');
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    await user.click(screen.getByRole('button', { name: '로그인 저장' }));
     expect(onSaved).toHaveBeenCalledWith('minji');
   });
 });

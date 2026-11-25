@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { STORAGE_KEYS, readStorage, writeStorage } from '../lib/storage';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { STORAGE_KEYS, onStorageChange, readStorage, writeStorage } from '../lib/storage';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -16,7 +16,8 @@ function readMode(): ThemeMode {
 const osDark = () => window.matchMedia(QUERY).matches;
 
 export function useTheme() {
-  const [mode, setModeState] = useState<ThemeMode>(readMode);
+  // 저장값을 구독해 App·설정 등 여러 사용처가 같은 모드를 본다(저장소가 막혀도 메모리 폴백이 알림을 보냄).
+  const mode = useSyncExternalStore(onStorageChange, readMode);
   const [os, setOs] = useState<boolean>(osDark);
   const dark = mode === 'system' ? os : mode === 'dark';
 
@@ -32,7 +33,6 @@ export function useTheme() {
   }, [dark]);
 
   const setMode = useCallback((m: ThemeMode) => {
-    setModeState(m);
     writeStorage(STORAGE_KEYS.theme, m === 'dark' ? 'true' : m === 'light' ? 'false' : 'system');
   }, []);
   const setDark = useCallback((v: boolean) => setMode(v ? 'dark' : 'light'), [setMode]);

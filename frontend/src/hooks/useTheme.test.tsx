@@ -70,4 +70,14 @@ describe('useTheme', () => {
     act(() => result.current.setMode('system'));
     expect(localStorage.getItem('darkMode')).toBe('system');
   });
+
+  it('두 사용처(App·설정)가 같은 모드를 본다: 설정에서 어둡게 고른 뒤 OS가 바뀌어도 유지', () => {
+    const app = renderHook(() => useTheme());
+    const settings = renderHook(() => useTheme());
+    act(() => settings.result.current.setMode('dark'));
+    expect(app.result.current.mode).toBe('dark');
+    flipOs(true);
+    flipOs(false);
+    expect(html()).toBe(true);
+  });
 });

@@ -87,7 +87,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
     <form onSubmit={submit} className="space-y-2">
       <label htmlFor={id} className="block text-sm font-medium">내 GitHub 로그인</label>
       <p id={`${id}-hint`} className="text-sm text-muted">github.com/ 뒤에 오는 이름이에요.</p>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           ref={inputRef}
           id={id}
@@ -95,14 +95,14 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
           onChange={(e) => { setValue(e.target.value); setInvalid(false); setConfirm(''); setUnknown(''); }}
           aria-invalid={invalid}
           aria-describedby={`${id}-hint ${id}-preview ${id}-err`}
-          className="min-h-9 w-64 rounded border border-border bg-surface-raised px-3 text-sm"
+          className="min-h-9 min-w-40 max-w-64 flex-1 rounded border border-border bg-surface-raised px-3 text-sm"
         />
         <button
           type="submit"
           aria-disabled={busy}
           className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast"
         >
-          {busy ? '확인하는 중…' : firstRun ? '저장하고 내 리뷰 요청 보기' : '저장'}
+          {busy ? '확인하는 중…' : firstRun ? '저장하고 내 리뷰 요청 보기' : '로그인 저장'}
         </button>
       </div>
       <p id={`${id}-preview`} className="text-sm text-muted">
