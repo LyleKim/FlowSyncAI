@@ -22,7 +22,7 @@ export async function listWatchedRepos(): Promise<WatchedRepo[]> {
 }
 
 export async function removeWatchedRepo(id: number): Promise<void> {
-  await parse<void>(await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE' }));
+  await parse<void>(await fetch(`${BASE}/watched-repos/${id}/`, { method: 'DELETE', keepalive: true }));
 }
 
 export async function syncPullRequests(repoId?: number): Promise<SyncResult> {

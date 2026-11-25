@@ -34,6 +34,7 @@ describe('integrationsApi', () => {
     await expect(removeWatchedRepo(3)).resolves.toBeUndefined();
     expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/integrations/watched-repos/3/');
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE');
+    expect(fetchMock.mock.calls[0][1].keepalive).toBe(true);
     fetchMock.mockResolvedValueOnce(json({ error: 'Not found' }, 404));
     await expect(removeWatchedRepo(9)).rejects.toThrow('Not found');
   });

@@ -43,6 +43,6 @@ export async function updateAreaAlias(
 }
 
 export async function deleteAreaAlias(repoId: number, id: number): Promise<void> {
-  const res = await fetch(url(repoId, id), { method: 'DELETE' });
+  const res = await fetch(url(repoId, id), { method: 'DELETE', keepalive: true });
   if (!res.ok) await fail(res);
 }

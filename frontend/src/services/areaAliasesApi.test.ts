@@ -57,6 +57,7 @@ describe('areaAliasesApi', () => {
     const { calls } = routeFetch({ [`DELETE ${BASE}7/`]: () => ({ status: 204 }) });
     await expect(deleteAreaAlias(1, 7)).resolves.toBeUndefined();
     expect(calls[0].method).toBe('DELETE');
+    expect(vi.mocked(fetch).mock.calls[0][1]?.keepalive).toBe(true);
     routeFetch({ [`DELETE ${BASE}7/`]: () => ({ status: 404, json: { error: 'nf' } }) });
     await expect(deleteAreaAlias(1, 7)).rejects.toBeInstanceOf(ApiError);
   });

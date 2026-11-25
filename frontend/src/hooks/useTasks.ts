@@ -38,6 +38,8 @@ const send = async (method: string, url: string, body?: unknown, post = false) =
         method,
         headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
+        // 지연 커밋(useUndo)의 DELETE는 pagehide에서 나갈 수 있어 페이지가 내려가도 살아남게.
+        keepalive: method === 'DELETE',
       });
   if (!res.ok) throw new Error(`${method} ${url} ${res.status}`);
   return res;

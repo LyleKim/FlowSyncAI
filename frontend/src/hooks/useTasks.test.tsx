@@ -103,6 +103,20 @@ describe('useTasks', () => {
     expect(result.current.tasks.map((t) => t.id)).toEqual(['b']);
   });
 
+  it('(f2) 지연 커밋 DELETE는 pagehide에도 살아남도록 keepalive로 보낸다', async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.loadState).toBe('ready'));
+    fetchMock.mockImplementation(async () => new Response(null, { status: 204 }));
+    await act(async () => {
+      await result.current.deleteTask('a');
+      await result.current.removeSubtask('b', 's1');
+      await result.current.deleteReview('b', 'r1');
+    });
+    const dels = fetchMock.mock.calls.filter((c) => c[1]?.method === 'DELETE');
+    expect(dels).toHaveLength(3);
+    for (const c of dels) expect(c[1].keepalive).toBe(true);
+  });
+
   it('(c2) 중복 moveTask의 두 번째 호출은 상태도 바꾸지 않는다', async () => {
     const { result } = setup();
     await waitFor(() => expect(result.current.loadState).toBe('ready'));
