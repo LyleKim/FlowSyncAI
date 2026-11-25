@@ -8,7 +8,7 @@ import { AREA_DAY_OPTIONS, type AreaSort, areasHref, parseAreaParams } from '../
 import { disconnectedAliases, sortAreas, summarizeAreas } from '../lib/areaChart';
 import { AreaRows } from '../components/areas/AreaRows';
 import { AreaNotices, analyzedAgo } from '../components/areas/AreaNotices';
-import { CouplingRanking } from '../components/areas/CouplingRanking';
+import { CouplingMap } from '../components/areas/CouplingMap';
 import type { Area } from '../types/areas';
 
 const SORT_OPTIONS: { value: AreaSort; label: string }[] = [
@@ -210,8 +210,15 @@ export default function AreasScreen() {
         <WeeklyTable areas={sorted} />
         <section aria-labelledby="areas-coupling" className="mt-8 space-y-3">
           <h2 id="areas-coupling" className="text-base font-semibold">함께 바뀐 영역</h2>
-          <p className="text-body-sm text-muted">같은 커밋에서 함께 바뀐 횟수가 많은 순서예요.</p>
-          <CouplingRanking couplings={data.couplings} areas={data.areas} repoId={repoId} days={data.days} />
+          <p className="text-body-sm text-muted">선이 굵을수록 같은 커밋에서 자주 함께 바뀐 영역이에요.</p>
+          <CouplingMap
+            couplings={data.couplings}
+            areas={data.areas}
+            repoId={repoId}
+            days={data.days}
+            truncated={data.truncated}
+            analyzedCommits={data.analyzedCommits}
+          />
         </section>
       </>
     );

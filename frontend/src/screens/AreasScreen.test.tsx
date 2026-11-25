@@ -249,8 +249,10 @@ describe('AreasScreen', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
-  it('함께 바뀐 영역: 순위 목록', () => {
+  it('함께 바뀐 영역: 그래프 + 목록으로 보기', () => {
     show();
+    expect(screen.getByRole('group', { name: /^함께 바뀐 영역 그래프/ })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '가 영역 ↔ 나 영역 · 커밋 5개' })).toBeInTheDocument();
     const list = screen.getByRole('list', { name: '함께 바뀐 영역' });
     expect(within(list).getByText('커밋 5개')).toBeInTheDocument();
     expect(within(list).getByRole('link', { name: '가 영역' })).toHaveAttribute('href', '/areas/a?repo=1');
