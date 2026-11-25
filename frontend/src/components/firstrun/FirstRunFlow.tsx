@@ -124,7 +124,7 @@ export default function FirstRunFlow({ onFinished }: { onFinished: () => void })
         <>
           {repos.length > 0 && (
             <div className="space-y-1 rounded border border-border bg-surface-sunken p-3 text-sm">
-              <p className="font-medium">팀이 이미 레포 {repos.length}개를 연결해 두었어요</p>
+              <p className="font-semibold">팀이 이미 레포 {repos.length}개를 연결해 두었어요</p>
               <p className="text-muted">로그인만 입력하면 바로 시작할 수 있어요. 레포를 따로 추가하지 않아도 돼요.</p>
             </div>
           )}
@@ -156,7 +156,7 @@ export default function FirstRunFlow({ onFinished }: { onFinished: () => void })
           <h1 tabIndex={-1} className={h1Class}>리뷰 요청을 가져오고 있어요</h1>
           {s.serverDown ? (
             <div role="alert" className="space-y-2 rounded border border-border bg-surface-sunken p-3 text-sm">
-              <p className="font-medium">서버에 연결할 수 없어요</p>
+              <p className="font-semibold">서버에 연결할 수 없어요</p>
               <p className="text-muted">이 앱의 서버가 꺼져 있거나 네트워크가 끊겼을 수 있어요. 지금은 리뷰 요청을 보여드릴 수 없어요.</p>
               <button type="button" onClick={() => dispatch({ type: 'retry' })} className={btn}>다시 시도</button>
             </div>

@@ -59,7 +59,7 @@ export default function ConnectRepoForm({ onConnected, autoFocus }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-2">
-      <label htmlFor={id} className="block text-sm font-medium">레포 추가</label>
+      <label htmlFor={id} className="block text-sm font-semibold">레포 추가</label>
       <div className="flex gap-2">
         <input
           id={id}
@@ -71,14 +71,14 @@ export default function ConnectRepoForm({ onConnected, autoFocus }: Props) {
           aria-describedby={invalid ? `${id}-err` : undefined}
           className="min-h-9 w-full min-w-0 max-w-md rounded border border-border bg-surface-raised px-3 text-sm"
         />
-        <button type="submit" aria-disabled={adding} className="min-h-9 shrink-0 rounded bg-accent px-3 text-sm font-medium text-accent-contrast aria-disabled:opacity-60">
+        <button type="submit" aria-disabled={adding} className="min-h-9 shrink-0 rounded bg-accent px-3 text-sm font-semibold text-accent-contrast aria-disabled:opacity-60">
           {adding ? '추가하는 중…' : '추가'}
         </button>
       </div>
       {invalid && <p id={`${id}-err`} role="alert" className="text-sm text-danger">{invalid}</p>}
       {failed && (
         <p role="alert" className="text-sm text-danger">
-          <span className="font-medium">{SAVE_FAILED}</span> {SAVE_FAILED_BODY}
+          <span className="font-semibold">{SAVE_FAILED}</span> {SAVE_FAILED_BODY}
         </p>
       )}
       {notice && <p role="status" className="text-sm text-muted">{notice}</p>}

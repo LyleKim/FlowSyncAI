@@ -25,6 +25,21 @@ describe('PrQueueRow', () => {
     expect(container.querySelector('li')).toHaveAttribute('data-row-id', 'acme/api#58:minji-park');
   });
 
+  it('a2: 대기 칸 막대 7칸, 채운 칸 = 글자와 같은 일수(1칸 = 1일, 7일 이상 7칸), 장식이라 aria-hidden', () => {
+    const filled = (c: HTMLElement) => c.querySelectorAll('[data-wait-cells] [data-filled]').length;
+    const { container, unmount } = row(); // 4일 4시간 → "요청 후 4일"과 같은 4칸
+    const bar = container.querySelector('[data-wait-cells]')!;
+    expect(bar).toHaveAttribute('aria-hidden', 'true');
+    expect(bar.children).toHaveLength(7);
+    expect(filled(container)).toBe(4);
+    unmount();
+    const { container: c2, unmount: u2 } = row({ requestedAt: '2026-11-01T00:00:00Z' });
+    expect(filled(c2)).toBe(7);
+    u2();
+    const { container: c3 } = row({ requestedAt: 'bad' });
+    expect(c3.querySelector('[data-wait-cells]')).toBeNull();
+  });
+
   it('b: 다시 요청됨 + 내 리뷰', () => {
     row({ reRequested: true, myReview: { state: 'CHANGES_REQUESTED', submittedAt: '2026-11-24T02:00:00Z' } });
     expect(screen.getByText('다시 요청됨')).toBeInTheDocument();

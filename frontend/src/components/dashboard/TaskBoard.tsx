@@ -30,7 +30,7 @@ const Card: FC<CardProps> = ({ task, linkSearch, onMoveTask, onDeleteTask }) => 
       <span className="flex flex-wrap items-center gap-2">
         {/* 카드 전체가 링크 영역. 위에 얹는 컨트롤은 relative z-10 */}
         <Link to={taskLinkTo(task.id, linkSearch)}
-          className="min-h-6 break-words font-medium text-text after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
+          className="min-h-6 break-words font-semibold text-text after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
           {title}
         </Link>
         {pr && <span className="relative z-10"><PrBadge url={task.sourceUrl} showWithoutLink /></span>}

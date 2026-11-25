@@ -37,7 +37,7 @@ export default function Sidebar({ reviewBadge }: { reviewBadge?: number }) {
         <CheckSquare size={18} aria-hidden="true" className="text-accent" />
         <span>FlowSync AI</span>
       </div>
-      <nav aria-label="주 메뉴" className="flex gap-1 overflow-x-auto px-3 pb-2 md:flex-1 md:flex-col md:py-4">
+      <nav aria-label="주 메뉴" className="flex flex-wrap gap-1 px-3 pb-2 md:flex-1 md:flex-col md:flex-nowrap md:py-4">
         {ITEMS.map((it) => (
           <Item key={it.to} {...it} badge={it.to === ROUTES.me ? reviewBadge : undefined} />
         ))}

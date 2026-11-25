@@ -101,7 +101,7 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
       </p>
       {loadFailed && (
         <div role="alert" className="space-y-1 rounded border border-border bg-surface-sunken p-3 text-sm">
-          <p className="font-medium">서버에 연결할 수 없어요</p>
+          <p className="font-semibold">서버에 연결할 수 없어요</p>
           <p className="text-muted">이 앱의 서버가 꺼져 있거나 네트워크가 끊겼을 수 있어요.</p>
           <button type="button" onClick={() => void load()} className="min-h-9 rounded border border-border px-3">다시 시도</button>
         </div>
@@ -117,7 +117,7 @@ export default function ConnectedReposSection({ onReposChange }: { onReposChange
       ) : (
         !loadFailed && (
           <div className="space-y-1 text-sm">
-            <p className="font-medium">아직 리뷰 요청을 가져올 레포가 없어요</p>
+            <p className="font-semibold">아직 리뷰 요청을 가져올 레포가 없어요</p>
             <p className="text-muted">레포를 연결하면 내게 온 리뷰 요청이 여기에 모여요.</p>
           </div>
         )

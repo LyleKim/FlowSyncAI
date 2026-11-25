@@ -70,7 +70,7 @@ export default function TasksScreen() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-heading font-bold">전체 작업</h1>
-        <Link to={ROUTES.newTask} className="inline-flex min-h-9 items-center rounded border border-border bg-surface-raised px-3 text-body-sm font-medium hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus-ring">새 작업</Link>
+        <Link to={ROUTES.newTask} className="inline-flex min-h-9 items-center rounded border border-border bg-surface-raised px-3 text-body-sm font-semibold hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus-ring">새 작업</Link>
       </div>
       <div className="mt-4">
         <TaskFilterBar state={state} onChange={onChange} assignees={assignees} counts={counts} hasMe={!!login} resultCount={shown.length} />

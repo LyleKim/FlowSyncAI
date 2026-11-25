@@ -13,7 +13,7 @@ import type { AreaDetail } from '../types/areas';
 
 const focus = 'focus-visible:outline-2 focus-visible:outline-focus-ring';
 const linkCls = `inline-flex min-h-6 items-center underline underline-offset-2 wrap-anywhere ${focus}`;
-const btn = `min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-medium ${focus}`;
+const btn = `min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-semibold ${focus}`;
 const box = 'mt-4 rounded border border-border bg-surface-raised p-4 text-body-sm';
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {

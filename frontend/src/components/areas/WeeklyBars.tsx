@@ -40,7 +40,8 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
   });
 
   return (
-    <div className={`inline-block text-(--text-muted) ${detail ? 'px-3' : 'max-w-full'}`}>
+    // relative: sr-only 날짜(position:absolute)가 가로 스크롤 상자를 벗어나 페이지 폭을 늘리지 않게
+    <div className={`relative inline-block text-(--text-muted) ${detail ? 'px-3' : 'max-w-full'}`}>
       {detail && (
         <div aria-hidden="true" style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
           {weekly.map((w, i) => (
@@ -99,9 +100,16 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
       </svg>
       {detail && (
         <div style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
-          {weekly.map((w, i) => (
-            <span key={w.weekStart} style={col(i)}>{md(w.weekStart)}</span>
-          ))}
+          {/* 칸(16px)이 "11/17"보다 좁아 매주 쓰면 겹친다: 첫 주·4주마다(4칸 눈금과 같은 간격)·마지막 주만 보이고
+              마지막 주와 4칸 안쪽으로 붙는 라벨은 건너뛴다. 나머지 날짜는 스크린리더에만 남긴다(10 §6.2) */}
+          {weekly.map((w, i) => {
+            const shown = i === n - 1 || (i % 4 === 0 && n - 1 - i >= 4);
+            return (
+              <span key={w.weekStart} data-week-label style={col(i)}>
+                <span className={shown ? undefined : 'sr-only'}>{md(w.weekStart)}</span>
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

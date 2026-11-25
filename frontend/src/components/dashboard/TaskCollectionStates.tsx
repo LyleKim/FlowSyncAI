@@ -15,8 +15,8 @@ export const TASKS_COPY = {
   clearFilters: '필터 해제',
 } as const;
 
-const btn = 'min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-medium focus-visible:outline-2 focus-visible:outline-focus-ring';
-const link = 'inline-flex min-h-9 items-center rounded border border-border px-3 text-body-sm font-medium hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus-ring';
+const btn = 'min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-semibold focus-visible:outline-2 focus-visible:outline-focus-ring';
+const link = 'inline-flex min-h-9 items-center rounded border border-border px-3 text-body-sm font-semibold hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus-ring';
 
 export function TasksLoading() {
   return (

@@ -36,7 +36,7 @@ const ConnectedRepoRow: FC<Props> = ({ repo, now = new Date(), onRetry, onDiscon
   return (
     <li ref={rowRef} className="space-y-1 py-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="min-w-0 truncate text-sm font-medium">{name}</span>
+        <span className="min-w-0 truncate text-sm font-semibold">{name}</span>
         <span className={`rounded border px-1.5 text-xs ${view ? 'border-danger text-danger' : 'border-success text-success'}`}>
           {view ? '실패' : '정상'}
         </span>
@@ -47,7 +47,7 @@ const ConnectedRepoRow: FC<Props> = ({ repo, now = new Date(), onRetry, onDiscon
       </div>
       {view && (
         <div className="space-y-1 text-sm">
-          <p className="font-medium">{view.title}</p>
+          <p className="font-semibold">{view.title}</p>
           <p className="text-muted">{view.body}</p>
         </div>
       )}

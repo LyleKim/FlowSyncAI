@@ -128,7 +128,7 @@ export default function AreaNamesSection() {
         <p className="text-sm text-muted">불러오는 중이에요</p>
       ) : repos === 'failed' ? (
         <div role="alert" className="space-y-1 rounded border border-border bg-surface-sunken p-3 text-sm">
-          <p className="font-medium">레포 목록을 읽지 못했어요</p>
+          <p className="font-semibold">레포 목록을 읽지 못했어요</p>
           <p className="text-muted">레포를 알아야 영역 이름을 보여드릴 수 있어요. 잠시 후 다시 시도해 주세요.</p>
           <button type="button" onClick={loadRepos} className="min-h-9 rounded border border-border px-3">다시 시도</button>
         </div>
@@ -156,9 +156,9 @@ export default function AreaNamesSection() {
             <table className="block w-full text-sm md:table">
               <thead className="hidden md:table-header-group">
                 <tr className="text-left text-muted">
-                  <th scope="col" className="py-2 pr-3 font-medium">원래 경로</th>
-                  <th scope="col" className="py-2 pr-3 font-medium">표시 이름</th>
-                  <th scope="col" className="py-2 font-medium">상태</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">원래 경로</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">표시 이름</th>
+                  <th scope="col" className="py-2 font-semibold">상태</th>
                 </tr>
               </thead>
               <tbody className="block md:table-row-group">
@@ -204,19 +204,19 @@ export default function AreaNamesSection() {
                         <div role="status" className="mt-1">{msg?.kind === 'saved' && '저장했어요'}</div>
                         {msg?.kind === 'error' && (
                           <div role="alert" className="mt-1 text-danger">
-                            <p className="font-medium">저장하지 못했어요</p>
+                            <p className="font-semibold">저장하지 못했어요</p>
                             <p>입력한 내용은 그대로 두었어요. 잠시 후 다시 시도해 주세요.</p>
                           </div>
                         )}
                         {msg?.kind === 'gone' && (
                           <div role="alert" className="mt-1 text-danger">
-                            <p className="font-medium">다른 사람이 이 이름을 지웠어요</p>
+                            <p className="font-semibold">다른 사람이 이 이름을 지웠어요</p>
                             <p>입력한 이름은 그대로 두었어요. 저장하면 새 이름으로 다시 붙여요.</p>
                           </div>
                         )}
                         {msg?.kind === 'conflict' && (
                           <div role="alert" className="mt-1 space-y-1 rounded border border-border-strong bg-surface-sunken p-2">
-                            <p className="font-medium">다른 사람이 방금 이름을 바꿨어요</p>
+                            <p className="font-semibold">다른 사람이 방금 이름을 바꿨어요</p>
                             <p>지금 이름은 “{msg.current}”예요. 내가 쓴 “{msg.mine}”은 그대로 남겨 두었어요.</p>
                             <div className="flex flex-wrap gap-2">
                               <button type="button" onClick={() => void save(path, alias, value)}

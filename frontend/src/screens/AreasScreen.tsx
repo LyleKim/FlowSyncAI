@@ -19,8 +19,8 @@ const SORT_OPTIONS: { value: AreaSort; label: string }[] = [
 
 const REFRESH_HINT = '분석 중이거나 방금 분석했어요. 잠시 뒤에 다시 할 수 있어요.';
 const focus = 'focus-visible:outline-2 focus-visible:outline-focus-ring';
-const btn = `min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-medium aria-disabled:text-muted ${focus}`;
-const linkBtn = `inline-flex min-h-9 items-center rounded border border-border px-3 text-body-sm font-medium hover:bg-surface-sunken ${focus}`;
+const btn = `min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-semibold aria-disabled:text-muted ${focus}`;
+const linkBtn = `inline-flex min-h-9 items-center rounded border border-border px-3 text-body-sm font-semibold hover:bg-surface-sunken ${focus}`;
 const selectCls = `min-h-9 max-w-full rounded border border-border bg-surface-raised px-2 text-body-sm ${focus}`;
 const box = 'mt-4 rounded border border-border bg-surface-raised p-4 text-body-sm';
 

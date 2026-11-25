@@ -30,7 +30,7 @@ export function ChecklistSection({ task }: { task: Task }) {
 
   return (
     <details className="mt-4 border-t border-border pt-3">
-      <summary className="min-h-6 cursor-pointer text-body-sm font-medium">체크리스트 ({done}/{task.subtasks.length}){task.hasUnreflectedReview && ' · 새 검토 미반영'}</summary>
+      <summary className="min-h-6 cursor-pointer text-body-sm font-semibold">체크리스트 ({done}/{task.subtasks.length}){task.hasUnreflectedReview && ' · 새 검토 미반영'}</summary>
       <div className="mt-3 flex flex-col gap-3">
         {task.hasUnreflectedReview && (
           <p className="text-body-sm text-warning">새 역할 검토가 아직 체크리스트에 반영되지 않았어요</p>

@@ -333,7 +333,7 @@
 - [ ] **Step 1: 실패 테스트** `tokenValues.test.ts`: (a) `index.css`에 `TEMP: Impeccable` 0건; (b) `--font-sans` 값이 `Pretendard`로 시작하고 폴백 스택(`Apple SD Gothic Neo`, `Malgun Gothic`, `system-ui`)을 포함; (c) `@font-face`의 `src`가 모두 `/fonts/`로 시작하는 로컬 경로이고 `http(s)://` URL 0건(결정 20); (d) 비테스트 소스의 `dark:` 변형 0건(`bg-surface` 계열로 통일); (e) `index.css`의 라이트·다크 블록에 10 §5의 토큰 21개가 모두 hex 값으로 존재(비어 있지 않음).
 - [ ] **Step 2:** `npx vitest run frontend/src/styles/tokenValues.test.ts` → FAIL
 - [ ] **Step 3: 구현** 값 교체와 `dark:` 치환. 폰트 파일은 `npm pack pretendard`를 **임시 디렉터리**에서 실행해 동적 서브셋 woff2만 `frontend/public/fonts/`로 복사한다(`package.json`에 의존성을 추가하지 않는다. 설치 경로·용량은 10 §2.1이 "확인 필요"로 남긴 항목이므로 실제 용량을 PR 설명에 적는다). `font-display: swap`, 숫자에 `font-variant-numeric: tabular-nums`.
-- [ ] **Step 4: 검증과 게이트** `npm test`, `npm run lint`, `npm run build` PASS. 10 §3.3 대비 재측정(호버·눌림·비활성), DevTools 그레이스케일, 320px. 그다음 `/#/me`, `/#/areas`, `/#/tasks`, `/#/settings`의 라이트·다크 스크린샷을 사용자에게 보여 주고 **승인을 받기 전에는 머지하지 않는다**(결정 36: 이 방향은 Impeccable이 배정한 후보이며 렌더링을 보고 재검토할 수 있다).
+- [x] **Step 4: 검증과 게이트** (2026-11-26 사용자 렌더 승인, 00 결정 46) `npm test`, `npm run lint`, `npm run build` PASS. 10 §3.3 대비 재측정(호버·눌림·비활성), DevTools 그레이스케일, 320px. 그다음 `/#/me`, `/#/areas`, `/#/tasks`, `/#/settings`의 라이트·다크 스크린샷을 사용자에게 보여 주고 **승인을 받기 전에는 머지하지 않는다**(결정 36: 이 방향은 Impeccable이 배정한 후보이며 렌더링을 보고 재검토할 수 있다).
 - [ ] **Step 5: 커밋** `feat: 시각 토큰 값과 Pretendard 자가 호스팅 적용`
 
 ---

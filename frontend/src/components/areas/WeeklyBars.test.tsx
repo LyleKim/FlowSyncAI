@@ -85,6 +85,18 @@ describe('WeeklyBars', () => {
     expect(getByText('10/27').parentElement!.getAttribute('aria-hidden')).toBeNull();
   });
 
+  it('(k) detail 날짜는 첫 주·4주 간격·마지막 주만 보이고, 보이는 라벨끼리 4칸 이상 떨어짐(나머지는 sr 전용)', () => {
+    const shownIdx = (c: HTMLElement) =>
+      Array.from(c.querySelectorAll('[data-week-label]')).flatMap((s, i) => (s.querySelector('.sr-only') ? [] : [i]));
+    const { container } = setup(Array(26).fill(2), { variant: 'detail' });
+    const spans = Array.from(container.querySelectorAll('[data-week-label]'));
+    expect(spans).toHaveLength(26);
+    expect(spans.every((s) => s.textContent)).toBe(true);
+    expect(shownIdx(container)).toEqual([0, 4, 8, 12, 16, 20, 25]);
+    expect(shownIdx(setup(Array(6).fill(2), { variant: 'detail' }).container)).toEqual([0, 5]);
+    expect(shownIdx(setup(Array(5).fill(2), { variant: 'detail' }).container)).toEqual([0, 4]);
+  });
+
   it('(i) 막대 수에 비례해 viewBox 폭이 늘어남', () => {
     const w = (n: number) => {
       const { container } = setup(Array(n).fill(2));

@@ -16,7 +16,7 @@ interface Props {
 
 const box = 'rounded border border-border bg-surface-sunken p-3 text-body-sm';
 const btn =
-  'mt-2 min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-medium focus-visible:outline-2 focus-visible:outline-focus-ring';
+  'mt-2 min-h-9 rounded border border-border bg-surface-raised px-3 text-body-sm font-semibold focus-visible:outline-2 focus-visible:outline-focus-ring';
 
 export function AreaNotices({ data, stale, now, onExtend }: Props) {
   return (

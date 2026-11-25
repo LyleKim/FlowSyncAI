@@ -85,7 +85,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
 
   return (
     <form onSubmit={submit} className="space-y-2">
-      <label htmlFor={id} className="block text-sm font-medium">내 GitHub 로그인</label>
+      <label htmlFor={id} className="block text-sm font-semibold">내 GitHub 로그인</label>
       <p id={`${id}-hint`} className="text-sm text-muted">github.com/ 뒤에 오는 이름이에요.</p>
       <div className="flex flex-wrap gap-2">
         <input
@@ -100,7 +100,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
         <button
           type="submit"
           aria-disabled={busy}
-          className="min-h-9 rounded bg-accent px-3 text-sm font-medium text-accent-contrast"
+          className="min-h-9 rounded bg-accent px-3 text-sm font-semibold text-accent-contrast"
         >
           {busy ? '확인하는 중…' : firstRun ? '저장하고 내 리뷰 요청 보기' : '로그인 저장'}
         </button>
@@ -128,7 +128,7 @@ export default function MyLoginForm({ initial = '', onSaved, variant = 'settings
           <p>“{confirm}”은 이 팀에서 본 적 없는 이름이에요. 맞나요?</p>
           <p className="text-muted">철자와 대문자는 상관없어요.</p>
           <div className="flex gap-2">
-            <button type="button" onClick={() => commitSave(confirm)} className="min-h-9 rounded bg-accent px-3 font-medium text-accent-contrast">맞아요</button>
+            <button type="button" onClick={() => commitSave(confirm)} className="min-h-9 rounded bg-accent px-3 font-semibold text-accent-contrast">맞아요</button>
             <button type="button" onClick={() => { setConfirm(''); inputRef.current?.focus(); }} className="min-h-9 rounded border border-border px-3">수정</button>
           </div>
         </div>

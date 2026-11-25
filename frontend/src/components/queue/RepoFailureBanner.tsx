@@ -37,7 +37,7 @@ function RepoFailure({
   };
   return (
     <li ref={rowRef} className="py-2">
-      <p className="font-medium">{v.title}</p>
+      <p className="font-semibold">{v.title}</p>
       <p className="text-sm">{v.body}</p>
       {clock && <p className="text-sm text-muted">{clock} 기준</p>}
       <div className="mt-1 flex flex-wrap items-center gap-2">

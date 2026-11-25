@@ -29,6 +29,13 @@ describe('AppShell', () => {
     expect(current[0]).toHaveTextContent('설정');
   });
 
+  it('(n) 좁은 폭 상단 탭은 가로 스크롤 대신 줄바꿈(라벨이 잘리지 않게), md 이상은 한 열', () => {
+    shell('/settings');
+    const nav = screen.getByRole('navigation', { name: '주 메뉴' });
+    expect(nav.className).toMatch(/(^|\s)flex-wrap(\s|$)/);
+    expect(nav.className).not.toMatch(/overflow-x-(auto|scroll)/);
+  });
+
   it('(m) 로그인 없음+/me → nav 없음, main·h1 1개 / 로그인 있음 → nav / 로그인 없음+/settings → nav', () => {
     const { unmount } = shell('/me');
     expect(screen.queryByRole('navigation', { name: '주 메뉴' })).not.toBeInTheDocument();

@@ -34,6 +34,10 @@ describe('시각 토큰 값(F-T17)', () => {
     const hits = walk('frontend/src').filter((f) => /\bdark:/.test(readFileSync(f, 'utf8')));
     expect(hits).toEqual([]);
   });
+  it('(f) 굵기는 400/600/700만: 비테스트 소스에 font-thin·light·medium·extrabold·black 0건(10 §2.2)', () => {
+    const hits = walk('frontend/src').filter((f) => /\bfont-(thin|extralight|light|medium|extrabold|black)\b/.test(readFileSync(f, 'utf8')));
+    expect(hits).toEqual([]);
+  });
   it.each([':root', '.dark'])('(e) %s 블록의 토큰 21개가 hex 값', (sel) => {
     const b = block(sel);
     for (const n of NAMES) expect(b, n).toMatch(new RegExp(`--${n}:\\s*#[0-9a-f]{6};`, 'i'));

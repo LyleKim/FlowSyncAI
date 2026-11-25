@@ -1,6 +1,8 @@
 import type { ReviewQueueItem } from '../../types/reviewQueue';
 import { changeSizeSpoken, formatChangeSize, myReviewLabel, waitBasisLabel, waitLabel } from '../../lib/reviewQueue';
 import { formatClock } from '../../lib/repoCopy';
+import { waitBarCells, waitingDays } from '../../lib/areaChart';
+import { WaitCells } from '../common/WaitCells';
 
 const badge = 'rounded border border-border px-1.5 py-0.5 text-xs';
 const linkCls =
@@ -23,6 +25,8 @@ export function PrQueueRow({
   unverifiedSince?: string | null;
 }) {
   const review = myReviewLabel(item.myReview, now);
+  // 1칸 = 1일(옆 글자 "N일"과 같은 내림, 하루 미만도 1칸), 7일 이상은 7칸. 시각을 모르면 막대도 없다
+  const cells = Number.isNaN(Date.parse(item.requestedAt)) ? null : waitBarCells(waitingDays(item.requestedAt, now));
   return (
     <li
       data-row-id={item.id}
@@ -31,10 +35,11 @@ export function PrQueueRow({
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 lg:block">
         <strong>{waitLabel(item.requestedAt, item.requestedAtSource, now)}</strong>{' '}
         <span className="text-sm text-muted">{waitBasisLabel(item.requestedAtSource)}</span>
+        {cells !== null && <span className="lg:mt-1 lg:block"><WaitCells filled={cells} /></span>}
         {item.reRequested && <span className={`${badge} ml-1`}>다시 요청됨</span>}
       </div>
       <div className="min-w-0">
-        <h3 className="min-w-0 break-words font-medium">{item.title}</h3>
+        <h3 className="min-w-0 break-words font-semibold">{item.title}</h3>
         <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
           <li className="min-w-0 break-words">
             {item.repo} #{item.number}

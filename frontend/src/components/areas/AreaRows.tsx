@@ -14,6 +14,7 @@ import {
 } from '../../lib/areaChart';
 import type { Area, AreaAlias } from '../../types/areas';
 import { WeeklyBars } from './WeeklyBars';
+import { WaitCells } from '../common/WaitCells';
 import { useWide } from '../../hooks/useWide';
 
 interface Props {
@@ -60,7 +61,7 @@ function WaitCount({ a, now }: { a: Area; now: Date }) {
     <div className="space-y-1">
       <p>리뷰 대기 {prCount}건{d !== null && ` · ${waitLabel(d)}`}</p>
       {/* 1칸 = 1일, 같은 값이 위 글자에 있다 */}
-      {d !== null && <span aria-hidden="true" className="block h-2 rounded-sm bg-muted" style={{ width: waitBarCells(d) * 8 }} />}
+      {d !== null && <WaitCells filled={waitBarCells(d)} />}
     </div>
   );
 }

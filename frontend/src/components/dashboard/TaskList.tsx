@@ -68,7 +68,7 @@ export default function TaskList({ tasks, sort, onSortChange, linkSearch, onMove
               <td role="cell" className="block px-3 py-1 md:table-cell md:py-2">
                 <span className="flex flex-wrap items-center gap-2">
                   <Link to={taskLinkTo(t.id, linkSearch)}
-                    className="min-h-6 break-words font-medium text-text hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
+                    className="min-h-6 break-words font-semibold text-text hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring">
                     {title}
                   </Link>
                   {pr && <PrBadge url={t.sourceUrl} showWithoutLink />}

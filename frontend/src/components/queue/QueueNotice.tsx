@@ -44,7 +44,7 @@ export function QueueNotice({ kind, login, repoCount = 0, lastSuccessAt, onRetry
     <div className="py-4" role={kind === 'server_error' ? 'alert' : undefined}>
       {kind === 'server_error' && (
         <>
-          <p className="font-medium">서버에 연결할 수 없어요</p>
+          <p className="font-semibold">서버에 연결할 수 없어요</p>
           <p className="text-sm">
             이 앱의 서버가 꺼져 있거나 네트워크가 끊겼을 수 있어요. 지금은 리뷰 요청을 보여드릴 수 없어요.
           </p>
@@ -57,7 +57,7 @@ export function QueueNotice({ kind, login, repoCount = 0, lastSuccessAt, onRetry
       )}
       {kind === 'no_repos' && (
         <>
-          <p className="font-medium">아직 리뷰 요청을 가져올 레포가 없어요</p>
+          <p className="font-semibold">아직 리뷰 요청을 가져올 레포가 없어요</p>
           <p className="text-sm">
             <Link to={ROUTES.settings} className={link}>레포 연결</Link>
           </p>
@@ -65,7 +65,7 @@ export function QueueNotice({ kind, login, repoCount = 0, lastSuccessAt, onRetry
       )}
       {kind === 'login_unknown' && (
         <>
-          <p className="font-medium">
+          <p className="font-semibold">
             레포 {repoCount}개에서 “{login}”에게 온 리뷰 요청을 찾지 못했어요.
           </p>
           <p className="text-sm">정말 없는 걸 수도 있고, 로그인이 다른 이름일 수도 있어요.</p>
@@ -76,7 +76,7 @@ export function QueueNotice({ kind, login, repoCount = 0, lastSuccessAt, onRetry
       )}
       {kind === 'no_waiting' && (
         <>
-          <p className="font-medium">지금 리뷰 대기 PR이 없어요</p>
+          <p className="font-semibold">지금 리뷰 대기 PR이 없어요</p>
           {clock && <p className="text-sm text-muted">{clock}에 가져왔어요</p>}
           <p className="text-sm">
             <Link to={ROUTES.areas} className={link}>영역 흐름 보기</Link>

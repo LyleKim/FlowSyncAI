@@ -38,7 +38,7 @@ export function EmptyQueueAreaSummary({ repoId, repoName }: { repoId: number; re
       )}
       {state.s === 'ok' && (
         <>
-          <h2 className="font-medium">다른 영역은 지금 이래요</h2>
+          <h2 className="font-semibold">다른 영역은 지금 이래요</h2>
           <p className="text-sm text-muted">{repoName} 기준이에요</p>
           <ul className="mt-2 space-y-1">
             {state.areas.map((a) => (
