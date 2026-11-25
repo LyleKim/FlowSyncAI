@@ -139,7 +139,7 @@ describe('ChecklistSection', () => {
     expect(screen.getAllByRole('button', { name: '체크리스트 제안받기', hidden: true })).toHaveLength(1);
     await user.type(screen.getByLabelText('새 항목'), '문서화{Enter}');
     await waitFor(() => expect(calls.find((c) => c.method === 'POST')?.body).toEqual({ title: '문서화', completed: false }));
-    expect(await screen.findByText('체크리스트 (1/4)')).toBeInTheDocument();
+    expect(await screen.findByText('체크리스트 (1/4) · 새 검토 미반영')).toBeInTheDocument();
     expect(screen.getByLabelText('새 항목')).toHaveValue('');
   });
 });
