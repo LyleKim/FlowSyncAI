@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { listConnectedRepos, type ConnectedRepo } from '../../services/connectedReposApi';
 import { fetchAreaAliases, fetchAreas } from '../../services/areasApi';
+import { ApiError } from '../../services/connectedReposApi';
 import { AliasConflictError, createAreaAlias, deleteAreaAlias, updateAreaAlias } from '../../services/areaAliasesApi';
 import { usePendingIds, useUndo } from '../../hooks/useUndo';
 import type { AreaAlias } from '../../types/areas';
 
-type RowMsg = { kind: 'saved' } | { kind: 'error' } | { kind: 'conflict'; mine: string; current: string };
+type RowMsg = { kind: 'saved' } | { kind: 'error' } | { kind: 'gone' } | { kind: 'conflict'; mine: string; current: string };
 const pendingKey = (id: number) => `alias:${id}`;
 const STATUS_TEXT = { connected: '연결됨', disconnected: '연결 끊김', unknown: '확인하지 못함' } as const;
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
@@ -14,8 +15,10 @@ export default function AreaNamesSection() {
   const id = useId();
   const { schedule } = useUndo();
   const pending = usePendingIds();
-  const [repos, setRepos] = useState<ConnectedRepo[] | null>(null);
+  const [repos, setRepos] = useState<ConnectedRepo[] | null | 'failed'>(null);
   const [repoId, setRepoId] = useState<number | null>(null);
+  const repoIdRef = useRef(repoId);
+  repoIdRef.current = repoId;
   const [aliases, setAliases] = useState<AreaAlias[]>([]);
   const [aliasesFailed, setAliasesFailed] = useState(false);
   const [areaPaths, setAreaPaths] = useState<string[] | 'loading' | 'failed'>('loading');
@@ -23,11 +26,13 @@ export default function AreaNamesSection() {
   const [msgs, setMsgs] = useState<Record<string, RowMsg>>({});
   const saving = useRef(new Set<string>());
 
-  useEffect(() => {
+  const loadRepos = () => {
+    setRepos(null);
     listConnectedRepos()
       .then((r) => { setRepos(r); setRepoId(r[0]?.id ?? null); })
-      .catch(() => setRepos([]));
-  }, []);
+      .catch(() => setRepos('failed'));
+  };
+  useEffect(loadRepos, []);
 
   // 별칭은 빠르게, 영역 목록은 느릴 수 있으므로 각각 비동기로 채운다.
   useEffect(() => {
@@ -48,18 +53,27 @@ export default function AreaNamesSection() {
   const upsert = (a: AreaAlias) => setAliases((p) => [...p.filter((x) => x.pathPrefix !== a.pathPrefix), a]);
 
   const save = async (path: string, alias: AreaAlias | undefined, value: string) => {
-    if (repoId === null || saving.current.has(path)) return;
+    const rid = repoId;
+    if (rid === null || saving.current.has(path)) return;
     saving.current.add(path);
     setMsg(path, undefined);
     try {
       const name = value.trim();
       const saved = alias
-        ? await updateAreaAlias(repoId, alias.id, name, alias.updatedAt)
-        : await createAreaAlias(repoId, path, name);
+        ? await updateAreaAlias(rid, alias.id, name, alias.updatedAt)
+        : await createAreaAlias(rid, path, name);
+      if (repoIdRef.current !== rid) return; // 그새 레포를 바꿨으면 새 레포 목록에 섞지 않는다.
       upsert(saved);
       setDraft(path, undefined);
       setMsg(path, { kind: 'saved' });
     } catch (e) {
+      if (repoIdRef.current !== rid) return;
+      if (alias && e instanceof ApiError && e.status === 404) {
+        // 다른 사람이 지움: 재시도해도 404이므로 별칭을 내려놓고 입력은 남긴다 → 다음 저장은 POST.
+        setAliases((p) => p.filter((x) => x.id !== alias.id));
+        setMsg(path, { kind: 'gone' });
+        return;
+      }
       const server = e instanceof AliasConflictError ? (e.current ?? e.existing) : undefined;
       if (server) {
         // 서버 최신값을 기준으로 삼고 내 입력은 남긴다 → [내 이름으로 저장]은 server.updatedAt으로 PATCH.
@@ -113,6 +127,12 @@ export default function AreaNamesSection() {
       <p className="text-sm text-muted">폴더 이름 대신 팀이 부르는 이름을 붙여요. 팀 전체에 공유돼요.</p>
       {repos === null ? (
         <p className="text-sm text-muted">불러오는 중이에요</p>
+      ) : repos === 'failed' ? (
+        <div role="alert" className="space-y-1 rounded border border-border bg-surface-sunken p-3 text-sm">
+          <p className="font-medium">레포 목록을 읽지 못했어요</p>
+          <p className="text-muted">레포를 알아야 영역 이름을 보여드릴 수 있어요. 잠시 후 다시 시도해 주세요.</p>
+          <button type="button" onClick={loadRepos} className="min-h-9 rounded border border-border px-3">다시 시도</button>
+        </div>
       ) : repos.length === 0 ? (
         <p className="text-sm">연결된 레포가 있으면 영역 이름을 붙일 수 있어요</p>
       ) : (
@@ -150,7 +170,11 @@ export default function AreaNamesSection() {
                   const len = value.trim().length;
                   const changed = value !== original;
                   const valid = len >= 1 && len <= 80;
-                  const canSave = changed && valid;
+                  // 연결된 행의 이름 지우기 대기 중엔 편집을 막는다(저장하면 409로 되살아나는 루프 방지).
+                  const deleting = !alias && aliases.some((a) => a.pathPrefix === path && pending.has(pendingKey(a.id)));
+                  const canSave = changed && valid && !deleting;
+                  const why = deleting ? '이름을 지우는 중이에요. 되돌리려면 알림의 되돌리기를 눌러 주세요.'
+                    : changed && !valid ? '이름은 1~80자로 써 주세요' : null;
                   const st = statusOf(path, alias);
                   const msg = msgs[path];
                   const rid = `${id}-r${i}`;
@@ -164,18 +188,19 @@ export default function AreaNamesSection() {
                       </td>
                       <td className="block py-1 pr-3 align-top md:table-cell md:py-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <input type="text" aria-label={`${path} 표시 이름`} value={value}
-                            onChange={(e) => { setDraft(path, e.target.value); if (msg?.kind !== 'conflict') setMsg(path, undefined); }}
-                            aria-describedby={changed && !valid ? `${rid}-why` : undefined}
+                          <input type="text" aria-label={`${path} 표시 이름`} value={value} readOnly={deleting}
+                            onChange={(e) => { setDraft(path, e.target.value); if (msg?.kind !== 'conflict' && msg?.kind !== 'gone') setMsg(path, undefined); }}
+                            aria-describedby={why ? `${rid}-why` : undefined}
                             className="min-h-9 min-w-0 flex-1 rounded border border-border bg-surface px-2" />
-                          <button type="button" aria-disabled={!canSave}
+                          <button type="button" aria-disabled={!canSave} aria-label={`${path} 이름 저장`}
+                            aria-describedby={why ? `${rid}-why` : undefined}
                             onClick={() => { if (canSave) void save(path, alias, value); }}
                             className="min-h-9 rounded border border-border px-3 aria-disabled:opacity-60">저장</button>
                           {alias && (
-                            <button type="button" onClick={() => remove(alias)} className="min-h-9 rounded px-2 text-muted underline">이름 지우기</button>
+                            <button type="button" aria-label={`${path} 이름 지우기`} onClick={() => remove(alias)} className="min-h-9 rounded px-2 text-muted underline">이름 지우기</button>
                           )}
                         </div>
-                        {changed && !valid && <p id={`${rid}-why`} className="mt-1 text-muted">이름은 1~80자로 써 주세요</p>}
+                        {why && <p id={`${rid}-why`} className="mt-1 text-muted">{why}</p>}
                         <div role="status" className="mt-1">{msg?.kind === 'saved' && '저장했어요'}</div>
                         {msg?.kind === 'error' && (
                           <div role="alert" className="mt-1 text-danger">
@@ -183,8 +208,14 @@ export default function AreaNamesSection() {
                             <p>입력한 내용은 그대로 두었어요. 잠시 후 다시 시도해 주세요.</p>
                           </div>
                         )}
+                        {msg?.kind === 'gone' && (
+                          <div role="alert" className="mt-1 text-danger">
+                            <p className="font-medium">다른 사람이 이 이름을 지웠어요</p>
+                            <p>입력한 이름은 그대로 두었어요. 저장하면 새 이름으로 다시 붙여요.</p>
+                          </div>
+                        )}
                         {msg?.kind === 'conflict' && (
-                          <div className="mt-1 space-y-1 rounded border border-border-strong bg-surface-sunken p-2">
+                          <div role="alert" className="mt-1 space-y-1 rounded border border-border-strong bg-surface-sunken p-2">
                             <p className="font-medium">다른 사람이 방금 이름을 바꿨어요</p>
                             <p>지금 이름은 “{msg.current}”예요. 내가 쓴 “{msg.mine}”은 그대로 남겨 두었어요.</p>
                             <div className="flex flex-wrap gap-2">

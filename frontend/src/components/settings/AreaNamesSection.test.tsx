@@ -71,7 +71,7 @@ describe('AreaNamesSection', () => {
     const { calls, user } = setup({ [`POST ${A}`]: (req) => ({ status: 201, json: alias({ id: 8, pathPrefix: 'frontend', displayName: (req.body as { displayName: string }).displayName }) }) });
     const fe = await input('frontend');
     await user.type(fe, '화면');
-    await user.click(within(rowOf(fe)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(fe)).getByRole('button', { name: /이름 저장$/ }));
     expect(await within(rowOf(fe)).findByRole('status')).toHaveTextContent('저장했어요');
     const post = calls.find((c) => c.method === 'POST')!;
     expect(post.body).toEqual({ pathPrefix: 'frontend', displayName: '화면' });
@@ -80,11 +80,12 @@ describe('AreaNamesSection', () => {
   it('(d) 빈 문자열·81자 → 저장 aria-disabled, 요청 0회', async () => {
     const { calls, user } = setup();
     const pay = await input('backend/payments');
-    const save = within(rowOf(pay)).getByRole('button', { name: '저장' });
+    const save = within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ });
     expect(save).toHaveAttribute('aria-disabled', 'true'); // 바뀌지 않음
     await user.clear(pay);
     expect(save).toHaveAttribute('aria-disabled', 'true');
     expect(within(rowOf(pay)).getByText('이름은 1~80자로 써 주세요')).toBeInTheDocument();
+    expect(save).toHaveAccessibleDescription('이름은 1~80자로 써 주세요');
     await user.click(save);
     await user.type(pay, 'x'.repeat(81));
     expect(save).toHaveAttribute('aria-disabled', 'true');
@@ -103,8 +104,9 @@ describe('AreaNamesSection', () => {
     const pay = await input('backend/payments');
     await user.clear(pay);
     await user.type(pay, '결제 흐름');
-    await user.click(within(rowOf(pay)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ }));
     expect(await screen.findByText('다른 사람이 방금 이름을 바꿨어요')).toBeInTheDocument();
+    expect(within(rowOf(pay)).getByRole('alert')).toHaveTextContent('다른 사람이 방금 이름을 바꿨어요');
     expect(screen.getByText('지금 이름은 “정산”예요. 내가 쓴 “결제 흐름”은 그대로 남겨 두었어요.')).toBeInTheDocument();
     expect(pay).toHaveValue('결제 흐름');
     expect(calls.filter((c) => c.method === 'PATCH')[0].body).toEqual({ displayName: '결제 흐름', expectedUpdatedAt: '2026-11-02T00:00:00Z' });
@@ -123,7 +125,7 @@ describe('AreaNamesSection', () => {
     const pay = await input('backend/payments');
     await user.clear(pay);
     await user.type(pay, '결제 흐름');
-    await user.click(within(rowOf(pay)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ }));
     await user.click(await screen.findByRole('button', { name: '그대로 두기' }));
     expect(pay).toHaveValue('정산');
     expect(screen.queryByText('다른 사람이 방금 이름을 바꿨어요')).not.toBeInTheDocument();
@@ -138,7 +140,7 @@ describe('AreaNamesSection', () => {
     });
     const fe = await input('frontend');
     await user.type(fe, '화면');
-    await user.click(within(rowOf(fe)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(fe)).getByRole('button', { name: /이름 저장$/ }));
     expect(await screen.findByText('지금 이름은 “화면단”예요. 내가 쓴 “화면”은 그대로 남겨 두었어요.')).toBeInTheDocument();
     expect(fe).toHaveValue('화면');
     await user.click(screen.getByRole('button', { name: '내 이름으로 저장' }));
@@ -150,26 +152,26 @@ describe('AreaNamesSection', () => {
     vi.mocked(fetchAreaAliases).mockResolvedValue([alias(), alias({ id: 8, pathPrefix: 'old/billing', displayName: '청구', status: 'disconnected' })]);
     const { calls, user } = setup({ [`DELETE ${A}7/`]: () => ({ status: 204 }), [`DELETE ${A}8/`]: () => ({ status: 204 }) });
     const old = await input('old/billing');
-    await user.click(within(rowOf(old)).getByRole('button', { name: '이름 지우기' }));
+    await user.click(within(rowOf(old)).getByRole('button', { name: /이름 지우기$/ }));
     expect(screen.getByText('‘청구’ 이름을 지웠어요 · 팀 모두에게 적용돼요')).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: 'old/billing 표시 이름' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '되돌리기' }));
     expect(await input('old/billing')).toHaveValue('청구');
 
     const pay = await input('backend/payments');
-    await user.click(within(rowOf(pay)).getByRole('button', { name: '이름 지우기' }));
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 지우기$/ }));
     expect(pay).toHaveValue('');
     await act(async () => { vi.advanceTimersByTime(10_000); });
     await waitFor(() => expect(writes(calls, 'DELETE')).toBe(1));
     expect(calls.find((c) => c.method === 'DELETE')!.url).toContain('/area-aliases/7/');
     expect(await input('backend/payments')).toHaveValue('');
-    expect(within(rowOf(pay)).queryByRole('button', { name: '이름 지우기' })).not.toBeInTheDocument();
+    expect(within(rowOf(pay)).queryByRole('button', { name: /이름 지우기$/ })).not.toBeInTheDocument();
   });
 
   it('(g2) DELETE 실패 → 알림 1번, 이름 복귀', async () => {
     const { user } = setup({ [`DELETE ${A}7/`]: () => ({ status: 500 }) });
     const pay = await input('backend/payments');
-    await user.click(within(rowOf(pay)).getByRole('button', { name: '이름 지우기' }));
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 지우기$/ }));
     await act(async () => { vi.advanceTimersByTime(10_000); });
     expect(await screen.findAllByText(/‘결제’ 이름을 지우지 못해/)).toHaveLength(1);
     expect(await input('backend/payments')).toHaveValue('결제');
@@ -183,19 +185,43 @@ describe('AreaNamesSection', () => {
     expect(within(rowOf(pay)).getByText('확인하지 못함')).toBeInTheDocument();
     expect(screen.queryByText('영역을 불러오는 중…')).not.toBeInTheDocument();
     await user.type(pay, ' 흐름');
-    await user.click(within(rowOf(pay)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ }));
     await within(rowOf(pay)).findByRole('status');
     expect(writes(calls, 'PATCH')).toBe(1);
-    expect(within(rowOf(pay)).getByRole('button', { name: '이름 지우기' })).toBeInTheDocument();
+    expect(within(rowOf(pay)).getByRole('button', { name: /이름 지우기$/ })).toBeInTheDocument();
   });
 
-  it('(i) 레포 2개 → <select> 변경이 해당 레포 별칭을 다시 조회', async () => {
+  it('(i) 레포 2개 → <select> 변경이 해당 레포 별칭을 다시 조회하고 행이 바뀜', async () => {
+    vi.mocked(fetchAreaAliases).mockImplementation(async (rid) => (rid === 2 ? [alias({ id: 20, repoId: 2, pathPrefix: 'web/ui', displayName: '웹' })] : [alias()]));
+    vi.mocked(fetchAreas).mockImplementation(async (rid) => (rid === 2 ? areasOf('web/ui') : areasOf('backend/payments', 'frontend')));
     const { user } = setup({}, [repo(1, 'api'), repo(2, 'web')]);
     const sel = await screen.findByRole('combobox', { name: '레포' });
-    await waitFor(() => expect(fetchAreaAliases).toHaveBeenCalledWith(1, expect.anything()));
+    await input('backend/payments');
     await user.selectOptions(sel, '2');
-    await waitFor(() => expect(fetchAreaAliases).toHaveBeenCalledWith(2, expect.anything()));
+    expect(await input('web/ui')).toHaveValue('웹');
+    expect(fetchAreaAliases).toHaveBeenCalledWith(2, expect.anything());
     expect(fetchAreas).toHaveBeenCalledWith(2, 30, expect.anything());
+    expect(screen.queryByRole('textbox', { name: 'backend/payments 표시 이름' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+  });
+
+  it('(i3) 저장 중에 레포를 바꾸면 응답이 새 레포 목록에 섞이지 않음', async () => {
+    vi.mocked(fetchAreaAliases).mockImplementation(async (rid) => (rid === 2 ? [] : [alias()]));
+    vi.mocked(fetchAreas).mockImplementation(async (rid) => (rid === 2 ? areasOf('web/ui') : areasOf('backend/payments', 'frontend')));
+    const { user } = setup({ [`POST ${A}`]: () => ({ status: 201, json: alias({ id: 8, pathPrefix: 'frontend', displayName: '화면' }) }) }, [repo(1, 'api'), repo(2, 'web')]);
+    let open!: () => void;
+    const gate = new Promise<void>((r) => { open = r; });
+    const orig = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (i, init) => { if (init?.method === 'POST') await gate; return orig(i, init); });
+    const fe = await input('frontend');
+    await user.type(fe, '화면');
+    await user.click(within(rowOf(fe)).getByRole('button', { name: /이름 저장$/ }));
+    await user.selectOptions(screen.getByRole('combobox', { name: '레포' }), '2');
+    await input('web/ui');
+    await act(async () => { open(); await gate; });
+    await act(async () => {});
+    expect(screen.queryByRole('textbox', { name: 'frontend 표시 이름' })).not.toBeInTheDocument();
+    expect(screen.queryByText('저장했어요')).not.toBeInTheDocument();
   });
 
   it('(i2) 레포 0개 → 안내 문구, 영역 조회 없음', async () => {
@@ -209,7 +235,7 @@ describe('AreaNamesSection', () => {
     vi.mocked(fetch).mockImplementation(async () => { throw new TypeError('Failed to fetch'); });
     const fe = await input('frontend');
     await user.type(fe, '화면');
-    await user.click(within(rowOf(fe)).getByRole('button', { name: '저장' }));
+    await user.click(within(rowOf(fe)).getByRole('button', { name: /이름 저장$/ }));
     const alert = await within(rowOf(fe)).findByRole('alert');
     expect(alert).toHaveTextContent('저장하지 못했어요');
     expect(alert).toHaveTextContent('입력한 내용은 그대로 두었어요. 잠시 후 다시 시도해 주세요.');
@@ -220,6 +246,9 @@ describe('AreaNamesSection', () => {
     setup({}, [repo(1, 'api'), repo(2, 'web')]);
     await input('frontend');
     for (const tb of screen.getAllByRole('textbox')) expect(tb).toHaveAccessibleName();
+    expect(screen.getByRole('button', { name: 'frontend 이름 저장' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'backend/payments 이름 저장' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'backend/payments 이름 지우기' })).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toHaveAccessibleName('레포');
   });
 
@@ -228,5 +257,48 @@ describe('AreaNamesSection', () => {
     setup();
     expect(await screen.findByText('영역을 불러오는 중…')).toBeInTheDocument();
     expect(await input('backend/payments')).toHaveValue('결제');
+  });
+  it('(l) PATCH 404(다른 사람이 지움) → 별칭 제거·안내, 입력 유지, 다시 저장하면 POST', async () => {
+    const { calls, user } = setup({
+      [`PATCH ${A}7/`]: () => ({ status: 404, json: { error: 'Not found' } }),
+      [`POST ${A}`]: () => ({ status: 201, json: alias({ id: 9, displayName: '결제 흐름' }) }),
+    });
+    const pay = await input('backend/payments');
+    await user.type(pay, ' 흐름');
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ }));
+    const alert = await within(rowOf(pay)).findByRole('alert');
+    expect(alert).toHaveTextContent('다른 사람이 이 이름을 지웠어요');
+    expect(alert).toHaveTextContent('저장하면 새 이름으로 다시 붙여요.');
+    expect(alert).not.toHaveTextContent('잠시 후 다시 시도해 주세요');
+    expect(pay).toHaveValue('결제 흐름');
+    expect(within(rowOf(pay)).queryByRole('button', { name: /이름 지우기$/ })).not.toBeInTheDocument();
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ }));
+    await within(rowOf(pay)).findByText('저장했어요');
+    expect(calls.find((c) => c.method === 'POST')!.body).toEqual({ pathPrefix: 'backend/payments', displayName: '결제 흐름' });
+  });
+
+  it('(m) 레포 목록 조회 실패 → 실패 안내(빈 상태 아님)와 다시 시도', async () => {
+    let fail = true;
+    const { user } = setup({ [REPOS]: () => (fail ? { status: 500 } : { json: [repo(1, 'api')] }) });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('레포 목록을 읽지 못했어요');
+    expect(screen.queryByText('연결된 레포가 있으면 영역 이름을 붙일 수 있어요')).not.toBeInTheDocument();
+    fail = false;
+    await user.click(within(alert).getByRole('button', { name: '다시 시도' }));
+    expect(await input('backend/payments')).toHaveValue('결제');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('(o) 연결된 행의 지우기 대기 중엔 편집·저장 막힘(요청 0회)', async () => {
+    const { calls, user } = setup();
+    const pay = await input('backend/payments');
+    await user.click(within(rowOf(pay)).getByRole('button', { name: /이름 지우기$/ }));
+    expect(pay).toHaveAttribute('readonly');
+    const save = within(rowOf(pay)).getByRole('button', { name: /이름 저장$/ });
+    expect(save).toHaveAttribute('aria-disabled', 'true');
+    expect(save).toHaveAccessibleDescription(/이름을 지우는 중이에요/);
+    await user.type(pay, '새 이름');
+    await user.click(save);
+    expect(writes(calls, 'POST') + writes(calls, 'PATCH')).toBe(0);
   });
 });
