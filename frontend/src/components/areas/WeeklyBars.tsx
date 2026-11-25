@@ -40,7 +40,7 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
   });
 
   return (
-    <div className={`inline-block text-(--text-muted) ${detail ? 'px-3' : ''}`}>
+    <div className={`inline-block text-(--text-muted) ${detail ? 'px-3' : 'max-w-full'}`}>
       {detail && (
         <div aria-hidden="true" style={{ width, whiteSpace: 'nowrap' }} className="text-xs tabular-nums">
           {weekly.map((w, i) => (
@@ -48,7 +48,8 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
           ))}
         </div>
       )}
-      <svg role="img" aria-label={name} viewBox={`0 0 ${width} ${HEIGHT}`} width={width} height={HEIGHT}>
+      {/* row: 좁은 폭에서는 모든 행이 같은 비율로 줄어 눈금 비교가 유지된다(가로 스크롤 대신) */}
+      <svg role="img" aria-label={name} viewBox={`0 0 ${width} ${HEIGHT}`} width={width} height={HEIGHT} className={detail ? undefined : 'h-auto max-w-full'}>
         {unknown
           ? Array.from({ length: n }, (_, i) => (
               <rect
