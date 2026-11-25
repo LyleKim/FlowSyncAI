@@ -168,14 +168,16 @@ describe('ConnectedReposSection', () => {
   it('(h) 연결 해제 → 즉시 숨김, 알림·되돌리기, 9.9초 DELETE 0회, 10초 1회', async () => {
     const { user, calls } = setup({ [LIST]: () => ({ json: [API] }), 'DELETE /api/v1/integrations/watched-repos/1/': () => ({ status: 204 }) });
     await screen.findByText('acme/api');
+    // 마감은 클릭 처리 중 schedule()의 Date.now()+10초라 [t0, t1]+10초 안에 있다(shouldAdvanceTime으로 클릭 자체가 시간을 쓴다).
     const t0 = Date.now();
     await user.click(screen.getByRole('button', { name: 'acme/api 연결 해제' }));
+    const t1 = Date.now();
     expect(screen.queryByText('acme/api')).not.toBeInTheDocument();
     expect(screen.getByText('acme/api 연결을 해제했어요 · 팀 모두에게 적용돼요')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '되돌리기' })).toBeInTheDocument();
     await act(async () => { await vi.advanceTimersByTimeAsync(t0 + 9_900 - Date.now()); });
     expect(count(calls, 'DELETE')).toBe(0);
-    await act(async () => { await vi.advanceTimersByTimeAsync(t0 + 10_050 - Date.now()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(t1 + 10_050 - Date.now()); });
     expect(count(calls, 'DELETE')).toBe(1);
   });
 
