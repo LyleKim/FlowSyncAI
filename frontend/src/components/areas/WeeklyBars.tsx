@@ -60,13 +60,17 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
                 width={BAR_W}
                 height={2 * CELL}
                 fill="none"
-                stroke="var(--text-muted)"
+                stroke="var(--border-strong)"
                 strokeDasharray="2 2"
               />
             ))
           : (
             <>
-              <line data-floor x1={0} x2={width} y1={FLOOR} y2={FLOOR} stroke="var(--text-muted)" />
+              {/* 관측 눈금: 4칸·8칸 점선이 모든 행에서 같은 높이 */}
+              {[4, 8].map((c) => (
+                <line key={c} data-grid aria-hidden="true" x1={0} x2={width} y1={FLOOR - c * CELL} y2={FLOOR - c * CELL} stroke="var(--chart-grid)" strokeDasharray="2 2" />
+              ))}
+              <line data-floor x1={0} x2={width} y1={FLOOR} y2={FLOOR} stroke="var(--border-strong)" />
               {weekly.map((w, i) => {
                 const h = barCells(w.commits) * CELL;
                 if (h === 0) return null;
@@ -80,12 +84,12 @@ export function WeeklyBars({ weekly, generatedAt, days, variant = 'row', state =
                       y={FLOOR - h}
                       width={now ? BAR_W - 2 * INSET : BAR_W}
                       height={h}
-                      fill={now ? 'none' : 'var(--text-muted)'}
-                      stroke={now ? 'var(--accent)' : undefined}
+                      fill={now ? 'none' : 'var(--chart-bar)'}
+                      stroke={now ? 'var(--chart-bar)' : undefined}
                       strokeWidth={now ? INSET * 2 : undefined}
                     />
                     {isClipped(w.commits) && (
-                      <line data-clipped x1={x} x2={x + BAR_W} y1={TOP - 1} y2={TOP - 1} stroke="var(--text-muted)" strokeWidth={1.5} />
+                      <line data-clipped x1={x} x2={x + BAR_W} y1={TOP - 1} y2={TOP - 1} stroke="var(--chart-bar)" strokeWidth={1.5} />
                     )}
                   </g>
                 );

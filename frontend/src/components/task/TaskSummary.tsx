@@ -1,6 +1,5 @@
 import type { Task } from '../../types';
 import { formatDate } from '../../lib/date';
-import { getAvatarColor, getInitials } from '../../lib/avatar';
 import { PRIORITY_LABEL, isPrTask } from '../../lib/taskLabels';
 import PrBadge from '../common/PrBadge';
 
@@ -19,12 +18,7 @@ export function TaskSummary({ task }: { task: Task }) {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">
         <dt className="text-muted">{pr ? '작성자' : '담당자'}</dt>
         <dd className="flex items-center gap-2">
-          {person ? (
-            <>
-              <span aria-hidden="true" className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-caption font-bold text-white ${getAvatarColor(person)}`}>{getInitials(person)}</span>
-              <span>{person}</span>
-            </>
-          ) : <span className="text-muted">없음</span>}
+          {person ? <span>{person}</span> : <span className="text-muted">없음</span>}
         </dd>
         <dt className="text-muted">우선순위</dt>
         <dd>{PRIORITY_LABEL[task.priority] ?? PRIORITY_LABEL.medium}</dd>

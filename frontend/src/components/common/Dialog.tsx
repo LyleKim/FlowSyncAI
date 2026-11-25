@@ -50,7 +50,7 @@ export function Dialog({ open, onClose, title, role = 'dialog', initialFocusRef,
       onClick={(e) => {
         if (e.target === e.currentTarget && role === 'dialog') onClose();
       }}
-      className={`m-auto w-full rounded-lg border border-border bg-surface p-0 text-text backdrop:bg-black/50 ${size === 'lg' ? 'max-w-3xl' : 'max-w-xl'}`}
+      className={`m-auto w-full rounded-md border border-border bg-surface-raised p-0 text-text shadow-overlay backdrop:bg-black/50 ${size === 'lg' ? 'max-w-3xl' : 'max-w-xl'}`}
     >
       <div className="p-6">
         <div className="mb-4 flex items-start justify-between gap-4">

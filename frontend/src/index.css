@@ -1,54 +1,67 @@
 @import "tailwindcss";
+@import "./styles/pretendard.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* TEMP: Impeccable — 값은 임시. 이름만 계약(F-T17에서 확정). */
+/* 값: docs/ux/10-visual-direction.md §5 "관측 기록지" (F-T17 제안, 사용자 렌더 승인 전) */
 :root {
-  --surface: #ffffff; /* TEMP: Impeccable */
+  --surface: #f3f5f8;
   --surface-raised: #ffffff;
-  --surface-sunken: #f1f5f9;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --accent: #2563eb;
+  --surface-sunken: #e9edf2;
+  --text: #18212c;
+  --text-muted: #475364;
+  --border: #c8d0da;
+  --border-strong: #6b7788;
+  --accent: #1b4f8f;
   --accent-contrast: #ffffff;
-  --focus-ring: #2563eb;
-  --danger: #dc2626;
-  --success: #16a34a;
-  --warning: #d97706;
-  --status-todo: #64748b;
-  --status-inprogress: #2563eb;
-  --status-review: #9333ea;
-  --status-done: #16a34a;
-  --priority-low: #64748b;
-  --priority-medium: #2563eb;
-  --priority-high: #d97706;
-  --priority-urgent: #dc2626;
+  --accent-subtle: #e3ecf8;
+  --focus-ring: #1b4f8f;
+  --danger: #b0261a;
+  --danger-subtle: #fce9e7;
+  --success: #1a6636;
+  --warning: #85500a;
+  --warning-subtle: #fbf0dc;
+  --status-todo: #4a5667;
+  --status-inprogress: #1b4f8f;
+  --status-review: #0d6b6b;
+  --status-done: #1a6636;
+  --priority-low: #4a5667;
+  --priority-medium: #18212c;
+  --priority-high: #85500a;
+  --priority-urgent: #b0261a;
+  --chart-bar: #1b4f8f;
+  --chart-grid: #c8d0da;
+  --overlay: 0 8px 24px rgb(15 23 42 / 0.14), 0 1px 3px rgb(15 23 42 / 0.1);
 }
 
 .dark {
-  --surface: #0f172a; /* TEMP: Impeccable */
-  --surface-raised: #1e293b;
-  --surface-sunken: #020617;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --border: #334155;
-  --border-strong: #475569;
-  --accent: #60a5fa;
-  --accent-contrast: #0f172a;
-  --focus-ring: #60a5fa;
-  --danger: #f87171;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --status-todo: #94a3b8;
-  --status-inprogress: #60a5fa;
-  --status-review: #c084fc;
-  --status-done: #4ade80;
-  --priority-low: #94a3b8;
-  --priority-medium: #60a5fa;
-  --priority-high: #fbbf24;
-  --priority-urgent: #f87171;
+  --surface: #0e1319;
+  --surface-raised: #151b23;
+  --surface-sunken: #0a0e13;
+  --text: #e7ebf1;
+  --text-muted: #a4afbe;
+  --border: #2c3644;
+  --border-strong: #7c8899;
+  --accent: #86b6f2;
+  --accent-contrast: #0a1626;
+  --accent-subtle: #1b2a3f;
+  --focus-ring: #9cc4f6;
+  --danger: #ff9f94;
+  --danger-subtle: #3a1c1a;
+  --success: #78d69a;
+  --warning: #e8b458;
+  --warning-subtle: #35280f;
+  --status-todo: #a4afbe;
+  --status-inprogress: #86b6f2;
+  --status-review: #6fd0d0;
+  --status-done: #78d69a;
+  --priority-low: #a4afbe;
+  --priority-medium: #e7ebf1;
+  --priority-high: #e8b458;
+  --priority-urgent: #ff9f94;
+  --chart-bar: #86b6f2;
+  --chart-grid: #2c3644;
+  --overlay: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4), 0 0 0 1px #7c8899;
 }
 
 @theme inline {
@@ -61,10 +74,13 @@
   --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
   --color-accent-contrast: var(--accent-contrast);
+  --color-accent-subtle: var(--accent-subtle);
   --color-focus-ring: var(--focus-ring);
   --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
   --color-status-todo: var(--status-todo);
   --color-status-inprogress: var(--status-inprogress);
   --color-status-review: var(--status-review);
@@ -73,19 +89,45 @@
   --color-priority-medium: var(--priority-medium);
   --color-priority-high: var(--priority-high);
   --color-priority-urgent: var(--priority-urgent);
+  --color-chart-bar: var(--chart-bar);
+  --color-chart-grid: var(--chart-grid);
+  --shadow-overlay: var(--overlay);
 }
 
 @theme {
-  --text-caption: 12px;
-  --text-body-sm: 14px;
-  --text-body: 16px;
-  --text-title: 20px;
-  --text-heading: 24px;
-  --text-display: 30px;
+  --font-sans: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.5;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.5;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.4;
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 1.3;
+  --text-display: 1.875rem;
+  --text-display--line-height: 1.2;
   --radius-sm: 4px;
   --radius-md: 8px;
   --spacing: 4px;
-  --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.16);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    background-color: var(--surface);
+    color: var(--text);
+    accent-color: var(--accent);
+    caret-color: var(--accent);
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  ::selection {
+    background-color: var(--accent-subtle);
+    color: var(--text);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
