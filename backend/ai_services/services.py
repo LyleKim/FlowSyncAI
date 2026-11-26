@@ -3,7 +3,8 @@ import os
 import requests
 from django.conf import settings
 
-GROQ_MODEL = "llama-3.1-8b-instant"
+# llama-3.1-8b-instant was retired by Groq (404); override with GROQ_MODEL env.
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 
 
 def run_checklist_generation(title, description, reviews_str):
