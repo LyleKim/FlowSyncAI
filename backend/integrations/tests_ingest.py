@@ -208,7 +208,8 @@ class IngestTests(TestCase):
             self.assertEqual(p.title, 't')
         with CaptureQueriesContext(connection) as c:
             ingest_prs(self.repo, [pr(1)], NOW)
-        self.assertIn('IN (1)', ' '.join(q['sql'] for q in c if 'integrations_pullrequest"' in q['sql'] and 'SELECT' in q['sql']))
+        table = connection.ops.quote_name('integrations_pullrequest')  # "..." on sqlite, `...` on MySQL
+        self.assertIn('IN (1)', ' '.join(q['sql'] for q in c if table + '.' in q['sql'] and 'SELECT' in q['sql']))
 
 
 class TeamKeyEndToEndTests(TestCase):

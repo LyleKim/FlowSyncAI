@@ -61,3 +61,16 @@ class ModelConstraintTests(TestCase):
         self.assertEqual(PullRequest.objects.count(), 0)
         self.assertEqual(PullRequestReviewer.objects.count(), 0)
         self.assertEqual(AreaAlias.objects.count(), 0)
+
+
+class GitPathCaseTests(TestCase):
+    """Git paths are case-sensitive; MySQL's default utf8mb4_0900_ai_ci collation is not."""
+
+    def test_paths_differing_only_in_case_are_distinct(self):
+        from .models import AreaAlias, FolderDescription
+        repo = WatchedRepo.objects.create(url='https://github.com/acme/case', owner='acme', name='case')
+        for p in ('Docs', 'docs'):
+            FolderDescription.objects.create(repo=repo, path=p, text=p, generated_at=timezone.now())
+            AreaAlias.objects.create(repo=repo, path_prefix=p, display_name=p)
+        self.assertEqual(FolderDescription.objects.get(repo=repo, path='docs').text, 'docs')
+        self.assertEqual(AreaAlias.objects.get(repo=repo, path_prefix='Docs').display_name, 'Docs')
