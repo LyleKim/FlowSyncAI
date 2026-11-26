@@ -11,7 +11,7 @@ export class AreasApiError extends Error {
   }
 }
 
-async function get<T>(url: string, signal?: AbortSignal): Promise<T> {
+export async function get<T>(url: string, signal?: AbortSignal): Promise<T> {
   let res: Response;
   try {
     res = await fetch(url, { signal });

@@ -10,6 +10,7 @@ import { formatDate } from '../lib/date';
 import { WeeklyBars } from '../components/areas/WeeklyBars';
 import { WaitingPrTable } from '../components/areas/WaitingPrTable';
 import type { AreaDetail } from '../types/areas';
+import { FolderDescriptionNote } from '../components/areas/FolderDescriptionNote';
 
 const focus = 'focus-visible:outline-2 focus-visible:outline-focus-ring';
 const linkCls = `inline-flex min-h-6 items-center underline underline-offset-2 wrap-anywhere ${focus}`;
@@ -53,6 +54,17 @@ function Body({ d, repoId, days, names, now }: {
         </p>
       )}
       <Link to={ROUTES.settings} className={`mt-2 text-body-sm ${linkCls}`}>이름 바꾸기</Link>
+      {/* 특수 영역(@docs 등)은 폴더가 아니라 설명이 없다 */}
+      {!d.pathPrefix.startsWith('@') && (
+        <section aria-labelledby="area-role" className="mt-4 space-y-1">
+          <h2 id="area-role" className="text-body-sm font-semibold">이 폴더의 역할</h2>
+          {d.description ? (
+            <FolderDescriptionNote d={d.description} />
+          ) : (
+            <p className="text-body-sm text-muted">아직 설명이 없어요. 영역 흐름의 전체 레포 분석에서 AI로 만들거나 직접 쓸 수 있어요.</p>
+          )}
+        </section>
+      )}
 
       {/* 좁은 폭에서는 보조 열이 아래로 내려온다(사람 → 결합 → 경로) */}
       <div className="mt-6 grid gap-8 lg:grid-cols-3">

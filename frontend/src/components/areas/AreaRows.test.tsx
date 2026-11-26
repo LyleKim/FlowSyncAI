@@ -126,4 +126,24 @@ describe('AreaRows (좁은 화면)', () => {
     expect(screen.getByText('리뷰 대기 중, 활동 없음')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '결제 흐름' })).toHaveAttribute('href', '/areas/backend-payments?repo=1');
   });
+
+  it('영역 폴더 설명: AI 추정·직접 수정함을 글자로 구분, 없으면 아무것도 없음', () => {
+    for (const wide of [true, false]) {
+      setWide(wide);
+      const { unmount } = renderWithRouter(
+        <AreaRows
+          areas={[
+            makeArea({ id: 'a', displayName: '가', description: { text: '결제 API로 보여요', source: 'ai', generatedAt: GENERATED_AT } }),
+            makeArea({ id: 'b', displayName: '나', description: { text: '체크아웃 화면', source: 'manual', generatedAt: GENERATED_AT } }),
+            makeArea({ id: 'c', displayName: '다', description: null }),
+          ]}
+          disconnected={[]} generatedAt={GENERATED_AT} days={30} repoId={1} now={AREAS_NOW}
+        />,
+      );
+      expect(screen.getByText('결제 API로 보여요').parentElement).toHaveTextContent('AI 추정');
+      expect(screen.getByText('체크아웃 화면').parentElement).toHaveTextContent('직접 수정함');
+      expect(screen.getAllByText(/AI 추정|직접 수정함/)).toHaveLength(2);
+      unmount();
+    }
+  });
 });

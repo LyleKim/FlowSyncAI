@@ -189,4 +189,19 @@ describe('AreaDetailScreen', () => {
     const coupled = screen.getByRole('region', { name: '함께 바뀐 영역' });
     expect(within(coupled).getByRole('link', { name: /frontend-checkout/ })).toBeInTheDocument();
   });
+
+  it('폴더 설명: 본문·AI 추정·정확하지 않을 수 있다는 안내', () => {
+    ready(makeAreaDetail({ description: { text: '결제 API를 구현하는 것으로 보입니다.', source: 'ai', generatedAt: '2026-11-26T03:00:00Z' } }));
+    show();
+    const sec = screen.getByRole('region', { name: '이 폴더의 역할' });
+    expect(within(sec).getByText('결제 API를 구현하는 것으로 보입니다.')).toBeInTheDocument();
+    expect(within(sec).getByText('AI 추정')).toBeInTheDocument();
+    expect(within(sec).getByText(/정확하지 않을 수 있어요/)).toBeInTheDocument();
+  });
+
+  it('폴더 설명이 없으면 만드는 곳을 안내', () => {
+    ready(makeAreaDetail({ description: null }));
+    show();
+    expect(within(screen.getByRole('region', { name: '이 폴더의 역할' })).getByText(/아직 설명이 없어요/)).toBeInTheDocument();
+  });
 });

@@ -16,6 +16,7 @@ import type { Area, AreaAlias } from '../../types/areas';
 import { WeeklyBars } from './WeeklyBars';
 import { WaitCells } from '../common/WaitCells';
 import { useWide } from '../../hooks/useWide';
+import { FolderDescriptionNote } from './FolderDescriptionNote';
 
 interface Props {
   areas: Area[];
@@ -34,6 +35,7 @@ function Meta({ a, all }: { a: Area; all: Area[] }) {
   const share = miscShare(all, a);
   return (
     <>
+      <FolderDescriptionNote d={a.description} compact />
       <p className={metaCls}>{a.pathPrefix} · 파일 {a.fileCount}개 · 사람 {a.authors.length}명</p>
       {share !== null && share >= MISC_WARN_SHARE && (
         <p className="text-caption">

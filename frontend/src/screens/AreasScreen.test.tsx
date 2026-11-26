@@ -7,9 +7,13 @@ import type { WatchedRepo } from '../types';
 
 vi.mock('../hooks/useAreaRepos', () => ({ useAreaRepos: vi.fn() }));
 vi.mock('../hooks/useAreas', () => ({ useAreas: vi.fn() }));
+vi.mock('../hooks/useRepoTree', async (orig) => ({ ...(await orig<typeof import('../hooks/useRepoTree')>()), useRepoTree: vi.fn() }));
 vi.mock('../hooks/useNow', () => ({ useNow: () => new Date('2026-11-25T03:00:00Z') }));
 import { useAreaRepos } from '../hooks/useAreaRepos';
 import { useAreas } from '../hooks/useAreas';
+import { useRepoTree } from '../hooks/useRepoTree';
+import { ToastProvider } from '../hooks/useToasts';
+import { liveRegions } from '../test/live';
 import AreasScreen from './AreasScreen';
 
 const repo = (id: number, name: string): WatchedRepo => ({
@@ -31,6 +35,14 @@ const RESP = makeAreasResponse({
   couplings: [{ a: 'a', b: 'b', count: 5 }],
 });
 
+const TREE = {
+  repoId: 1, treeHash: 'h', truncated: false, folderCount: 1, limits: { maxDepth: 6, maxNodes: 400 },
+  root: { path: '', name: 'api', fileCount: 9, areaId: null, description: null, children: [
+    { path: 'backend/payments', name: 'payments', fileCount: 9, areaId: 'b', children: [],
+      description: { text: '트리에서 온 설명', source: 'manual' as const, generatedAt: '2026-11-26T00:00:00Z' } },
+  ] },
+};
+
 type AreasState = ReturnType<typeof useAreas>;
 const setAreas = (over: Partial<AreasState> = {}) =>
   areasMock.mockReturnValue({
@@ -43,10 +55,12 @@ function Loc() {
 }
 const show = (route = '/areas?repo=1') =>
   renderWithRouter(
-    <Routes>
-      <Route path="/areas" element={<><AreasScreen /><Loc /></>} />
-      <Route path="*" element={<Loc />} />
-    </Routes>,
+    <ToastProvider>
+      <Routes>
+        <Route path="/areas" element={<><AreasScreen /><Loc /></>} />
+        <Route path="*" element={<Loc />} />
+      </Routes>
+    </ToastProvider>,
     { route },
   );
 const loc = () => screen.getByTestId('loc').textContent;
@@ -56,6 +70,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   reposMock.mockReturnValue({ status: 'ready', repos: [repo(1, 'api'), repo(2, 'web')], retry: retryRepos });
   setAreas();
+  vi.mocked(useRepoTree).mockReturnValue({ status: 'ready', data: TREE, error: null, reload: vi.fn() });
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -135,10 +150,12 @@ describe('AreasScreen', () => {
     setAreas({ status: 'error', data: null, error: err, failSeq: 2 });
     rerender(
       <MemoryRouter initialEntries={['/areas?repo=1']}>
-        <Routes>
-          <Route path="/areas" element={<><AreasScreen /><Loc /></>} />
-          <Route path="*" element={<Loc />} />
-        </Routes>
+        <ToastProvider>
+          <Routes>
+            <Route path="/areas" element={<><AreasScreen /><Loc /></>} />
+            <Route path="*" element={<Loc />} />
+          </Routes>
+        </ToastProvider>
       </MemoryRouter>,
     );
     const after = screen.getAllByRole('alert');
@@ -157,7 +174,9 @@ describe('AreasScreen', () => {
   it('별칭 조회 실패 → 한 줄 안내(status)', () => {
     setAreas({ aliasesFailed: true });
     show();
-    expect(screen.getByRole('status')).toHaveTextContent(/연결 끊김.*빠졌을 수 있어요/);
+    // 비어 있는 상시 live region(트리 설명 진행 알림)은 세지 않는다
+    expect(liveRegions('status')).toHaveLength(1);
+    expect(liveRegions('status')[0]).toHaveTextContent(/연결 끊김.*빠졌을 수 있어요/);
   });
 
   it('표로 보기 스크롤 영역은 탭 순서에 강제로 넣지 않는다', () => {
@@ -280,5 +299,12 @@ describe('AreasScreen', () => {
     show();
     expect(get).not.toHaveBeenCalled();
     expect(set).not.toHaveBeenCalled();
+  });
+
+  it('전체 레포 분석: 폴더 트리 섹션, 영역 행 설명은 최신 트리 값을 따른다', () => {
+    show();
+    const sec = screen.getByRole('region', { name: '전체 레포 분석' });
+    expect(within(sec).getByRole('tree', { name: 'api 폴더 트리' })).toBeInTheDocument();
+    expect(screen.getByText('트리에서 온 설명').parentElement).toHaveTextContent('직접 수정함');
   });
 });

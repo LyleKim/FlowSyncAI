@@ -9,6 +9,9 @@ import { disconnectedAliases, sortAreas, summarizeAreas } from '../lib/areaChart
 import { AreaRows } from '../components/areas/AreaRows';
 import { AreaNotices, analyzedAgo } from '../components/areas/AreaNotices';
 import { CouplingMap } from '../components/areas/CouplingMap';
+import { RepoTree } from '../components/areas/RepoTree';
+import { useHiddenFolders, useRepoTree } from '../hooks/useRepoTree';
+import { areaDescriptions } from '../lib/folderTree';
 import type { Area } from '../types/areas';
 
 const SORT_OPTIONS: { value: AreaSort; label: string }[] = [
@@ -87,6 +90,8 @@ export default function AreasScreen() {
   const repos = useAreaRepos();
   const known = repos.status === 'ready' && repos.repos.some((r) => r.id === repoId);
   const areas = useAreas(known ? repoId : null, days);
+  const tree = useRepoTree(known ? repoId : null);
+  const hiddenFolders = useHiddenFolders(repoId);
   const now = useNow();
 
   if (repos.status === 'loading') {
@@ -139,7 +144,10 @@ export default function AreasScreen() {
 
   const go = (p: { repoId?: number; days?: number; sort?: AreaSort }) => navigate(areasHref({ repoId, days, sort, ...p }));
   const { data, canRefresh, refresh } = areas;
-  const sorted = data ? sortAreas(data.areas, sort) : [];
+  // 설명은 트리가 더 최신(생성·수정·되돌리기 직후 다시 읽음)이라 트리 값을 우선한다
+  const treeDescs = tree.data ? areaDescriptions(tree.data.root, hiddenFolders) : null;
+  const withDesc = (data?.areas ?? []).map((a) => (treeDescs?.has(a.id) ? { ...a, description: treeDescs.get(a.id) } : a));
+  const sorted = data ? sortAreas(withDesc, sort) : [];
   const unreadable = areas.error?.code === 'github_unavailable';
 
   let body: ReactNode;
@@ -219,6 +227,16 @@ export default function AreasScreen() {
             truncated={data.truncated}
             analyzedCommits={data.analyzedCommits}
           />
+        </section>
+        <section aria-labelledby="areas-repo-tree" className="mt-8 space-y-3">
+          <h2 id="areas-repo-tree" className="text-base font-semibold">전체 레포 분석</h2>
+          <p className="text-body-sm text-muted">
+            레포의 모든 폴더예요. 폴더를 고르면 그 폴더가 어떤 기능을 맡는지 설명이 보여요. 화살표로 움직이고 Enter로 골라요.
+          </p>
+          {/* 레포가 바뀌면 펼침·선택 상태를 새로 시작한다 */}
+          <div key={repoId}>
+            <RepoTree repoId={repoId} tree={tree} areas={data.areas} days={data.days} now={now} />
+          </div>
         </section>
       </>
     );

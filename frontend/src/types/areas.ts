@@ -23,6 +23,8 @@ export interface Area {
   authors: string[];
   trend: AreaTrend;
   reviewWaiting: { prCount: number; oldestRequestedAt: string | null };
+  /** 이 영역 폴더의 설명(계약 §8). 특수 영역·구버전 응답은 null/없음 */
+  description?: FolderDescription | null;
 }
 
 export interface AreasResponse {
@@ -66,4 +68,40 @@ export interface AreaAlias {
   status: 'connected' | 'disconnected' | 'unknown';
   createdAt: string;
   updatedAt: string;
+}
+
+/** 폴더 설명(계약 §8): ai = 파일 이름만 보고 추정, manual = 사람이 직접 씀 */
+export interface FolderDescription {
+  text: string;
+  source: 'ai' | 'manual';
+  generatedAt: string;
+}
+
+export interface FolderNode {
+  path: string;
+  name: string;
+  fileCount: number;
+  areaId: string | null;
+  description: FolderDescription | null;
+  children: FolderNode[];
+}
+
+export interface RepoTree {
+  repoId: number;
+  treeHash: string;
+  truncated: boolean;
+  folderCount: number;
+  limits: { maxDepth: number; maxNodes: number };
+  root: FolderNode;
+}
+
+export interface DescribeResult {
+  repoId: number;
+  treeHash: string;
+  model: string;
+  generated: string[];
+  skippedUnchanged: number;
+  skippedManual: number;
+  failed: string[];
+  limited: boolean;
 }
