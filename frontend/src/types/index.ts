@@ -33,10 +33,12 @@ export interface Task {
   hasUnreflectedReview?: boolean;
   lastReviewAddedAt?: string;
   sourceUrl?: string | null;
+  kind?: 'pr' | 'manual';
+  author?: string | null;
 }
 
 export interface WatchedRepo {
-  id: string | number;
+  id: number;
   url: string;
   owner: string;
   name: string;
@@ -49,16 +51,6 @@ export interface SyncResult {
   created: number;
   skipped: number;
   errors: string[];
-}
-
-export interface Activity {
-  id: string;
-  userName: string;
-  userAvatarColor: string;
-  userAvatarText: string;
-  action: string;
-  targetName: string;
-  timestamp: string;
 }
 
 export type ArchGroupKind = 'backend' | 'frontend' | 'infra' | 'docs' | 'other';

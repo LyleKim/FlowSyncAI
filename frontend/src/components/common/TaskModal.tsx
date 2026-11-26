@@ -3,6 +3,8 @@ import { X, Save, Edit2, Plus, Trash2, CheckSquare, Square, Calendar, User, Alig
 import { Task, TaskStatus, TaskPriority, SubTask, RoleReview } from '../../types';
 import { postJson } from '../../services/apiClient';
 import PrBadge from './PrBadge';
+import { formatDate } from '../../lib/date';
+import { getInitials, getAvatarColor } from '../../lib/avatar';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -20,53 +22,6 @@ interface TaskModalProps {
   onDeleteReview: (taskId: string, reviewId: string) => Promise<void>;
   onNavigateToStatus?: (status: TaskStatus) => void;
 }
-
-const getInitials = (name: string) => {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
-const getAvatarColor = (name: string) => {
-  const colors = [
-    'bg-blue-500',
-    'bg-emerald-500',
-    'bg-rose-500',
-    'bg-amber-500',
-    'bg-purple-500',
-    'bg-sky-500',
-    'bg-indigo-500',
-    'bg-pink-500',
-  ];
-  if (!name) return 'bg-slate-500';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-};
-
-const formatCreatedAt = (dateString?: string) => {
-  if (!dateString) return '알 수 없음';
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '알 수 없음';
-    
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    
-    return `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes}분`;
-  } catch (e) {
-    return '알 수 없음';
-  }
-};
 
 export default function TaskModal({
   isOpen,
@@ -359,7 +314,7 @@ export default function TaskModal({
                 <button
                   id="modal-edit-toggle-btn"
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-450 hover:underline px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/20"
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/20"
                 >
                   <Edit2 size={12} />
                   <span>정보 수정</span>
@@ -524,9 +479,9 @@ export default function TaskModal({
             <div className="space-y-6" id="task-view-details">
               {/* Task Header info */}
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
-                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-150 text-slate-600 dark:text-slate-300">
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border text-slate-600 dark:text-slate-300">
                   <Calendar size={13} className="text-slate-400" />
-                  <span>생성일: <strong>{formatCreatedAt(task?.createdAt || (task as any)?.created_at)}</strong></span>
+                  <span>생성일: <strong>{formatDate(task?.createdAt || (task as any)?.created_at)}</strong></span>
                 </span>
                 <PrBadge url={task?.sourceUrl} />
               </div>
@@ -615,13 +570,13 @@ export default function TaskModal({
                               {review.createdAt}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-700 dark:text-slate-355 leading-relaxed whitespace-pre-wrap">
+                          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                             {review.comment}
                           </p>
 
                           {/* Tagged Reviewer & Accept Section */}
                           {review.reviewerId && (
-                            <div className="mt-2.5 pt-2 border-t border-slate-150/70 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 bg-slate-100/30 dark:bg-slate-950/10 p-1.5 rounded-lg">
+                            <div className="mt-2.5 pt-2 border-t dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 bg-slate-100/30 dark:bg-slate-950/10 p-1.5 rounded-lg">
                               <div className="flex items-center gap-1.5 text-[11px]">
                                 <span className="text-slate-400 dark:text-slate-500">검토자:</span>
                                 <span className="font-bold text-slate-700 dark:text-slate-300">{review.reviewerId}</span>
@@ -674,7 +629,7 @@ export default function TaskModal({
                 )}
 
                 {/* Add Review Record Form */}
-                <form onSubmit={addRoleReview} className="space-y-3 pt-3 border-t border-slate-150 dark:border-slate-800/80">
+                <form onSubmit={addRoleReview} className="space-y-3 pt-3 border-t dark:border-slate-800/80">
                   <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">새 검토 기록 추가</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="space-y-1">
@@ -682,7 +637,7 @@ export default function TaskModal({
                       <select
                         value={newReviewRole}
                         onChange={(e) => setNewReviewRole(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-850 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
                       >
                         <option value="Developer">개발자 (Developer)</option>
                         <option value="Designer">디자이너 (Designer)</option>
@@ -723,7 +678,7 @@ export default function TaskModal({
                       <select
                         value={newReviewUrgency}
                         onChange={(e) => setNewReviewUrgency(e.target.value as 'normal' | 'urgent')}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-850 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-bold"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none font-bold"
                       >
                         <option value="normal" className="text-slate-700 font-normal">보통 (Normal)</option>
                         <option value="urgent" className="text-rose-600 font-bold">긴급 (Urgent) 🔥</option>
@@ -901,7 +856,7 @@ export default function TaskModal({
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
                     placeholder="체크리스트 항목 추가..."
-                    className="flex-1 px-3 py-2 rounded-lg border border-slate-250 dark:border-slate-750 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                    className="flex-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                   />
                   <button
                     type="submit"
@@ -914,7 +869,7 @@ export default function TaskModal({
               </div>
 
               {/* Graphical Workflow Visualization */}
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-850 space-y-4">
+              <div className="pt-6 border-t border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider font-sans flex items-center gap-2">
                     <BarChart size={14} className="text-blue-600" />
@@ -984,7 +939,7 @@ export default function TaskModal({
                         {['inprogress', 'review', 'done'].includes(status) ? '✓' : '1'}
                       </div>
                       <span className={`text-[10px] font-bold mt-2 transition-colors ${
-                        status === 'todo' ? 'text-blue-600 dark:text-blue-450' : 'text-slate-500 dark:text-slate-400'
+                        status === 'todo' ? 'text-blue-600' : 'text-slate-500 dark:text-slate-400'
                       }`}>할 일</span>
                     </div>
 
@@ -1000,7 +955,7 @@ export default function TaskModal({
                         {['review', 'done'].includes(status) ? '✓' : '2'}
                       </div>
                       <span className={`text-[10px] font-bold mt-2 transition-colors ${
-                        status === 'inprogress' ? 'text-blue-600 dark:text-blue-450' : 'text-slate-500 dark:text-slate-400'
+                        status === 'inprogress' ? 'text-blue-600' : 'text-slate-500 dark:text-slate-400'
                       }`}>진행 중</span>
                     </div>
 
@@ -1016,7 +971,7 @@ export default function TaskModal({
                         {status === 'done' ? '✓' : '3'}
                       </div>
                       <span className={`text-[10px] font-bold mt-2 transition-colors ${
-                        status === 'review' ? 'text-blue-600 dark:text-blue-450' : 'text-slate-500 dark:text-slate-400'
+                        status === 'review' ? 'text-blue-600' : 'text-slate-500 dark:text-slate-400'
                       }`}>검토 중</span>
                     </div>
 
@@ -1030,7 +985,7 @@ export default function TaskModal({
                         4
                       </div>
                       <span className={`text-[10px] font-bold mt-2 transition-colors ${
-                        status === 'done' ? 'text-emerald-600 dark:text-emerald-455' : 'text-slate-500 dark:text-slate-400'
+                        status === 'done' ? 'text-emerald-600' : 'text-slate-500 dark:text-slate-400'
                       }`}>완료됨</span>
                     </div>
                   </div>
