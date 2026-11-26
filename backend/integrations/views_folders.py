@@ -1,6 +1,6 @@
-import time
+from datetime import timedelta
 
-from django.core.cache import cache
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -13,7 +13,7 @@ from api.idempotency import finalize_idempotent_response, replay_idempotent_resp
 from . import areas, folders
 from .architecture import group_paths
 from .github_client import GitHubError
-from .models import FolderDescription
+from .models import FolderDescription, WatchedRepo
 from .views_aliases import _repo_or_404
 
 DESCRIBE_INTERVAL = 120  # seconds; also covers an in-flight run (worst case 4 batches x 30s timeout)
@@ -58,19 +58,27 @@ def describe(request, repo_id):
     if not groq_api_key():
         return json_error('AI is not configured (GROQ_API_KEY missing)', status=503, code='ai_unavailable')
 
-    lock = f'describe:{repo.id}'
-    # ponytail: per-process cache lock (locmem); use a DB claim like pr_sync if run with several workers
-    if not cache.add(lock, time.time(), DESCRIBE_INTERVAL):
-        since = time.time() - (cache.get(lock) or time.time())
+    # atomic DB claim (like pr_sync): one winner per interval across all workers/processes
+    now = timezone.now()
+    mine = WatchedRepo.objects.filter(pk=repo.pk)
+    claimed = mine.filter(Q(describe_started_at__isnull=True)
+                          | Q(describe_started_at__lt=now - timedelta(seconds=DESCRIBE_INTERVAL))
+                          ).update(describe_started_at=now)
+    if not claimed:
+        started = mine.values_list('describe_started_at', flat=True).first() or now
         return json_error('Describe was run recently', status=429, code='describe_throttled',
-                          retryAfterSeconds=max(1, int(DESCRIBE_INTERVAL - since)))
+                          retryAfterSeconds=max(1, int(DESCRIBE_INTERVAL - (now - started).total_seconds())))
+
+    def release():
+        mine.filter(describe_started_at=now).update(describe_started_at=None)
+
     paths, err = _paths(repo)
     if err:
-        cache.delete(lock)
+        release()
         return err
     out = folders.describe_repo(repo, paths, group_paths(paths), force=body.get('force') is True)
     if out['failed'] and not out['generated']:
-        cache.delete(lock)
+        release()
         return json_error('AI description failed', status=502, code='ai_failed', failed=out['failed'])
     return finalize_idempotent_response(request, scope, key, 200, out)
 

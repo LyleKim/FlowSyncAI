@@ -11,9 +11,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN chmod +x scripts/entrypoint.sh
+# collectstatic only needs importable settings, not the real secret
+RUN chmod +x scripts/entrypoint.sh \
+    && DJANGO_SECRET_KEY=build-only DJANGO_DOTENV=0 python manage.py collectstatic --noinput \
+    && useradd --system --uid 10001 --no-create-home app
+
+USER app
 
 EXPOSE 8000
 
-ENTRYPOINT ["./scripts/entrypoint.sh"]
-
+# Dev default (docker-compose.yml): wait for DB, migrate, runserver.
+# Prod (docker-compose.prod.yml) overrides the command with gunicorn and runs migrate as its own step.
+CMD ["./scripts/entrypoint.sh"]

@@ -41,3 +41,19 @@
 
 결과 : 기존에는 "새로 고침"이 아니라면 서버와 데이터가 동기화 되지 않았지만,
 이를 polling으로 해결하되 변경 내역을 확인한 후에 서버로부터 데이터를 가져오게 하여 서버의 부하를 줄였다.
+
+## 2026-11-26 운영 배포 준비 (설정 강화, 다중 워커, MySQL 검증)
+
+문제 : 설정이 개발용 기본값(DEBUG True, 고정 SECRET_KEY, ALLOWED_HOSTS `*`, CORS 전체 허용)이었고,
+폴더 설명 생성 쓰로틀이 프로세스별 locmem 캐시 락이라 gunicorn 다중 워커에서는 워커 수만큼 동시 실행될 수 있었다.
+테스트는 SQLite에서만 돌아 운영 DB(MySQL)의 차이가 숨어 있었다.
+
+해결 :
+- DEBUG 기본 False, DEBUG가 꺼져 있으면 DJANGO_SECRET_KEY 없이 기동 실패. 호스트·CORS·CSRF 오리진은 콤마 구분 환경변수, 기본은 localhost만.
+- 쓰로틀은 `WatchedRepo.describe_started_at`에 조건부 UPDATE로 거는 DB 클레임(pr_sync와 같은 방식). 공유 캐시(Redis)를 새로 두지 않았다.
+- 새 의존성은 두 개만: gunicorn(운영 WSGI 서버), whitenoise(관리자 정적 파일 서빙 —
+  nginx와 백엔드가 정적 파일 볼륨을 공유하지 않아도 되고, 이후 ECS처럼 공유 볼륨이 없는 환경에서도 그대로 동작).
+- MySQL 8.4 기본 콜레이션(utf8mb4_0900_ai_ci)은 대소문자를 구분하지 않아 Git 경로('Docs'/'docs')가 유니크 키에서 충돌했다.
+  경로 컬럼만 MySQL에서 utf8mb4_bin으로 바꾼다. 레포 URL·로그인 등 GitHub이 원래 대소문자를 구분하지 않는 값은 기본 콜레이션 그대로 둔다.
+
+결과 : 운영 기본값이 안전해졌고, CI가 SQLite와 MySQL 8.4 양쪽에서 테스트한다. 배포 설계는 docs/deploy/aws-plan.md.

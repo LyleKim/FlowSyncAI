@@ -14,6 +14,8 @@ class WatchedRepo(models.Model):
     last_error_message = models.TextField(blank=True, default='')
     last_error_reset_at = models.DateTimeField(null=True, blank=True)
     truncated = models.BooleanField(default=False)
+    # folder-describe throttle claim (shared across gunicorn workers); None = free
+    describe_started_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
