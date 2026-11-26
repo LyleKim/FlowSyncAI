@@ -1,13 +1,16 @@
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 
 from . import folders, github_client
 from .architecture import group_paths
 from .models import FolderDescription, WatchedRepo
 from .tests_arch import TREE, commit
+from .views_folders import DESCRIBE_INTERVAL
 
 TREE_URL = '/api/v1/integrations/watched-repos/{}/tree/'
 DESCRIBE_URL = '/api/v1/integrations/watched-repos/{}/describe/'
@@ -87,6 +90,9 @@ class Base(TestCase):
                          ).start()
         self.addCleanup(patch.stopall)
 
+    def release_throttle(self):
+        WatchedRepo.objects.filter(pk=self.repo.pk).update(describe_started_at=None)
+
     def describe(self, body=None, **headers):
         return self.client.post(DESCRIBE_URL.format(self.repo.id), json.dumps(body or {}),
                                 content_type='application/json', **headers)
@@ -155,10 +161,10 @@ class DescribeTests(Base):
         first = self.describe().json()
         n = len(first['generated'])
         FolderDescription.objects.filter(repo=self.repo, path='backend/tasks').update(source='manual', text='수동')
-        cache.clear()
+        self.release_throttle()
         again = self.describe().json()
         self.assertEqual((again['generated'], again['skippedUnchanged'], again['skippedManual']), ([], n - 1, 1))
-        cache.clear()
+        self.release_throttle()
         forced = self.describe({'force': True}).json()
         self.assertEqual((len(forced['generated']), forced['skippedManual']), (n - 1, 1))
         self.assertEqual(FolderDescription.objects.get(repo=self.repo, path='backend/tasks').text, '수동')
@@ -172,6 +178,16 @@ class DescribeTests(Base):
         r = self.describe()
         self.assertEqual((r.status_code, r.json()['code']), (429, 'describe_throttled'))
         self.assertIn('retryAfterSeconds', r.json())
+
+    def test_throttle_is_shared_across_workers(self):
+        # the claim lives in the DB, not in a per-process cache: clearing locmem must not release it
+        self.assertEqual(self.describe().status_code, 200)
+        cache.clear()
+        self.assertEqual(self.describe().json()['code'], 'describe_throttled')
+        # and it expires after the interval
+        WatchedRepo.objects.filter(pk=self.repo.pk).update(
+            describe_started_at=timezone.now() - timedelta(seconds=DESCRIBE_INTERVAL + 1))
+        self.assertEqual(self.describe().status_code, 200)
 
     def test_all_batches_fail_is_502_and_releases_throttle(self):
         self.llm.side_effect = RuntimeError('groq down')
