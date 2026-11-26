@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowSyncAI — 와이어프레임 (mid-fi)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%234338ca'/%3E%3C/svg%3E">
+<style>
+/* ===== Intent /wireframe design-system.css (코멘트만 축약, 규칙은 원본 그대로) ===== */
+:root {
+  --w-canvas:  #ffffff; --w-surface: #f4f4f6; --w-border:  #d6d6dd;
+  --w-ink2:    #62626b; --w-ink1:    #26262e;
+  --w-accent:      #4338ca; --w-on-accent:   #ffffff; --w-accent-soft: #edebfc;
+  --w-error:   #b42318; --note:      #4338ca;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-14: 56px; --sp-16: 64px; --sp-18: 72px;
+  --sp-20: 80px; --sp-22: 88px; --sp-23: 92px;
+  --h-sm: 32px; --h-md: 40px; --h-lg: 48px;
+  --ic-sm: 16px; --ic-md: 20px; --ic-lg: 24px; --ic-xl: 32px;
+  --r-sm: 2px; --r-md: 4px; --r-lg: 8px; --r-full: 999px;
+  --t-xs: 11px;  --t-xs-lh: 16px;
+  --t-sm: 13px;  --t-sm-lh: 20px;
+  --t-md: 14px;  --t-md-lh: 20px;
+  --t-lg: 16px;  --t-lg-lh: 20px;
+  --t-xl: 18px;  --t-xl-lh: 24px;
+  --t-2xl: 22px; --t-2xl-lh: 28px;
+  --wf-font: system-ui, -apple-system, sans-serif;
+  --gl-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --gl-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='4.25' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3Cpath d='M10.5 10.5L14 14' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  --gl-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5L13.5 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --gl-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  --gl-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3v10M3 8h10' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  --gl-bell: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2a4 4 0 0 0-4 4v3L2.5 11h11L12 9V6a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --gl-camera: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 5h3l1-1.5h4L11 5h3v8H2z' fill='none' stroke='%23000' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='8' cy='8.75' r='2.25' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E");
+  --gl-alert: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2L15 13.5H1z' fill='none' stroke='%23000' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M8 6.5v3.5' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.75' r='0.9' fill='%23000'/%3E%3C/svg%3E");
+  --gl-arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M13 8H3M7 4L3 8l4 4' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --gl-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.25' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3Cpath d='M8 7.25v3.75' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='4.9' r='0.9' fill='%23000'/%3E%3C/svg%3E");
+  --gl-check-on-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5L13.5 4.5' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] {
+  --w-canvas:  #1a1a20; --w-surface: #232329; --w-border:  #3a3a44;
+  --w-ink2:    #9a9aa6; --w-ink1:    #e8e8ee;
+  --w-accent:      #7c6ff0; --w-on-accent:   #0b0b0e; --w-accent-soft: #2d2a4e;
+  --w-error:   #f97066; --note:      #8a80f4;
+  --gl-check-on-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5L13.5 4.5' fill='none' stroke='%230b0b0e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.wf { font-family: var(--wf-font); font-size: var(--t-md); line-height: var(--t-md-lh); color: var(--w-ink1); background: var(--w-canvas); }
+.wf * { box-sizing: border-box; }
+.wf button, .wf input, .wf textarea, .wf select { font: inherit; color: inherit; }
+.wf button { cursor: pointer; background: none; border: none; padding: 0; }
+.wf .t-display { font-size: var(--t-2xl); line-height: var(--t-2xl-lh); font-weight: 700; }
+.wf .t-title   { font-size: var(--t-xl);  line-height: var(--t-xl-lh);  font-weight: 700; }
+.wf .t-heading { font-size: var(--t-lg);  line-height: var(--t-lg-lh);  font-weight: 600; }
+.wf .t-body    { font-size: var(--t-md);  line-height: var(--t-md-lh);  font-weight: 400; }
+.wf .t-body-strong { font-size: var(--t-md); line-height: var(--t-md-lh); font-weight: 600; }
+.wf .t-small   { font-size: var(--t-sm);  line-height: var(--t-sm-lh);  font-weight: 400; }
+.wf .t-caption { font-size: var(--t-xs);  line-height: var(--t-xs-lh);  font-weight: 400; }
+.wf .muted     { color: var(--w-ink2); }
+.wf .glyph { display: inline-block; flex-shrink: 0; width: var(--ic-md); height: var(--ic-md); background: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+.wf .glyph-sm { width: var(--ic-sm); height: var(--ic-sm); }
+.wf .glyph-lg { width: var(--ic-lg); height: var(--ic-lg); }
+.wf .gl-chevron    { -webkit-mask-image: var(--gl-chevron);    mask-image: var(--gl-chevron); }
+.wf .gl-search     { -webkit-mask-image: var(--gl-search);     mask-image: var(--gl-search); }
+.wf .gl-check      { -webkit-mask-image: var(--gl-check);      mask-image: var(--gl-check); }
+.wf .gl-x          { -webkit-mask-image: var(--gl-x);          mask-image: var(--gl-x); }
+.wf .gl-plus       { -webkit-mask-image: var(--gl-plus);       mask-image: var(--gl-plus); }
+.wf .gl-bell       { -webkit-mask-image: var(--gl-bell);       mask-image: var(--gl-bell); }
+.wf .gl-camera     { -webkit-mask-image: var(--gl-camera);     mask-image: var(--gl-camera); }
+.wf .gl-alert      { -webkit-mask-image: var(--gl-alert);      mask-image: var(--gl-alert); }
+.wf .gl-arrow-left { -webkit-mask-image: var(--gl-arrow-left); mask-image: var(--gl-arrow-left); }
+.wf .gl-info       { -webkit-mask-image: var(--gl-info);       mask-image: var(--gl-info); }
+.wf .icon { display: inline-block; flex-shrink: 0; width: var(--ic-lg); height: var(--ic-lg); border-radius: var(--r-full); background: var(--w-surface); border: 1px solid var(--w-border); }
+.wf .icon-sm { width: var(--ic-sm); height: var(--ic-sm); }
+.wf .icon-md { width: var(--ic-md); height: var(--ic-md); }
+.wf .icon-xl { width: var(--ic-xl); height: var(--ic-xl); }
+.wf .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); border-radius: var(--r-md); font-weight: 600; height: var(--h-md); padding: 0 var(--sp-3); font-size: var(--t-md); line-height: var(--t-md-lh); transition: opacity 120ms, background 120ms; }
+.wf .btn-sm { height: var(--h-sm); padding: 0 var(--sp-2); font-size: var(--t-sm); line-height: var(--t-sm-lh); }
+.wf .btn-lg { height: var(--h-lg); padding: 0 var(--sp-5); }
+.wf .btn-primary { background: var(--w-accent); color: var(--w-on-accent); }
+.wf .btn-primary:hover { opacity: 0.88; }
+.wf .btn-primary:active { opacity: 0.75; }
+.wf .btn-secondary { border: 1px solid var(--w-border); }
+.wf .btn-secondary:hover { background: var(--w-surface); }
+.wf .btn-secondary:active { background: var(--w-border); }
+.wf .btn-ghost { color: var(--w-ink1); }
+.wf .btn-ghost:hover { background: var(--w-surface); }
+.wf .btn-ghost:active { background: var(--w-border); }
+.wf .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.wf .btn:focus-visible, .wf .chip:focus-visible, .wf .tab:focus-visible, .wf .btn-icon:focus-visible, .wf .switch:focus-visible { outline: 2px solid var(--w-accent); outline-offset: 2px; }
+.wf .btn-block { display: flex; width: 100%; }
+.wf .btn-icon { display: inline-flex; align-items: center; justify-content: center; width: var(--h-sm); height: var(--h-sm); border-radius: var(--r-md); transition: background 120ms; }
+.wf .btn-icon:hover { background: var(--w-surface); }
+.wf .btn-icon:active { background: var(--w-border); }
+.wf .field { display: block; }
+.wf .field + .field { margin-top: var(--sp-4); }
+.wf .field-label { display: block; font-size: var(--t-sm); line-height: var(--t-sm-lh); font-weight: 600; margin-bottom: var(--sp-1); }
+.wf .field-hint { font-size: var(--t-xs); line-height: var(--t-xs-lh); color: var(--w-ink2); margin-top: var(--sp-1); }
+.wf .input, .wf .select { display: block; width: 100%; height: var(--h-md); padding: 0 var(--sp-3); border: 1px solid var(--w-border); border-radius: var(--r-md); background: var(--w-canvas); font-size: var(--t-md); line-height: var(--t-md-lh); color: var(--w-ink1); }
+.wf .input-lg, .wf .select-lg { height: var(--h-lg); padding: 0 var(--sp-4); }
+.wf .textarea { display: block; width: 100%; min-height: calc(var(--h-md) * 2); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--w-border); border-radius: var(--r-md); background: var(--w-canvas); font-size: var(--t-md); line-height: var(--t-md-lh); color: var(--w-ink1); resize: vertical; }
+.wf .input::placeholder, .wf .textarea::placeholder { color: var(--w-ink2); }
+.wf .input:hover, .wf .textarea:hover, .wf .select:hover { border-color: var(--w-ink2); }
+.wf .input:focus, .wf .textarea:focus, .wf .select:focus { outline: 2px solid var(--w-accent); outline-offset: 0; border-color: var(--w-accent); }
+.wf .input:disabled, .wf .textarea:disabled, .wf .select:disabled { background: var(--w-surface); color: var(--w-ink2); cursor: not-allowed; }
+.wf .input.error, .wf .textarea.error, .wf .select.error { border-color: var(--w-error); }
+.wf .input.error:focus, .wf .textarea.error:focus, .wf .select.error:focus { outline-color: var(--w-error); border-color: var(--w-error); }
+.wf .field-error { display: flex; align-items: center; gap: var(--sp-1); font-size: var(--t-sm); line-height: var(--t-sm-lh); font-weight: 500; color: var(--w-error); margin-top: var(--sp-1); }
+.wf .select { display: flex; align-items: center; justify-content: space-between; text-align: left; gap: var(--sp-2); }
+.wf .select::after { content: ""; flex-shrink: 0; width: var(--ic-sm); height: var(--ic-sm); background: var(--w-ink2); -webkit-mask: var(--gl-chevron) center / contain no-repeat; mask: var(--gl-chevron) center / contain no-repeat; }
+.wf .search { position: relative; }
+.wf .search .glyph { position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--w-ink2); }
+.wf .search .input { padding-left: var(--sp-10); }
+.wf .choice { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--h-sm); cursor: pointer; font-size: var(--t-md); line-height: var(--t-md-lh); }
+.wf .choice input { appearance: none; margin: 0; flex-shrink: 0; width: var(--ic-md); height: var(--ic-md); border: 1px solid var(--w-border); background: var(--w-canvas); cursor: pointer; transition: background 120ms, border-color 120ms; }
+.wf .choice input[type="checkbox"] { border-radius: var(--r-sm); }
+.wf .choice input[type="radio"] { border-radius: var(--r-full); }
+.wf .choice input:hover { border-color: var(--w-ink2); }
+.wf .choice input[type="checkbox"]:checked { background: var(--w-accent) var(--gl-check-on-accent) center / 14px no-repeat; border-color: var(--w-accent); }
+.wf .choice input[type="radio"]:checked { background: var(--w-accent); border-color: var(--w-accent); box-shadow: inset 0 0 0 3px var(--w-canvas); }
+.wf .choice input:focus-visible { outline: 2px solid var(--w-accent); outline-offset: 2px; }
+.wf .switch { position: relative; flex-shrink: 0; cursor: pointer; width: var(--sp-10); height: var(--sp-6); border-radius: var(--r-full); background: var(--w-border); transition: background 120ms; }
+.wf .switch::after { content: ""; position: absolute; top: var(--sp-1); left: var(--sp-1); width: var(--sp-4); height: var(--sp-4); border-radius: var(--r-full); background: var(--w-canvas); transition: left 120ms; }
+.wf .switch[aria-checked="true"] { background: var(--w-accent); }
+.wf .switch[aria-checked="true"]::after { left: var(--sp-5); }
+.wf .chip { display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--h-sm); padding: 0 var(--sp-3); border: 1px solid var(--w-border); border-radius: var(--r-full); background: var(--w-canvas); color: var(--w-ink1); font-size: var(--t-sm); line-height: var(--t-sm-lh); transition: background 120ms; }
+.wf .chip:hover { background: var(--w-surface); }
+.wf .chip.active, .wf .chip[aria-pressed="true"] { background: var(--w-accent); color: var(--w-on-accent); border-color: var(--w-accent); }
+.wf .tabs { display: flex; gap: var(--sp-6); border-bottom: 1px solid var(--w-border); }
+.wf .tabs .tab-item { height: var(--h-md); display: inline-flex; align-items: center; font-size: var(--t-md); line-height: var(--t-md-lh); color: var(--w-ink2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.wf .tabs .tab-item:hover { color: var(--w-ink1); }
+.wf .tabs .tab-item.active { color: var(--w-ink1); font-weight: 600; border-bottom-color: var(--w-accent); }
+.wf .tabbar { display: flex; border-top: 1px solid var(--w-border); padding: var(--sp-2) 0 var(--sp-1); background: var(--w-canvas); }
+.wf .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); min-height: var(--h-lg); font-size: var(--t-xs); line-height: var(--t-xs-lh); color: var(--w-ink2); }
+.wf .tab:hover { color: var(--w-ink1); }
+.wf .tab.active { color: var(--w-accent); font-weight: 600; }
+.wf .appbar { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--h-lg); padding: var(--sp-2) var(--sp-4); background: var(--w-canvas); border-bottom: 1px solid var(--w-border); }
+.wf .appbar .t-title, .wf .appbar .t-heading { margin: 0; }
+.wf .avatar { display: inline-block; flex-shrink: 0; width: var(--sp-8); height: var(--sp-8); border-radius: var(--r-full); background: var(--w-border); }
+.wf .avatar-sm { width: var(--sp-5); height: var(--sp-5); }
+.wf .avatar-lg { width: var(--sp-12); height: var(--sp-12); }
+.wf .media { background: var(--w-surface); border: 1px solid var(--w-border); border-radius: var(--r-sm); }
+.wf .badge { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); min-width: var(--sp-5); height: var(--sp-5); padding: 0 var(--sp-2); border-radius: var(--r-full); background: var(--w-ink1); color: var(--w-canvas); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; }
+.wf .badge-muted { background: var(--w-surface); color: var(--w-ink2); border: 1px solid var(--w-border); }
+.wf .badge-accent { background: var(--w-accent-soft); color: var(--w-accent); }
+[data-theme="dark"] .wf .badge-accent { color: var(--w-ink1); }
+.wf .link { color: var(--w-accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.wf .link:hover { text-decoration: none; }
+.wf .divider { border: 0; border-top: 1px solid var(--w-border); margin: var(--sp-4) 0; }
+.wf .skeleton { background: var(--w-surface); border-radius: var(--r-sm); animation: wf-pulse 1.6s ease-in-out infinite; }
+.wf .skeleton-text  { height: var(--sp-3); }
+.wf .skeleton-title { height: var(--sp-5); }
+@keyframes wf-pulse { 50% { opacity: 0.55; } }
+.wf .spinner { display: inline-block; flex-shrink: 0; width: var(--ic-sm); height: var(--ic-sm); border-radius: var(--r-full); border: 2px solid currentColor; border-right-color: transparent; animation: wf-spin 0.7s linear infinite; }
+@keyframes wf-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .wf .skeleton { animation: none; }
+  .wf .spinner { animation: none; border-right-color: currentColor; opacity: 0.55; }
+}
+.wf .card { background: var(--w-canvas); border: 1px solid var(--w-border); border-radius: var(--r-lg); overflow: hidden; }
+.wf .card .media { border-left: 0; border-right: 0; border-top: 0; border-radius: 0; }
+.wf .card-body { padding: var(--sp-3); }
+.wf .card.interactive { transition: border-color 120ms; cursor: pointer; }
+.wf .card.interactive:hover { border-color: var(--w-ink2); }
+.wf .list { display: flex; flex-direction: column; }
+.wf .list-row { display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: var(--h-lg); padding: var(--sp-2) var(--sp-4); border-bottom: 1px solid var(--w-border); text-align: left; transition: background 120ms; }
+.wf .list-row:hover { background: var(--w-surface); }
+.wf .list-row .grow { flex: 1; min-width: 0; }
+.wf table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); line-height: var(--t-sm-lh); }
+.wf th { text-align: left; font-weight: 600; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--w-ink2); }
+.wf td { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--w-border); }
+.wf tbody tr { transition: background 120ms; }
+.wf tbody tr:hover { background: var(--w-surface); }
+.wf .scrim { background: rgba(0, 0, 0, 0.4); }
+.wf .modal { background: var(--w-canvas); border: 1px solid var(--w-border); border-radius: var(--r-lg); padding: var(--sp-6); max-width: 480px; }
+.wf .modal-actions { display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-6); }
+.wf .sheet { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.wf .sheet-handle { width: var(--sp-10); height: var(--sp-1); border-radius: var(--r-full); background: var(--w-border); margin: 0 auto var(--sp-4); }
+.wf .toast { display: inline-flex; align-items: center; gap: var(--sp-3); min-height: var(--h-md); padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4); background: var(--w-ink1); color: var(--w-canvas); border-radius: var(--r-md); font-size: var(--t-sm); line-height: var(--t-sm-lh); }
+.wf .toast .btn-icon { color: var(--w-canvas); }
+.wf .toast .btn-icon:hover { background: rgba(255, 255, 255, 0.15); }
+.wf .callout { display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--w-surface); border: 1px solid var(--w-border); border-radius: var(--r-md); }
+.wf .callout > .glyph { flex-shrink: 0; color: var(--w-ink2); }
+.wf .callout-body { flex: 1; min-width: 0; }
+.wf .callout-title { font-size: var(--t-md); line-height: var(--t-md-lh); font-weight: 600; }
+.wf .callout-title + .callout-text { margin-top: var(--sp-1); }
+.wf .callout-text { font-size: var(--t-sm); line-height: var(--t-sm-lh); color: var(--w-ink2); }
+.wf .callout > .btn-icon { flex-shrink: 0; }
+.wf .callout.accent { background: var(--w-accent-soft); border-color: var(--w-accent); }
+.wf .callout.accent > .glyph, .wf .callout.accent .callout-title { color: var(--w-accent); }
+[data-theme="dark"] .wf .callout.accent > .glyph, [data-theme="dark"] .wf .callout.accent .callout-title { color: var(--w-ink1); }
+.wf .callout.error { border-color: var(--w-error); }
+.wf .callout.error > .glyph, .wf .callout.error .callout-title { color: var(--w-error); }
+.wf .row { display: flex; align-items: center; gap: var(--sp-2); }
+.wf .stack > * + * { margin-top: var(--sp-3); }
+.wf .text-stack { display: flex; flex-direction: column; }
+.wf .text-stack > * { line-height: var(--t-xs-lh); }
+.wf .grow { flex: 1; min-width: 0; }
+.wf .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.wf .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-3); }
+.wf .screen-body { padding: var(--sp-4); }
+
+/* ===== Intent /wireframe viewer.css (코멘트 축약, 규칙은 원본 그대로) ===== */
+:root { --stage: #fafafc; --chrome-fg: #18182b; --chrome-ink: #65657a; --chrome-border: #d8d8e4;
+  --display: "General Sans", system-ui, -apple-system, sans-serif; --sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif; --mono: "SF Mono", "Fira Code", ui-monospace, monospace; }
+[data-theme="dark"] { --stage: #18182b; --chrome-fg: #f0f0f8; --chrome-ink: #8888a8; --chrome-border: #2a2a44; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: var(--sp-8); background: var(--stage); font-family: var(--sans); color: var(--chrome-fg); line-height: 1.5; }
+@media (max-width: 600px) { body { padding: var(--sp-4); } }
+.board-header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; row-gap: var(--sp-3); margin-bottom: var(--sp-8); }
+.board-title { font-family: var(--display); font-size: var(--t-xl); line-height: var(--t-xl-lh); font-weight: 700; letter-spacing: -0.02em; color: var(--chrome-fg); margin: 0; }
+.board-meta { font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-ink); margin: var(--sp-1) 0 0; }
+.board-controls { display: flex; align-items: center; gap: var(--sp-6); }
+.view-toggle { display: flex; gap: var(--sp-1); }
+.view-toggle button { font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; height: var(--h-sm); padding: 0 var(--sp-3); background: none; border: 1px solid var(--chrome-border); border-radius: var(--r-md); color: var(--chrome-ink); }
+.view-toggle button:hover { color: var(--chrome-fg); }
+.view-toggle button[aria-pressed="true"] { background: var(--chrome-fg); border-color: var(--chrome-fg); color: var(--stage); }
+.view-toggle button:focus-visible, .theme-toggle:focus-visible, .slide-nav button:focus-visible, .board-index a:focus-visible, .plate-open:focus-visible, body[data-view="proto"] [data-go]:focus-visible { outline: 2px solid var(--chrome-fg); outline-offset: 2px; }
+.theme-toggle { display: flex; align-items: center; gap: var(--sp-2); background: none; border: none; cursor: pointer; height: var(--h-sm); padding: 0; font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-ink); }
+.theme-toggle:hover { color: var(--chrome-fg); }
+.theme-toggle .swatch { width: var(--ic-sm); height: var(--ic-sm); border-radius: var(--r-full); border: 1px solid var(--chrome-ink); background: linear-gradient(90deg, #ffffff 50%, #1a1a20 50%); }
+[data-theme="dark"] .theme-toggle .swatch { background: linear-gradient(90deg, #1a1a20 50%, #ffffff 50%); }
+.board-section { margin-bottom: var(--sp-16); scroll-margin-top: var(--sp-16); }
+.section-label { font-family: var(--mono); font-size: var(--t-sm); line-height: var(--t-sm-lh); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--chrome-ink); border-bottom: 1px solid var(--chrome-border); padding-bottom: var(--sp-2); margin-bottom: var(--sp-4); }
+.frame-grid { display: flex; flex-wrap: wrap; gap: var(--sp-6); align-items: flex-start; }
+.frame { background: none; border: none; }
+.frame-plate { display: flex; gap: var(--sp-2); align-items: baseline; font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-ink); padding: 0 var(--sp-1); margin: 0 0 var(--sp-2); }
+.plate-open { display: flex; gap: var(--sp-2); align-items: baseline; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: default; }
+body[data-view="grid"] .plate-open { cursor: pointer; }
+body[data-view="grid"] .plate-open:hover { color: var(--chrome-fg); }
+body[data-view="slides"] .frame-pos, body[data-view="proto"] .frame-pos { display: none; }
+.frame > .wf { border: 1px solid var(--chrome-border); border-radius: var(--r-lg); overflow: hidden; }
+body[data-view="grid"] .board-section:has(.note-rail) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); column-gap: var(--sp-10); }
+body[data-view="grid"] .board-section:has(.note-rail) .section-label { grid-column: 1 / -1; }
+body[data-view="grid"] .board-section:has(.note-rail) .frame-grid { grid-row: 2; grid-column: 1; }
+body[data-view="grid"] .board-section:has(.note-rail) .note-rail { grid-row: 2; grid-column: 2; max-width: none; margin-top: 0; border-left: 1px solid var(--chrome-border); padding-left: var(--sp-6); align-self: start; }
+@media (max-width: 1208px) { body[data-view="grid"] .board-section:has(.note-rail) { grid-template-columns: minmax(0, 1fr) minmax(220px, 240px); } }
+@media (max-width: 900px) {
+  body[data-view="grid"] .board-section:has(.note-rail) { display: block; }
+  body[data-view="grid"] .board-section:has(.note-rail) .note-rail { max-width: 320px; margin-top: var(--sp-4); border-left: 0; padding-left: 0; }
+}
+body[data-view="slides"], body[data-view="proto"] { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+body[data-view="slides"] .section-label { display: none; }
+body[data-view="slides"] .frame, body[data-view="proto"] .frame { display: none; }
+body[data-view="slides"] .board-section:not(:has(.frame.active)), body[data-view="proto"] .board-section:not(:has(.frame.active)) { display: none; }
+body[data-view="slides"] .board-section:has(.frame.active), body[data-view="proto"] .board-section:has(.frame.active) { flex: 1; min-height: 0; margin-bottom: 0; display: grid; grid-template-rows: minmax(0, 1fr); column-gap: var(--sp-10); }
+body[data-view="slides"] .board-section:has(.frame.active) { grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); }
+body[data-view="proto"] .board-section:has(.frame.active) { grid-template-columns: minmax(0, 1fr); }
+body[data-view="slides"] .frame-grid, body[data-view="proto"] .frame-grid { grid-row: 1; grid-column: 1 / -1; position: relative; min-height: 0; }
+body[data-view="slides"] .frame.active, body[data-view="proto"] .frame.active { display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(var(--slide-scale, 1)); }
+body[data-view="slides"] .note-rail { grid-row: 1; grid-column: 2; max-width: none; margin-top: 0; min-height: 0; overflow-y: auto; align-self: start; max-height: 100%; background: var(--stage); border-left: 1px solid var(--chrome-border); padding-left: var(--sp-6); }
+@media (max-width: 900px) {
+  body[data-view="slides"] .board-section:has(.frame.active) { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  body[data-view="slides"] .note-rail { grid-row: 2; grid-column: 1; max-height: 30vh; border-left: 0; border-top: 1px solid var(--chrome-border); padding-left: 0; padding-top: var(--sp-4); margin-top: var(--sp-4); }
+}
+.slide-nav { display: none; }
+body[data-view="slides"] .slide-nav, body[data-view="proto"] .slide-nav { display: flex; gap: var(--sp-3); align-items: center; margin-bottom: var(--sp-4); font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-ink); border-bottom: 1px solid var(--chrome-border); padding-bottom: var(--sp-2); }
+.slide-nav .slide-section { font-size: var(--t-sm); line-height: var(--t-sm-lh); font-weight: 600; letter-spacing: 0.08em; }
+.slide-nav [data-prev] { margin-left: auto; }
+.nav-hint { display: none; text-transform: none; letter-spacing: 0; }
+body[data-view="slides"] .slides-hint { display: inline; }
+body[data-view="proto"] .proto-hint { display: inline; }
+.slide-nav button { display: inline-flex; align-items: center; justify-content: center; color: inherit; cursor: pointer; background: none; border: 1px solid var(--chrome-border); border-radius: var(--r-md); height: var(--h-sm); padding: 0; }
+.slide-nav [data-prev], .slide-nav [data-next] { width: var(--h-sm); }
+.slide-nav button:hover { color: var(--chrome-fg); }
+.slide-nav button:disabled { opacity: 0.45; cursor: default; }
+.slide-nav button:disabled:hover { color: inherit; }
+.slide-nav [data-prev]::before, .slide-nav [data-next]::before { content: ""; width: var(--ic-sm); height: var(--ic-sm); background: currentColor; -webkit-mask: var(--gl-arrow-left) center / contain no-repeat; mask: var(--gl-arrow-left) center / contain no-repeat; }
+.slide-nav [data-next]::before { transform: scaleX(-1); }
+.slide-nav [data-restart] { display: none; font: inherit; letter-spacing: inherit; text-transform: inherit; padding: 0 var(--sp-3); }
+body[data-view="proto"] .slide-nav [data-restart] { display: inline-flex; }
+body[data-view="proto"] .slide-nav [data-next], body[data-view="proto"] .slide-pos { display: none; }
+body[data-view="proto"] .section-label, body[data-view="proto"] .note-rail, body[data-view="proto"] .note-marker { display: none; }
+body[data-view="proto"] [data-go] { cursor: pointer; }
+body[data-view="proto"] [data-go]:hover { outline: 1px solid var(--chrome-ink); outline-offset: 2px; }
+.wf .dead-tap { outline: 1px solid var(--chrome-ink); outline-offset: 2px; }
+.note-marker { position: absolute; width: var(--sp-6); height: var(--sp-6); border-radius: var(--r-full); background: var(--note); color: #ffffff; font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 700; display: flex; align-items: center; justify-content: center; z-index: 2; }
+[data-theme="dark"] .note-marker { color: var(--stage); }
+.note-rail { max-width: 320px; margin-top: var(--sp-4); font-size: var(--t-sm); line-height: var(--t-sm-lh); color: var(--chrome-ink); }
+.note-rail p { margin: 0 0 var(--sp-3); }
+.note-rail .note-num { color: var(--note); font-family: var(--mono); font-weight: 700; }
+.note-group + .note-group { margin-top: var(--sp-5); }
+.note-frame { font-family: var(--mono); font-size: var(--t-xs); line-height: var(--t-xs-lh); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-ink); margin: 0 0 var(--sp-2); border-bottom: 1px solid var(--chrome-border); padding-bottom: var(--sp-1); }
+body[data-view="slides"] .note-group:not(.active) { display: none; }
+
+/* ===== 이 아티팩트의 레이아웃 (전부 키트 토큰) ===== */
+.wf .rel { position: relative; }
+.wf .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wf .w-auto { width: auto; min-width: calc(var(--sp-16) * 3); }
+.wf .app { display: grid; grid-template-columns: calc(var(--sp-16) * 4) minmax(0, 1fr); min-height: calc(var(--sp-16) * 14); }
+.wf .side { display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-4); background: var(--w-surface); border-right: 1px solid var(--w-border); }
+.wf .side nav { display: flex; flex-direction: column; gap: var(--sp-1); }
+.wf .side .brand { padding: var(--sp-2) var(--sp-3) var(--sp-4); }
+.wf .nav-item { display: flex; align-items: center; gap: var(--sp-3); width: 100%; height: var(--h-md); padding: 0 var(--sp-3); border-radius: var(--r-md); text-align: left; }
+.wf .nav-item .grow { flex: 1; }
+.wf .nav-item:hover { background: var(--w-border); }
+.wf .nav-item[aria-current="page"] { background: var(--w-accent-soft); font-weight: 600; }
+.wf .nav-item:focus-visible { outline: 2px solid var(--w-accent); outline-offset: 2px; }
+.wf .side-foot { margin-top: auto; padding-top: var(--sp-4); border-top: 1px solid var(--w-border); }
+.wf .side-foot .row { flex-wrap: wrap; }
+.wf .main { padding: var(--sp-8); min-width: 0; }
+.wf .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-6); margin-bottom: var(--sp-6); }
+.wf .page-head h1, .wf .page-head p { margin: 0; }
+.wf .stats { display: flex; gap: var(--sp-8); margin-bottom: var(--sp-6); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--w-border); }
+.wf .stat .t-display { display: block; }
+.wf .toolbar { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.wf .toolbar .grow { flex: 1; }
+.wf .grp-head { display: flex; align-items: center; gap: var(--sp-2); height: var(--h-md); width: 100%; text-align: left; font-weight: 600; }
+.wf .grp-head .glyph { transition: transform 120ms; }
+.wf .grp-head[aria-expanded="false"] .glyph { transform: rotate(-90deg); }
+.wf .grp-head[aria-expanded="true"] .glyph { transform: rotate(0); }
+.wf .qlist { list-style: none; margin: 0 0 var(--sp-6); padding: 0; border: 1px solid var(--w-border); border-radius: var(--r-lg); }
+.wf .qlist > li { border-bottom: 1px solid var(--w-border); }
+.wf .qlist > li:last-child { border-bottom: 0; }
+.wf .qrow { display: grid; grid-template-columns: calc(var(--sp-16) * 2) minmax(0, 1fr) auto; gap: var(--sp-4); align-items: start; padding: var(--sp-4); }
+.wf .qrow h3 { margin: 0; }
+.wf .qrow .meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); color: var(--w-ink2); font-size: var(--t-sm); line-height: var(--t-sm-lh); margin-top: var(--sp-1); }
+.wf .qrow .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.wf .qrow .acts { display: flex; align-items: center; gap: var(--sp-2); }
+.wf .wait strong { display: block; font-size: var(--t-lg); line-height: var(--t-lg-lh); }
+.wf .detail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-6); padding: var(--sp-4) var(--sp-4) var(--sp-4) calc(var(--sp-16) * 2 + var(--sp-8)); background: var(--w-surface); border-top: 1px solid var(--w-border); }
+.wf .detail h4 { margin: 0 0 var(--sp-2); font-size: var(--t-sm); line-height: var(--t-sm-lh); }
+.wf .detail p { margin: 0; }
+.wf .detail .full { grid-column: 1 / -1; display: flex; gap: var(--sp-3); align-items: center; }
+.wf .qcompact { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); }
+.wf .vz th, .wf .vz td { vertical-align: middle; padding: var(--sp-3); }
+.wf .vz th { font-size: var(--t-xs); line-height: var(--t-xs-lh); color: var(--w-ink2); }
+.wf .vz .name { font-weight: 600; text-align: left; display: block; }
+.wf .vz .name:hover { text-decoration: underline; }
+.wf .bars { display: inline-flex; align-items: flex-end; gap: var(--sp-1); height: var(--sp-8); border-bottom: 1px solid var(--w-ink2); }
+.wf .bars i { display: block; width: var(--sp-5); height: calc(var(--sp-1) * var(--n)); background: var(--w-ink1); }
+.wf .bars i.part { background: var(--w-canvas); border: 1px solid var(--w-ink1); border-bottom: 0; }
+.wf .bars i.na { height: var(--sp-1); background: none; border: 1px dashed var(--w-ink2); }
+.wf .bars-lg { height: calc(var(--sp-16) * 2); gap: var(--sp-4); }
+.wf .bars-lg .col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: var(--sp-1); }
+.wf .bars-lg i { width: var(--sp-12); height: calc(var(--sp-2) * var(--n)); }
+.wf .wbar { display: block; height: var(--sp-2); width: calc(var(--sp-4) * var(--d)); background: var(--w-ink1); margin-top: var(--sp-1); }
+.wf .cbar { display: block; height: var(--sp-2); width: calc(var(--sp-3) * var(--n)); background: var(--w-ink1); }
+.wf .legend { display: flex; gap: var(--sp-6); flex-wrap: wrap; color: var(--w-ink2); font-size: var(--t-xs); line-height: var(--t-xs-lh); margin: var(--sp-3) 0; align-items: center; }
+.wf .legend .sw { display: inline-block; width: var(--sp-3); height: var(--sp-3); background: var(--w-ink1); vertical-align: middle; margin-right: var(--sp-1); }
+.wf .legend .sw.part { background: var(--w-canvas); border: 1px solid var(--w-ink1); }
+.wf .legend .sw.na { background: none; border: 1px dashed var(--w-ink2); }
+.wf .two { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-8); }
+.wf .sec { margin-bottom: var(--sp-6); }
+.wf .sec > h2 { margin: 0 0 var(--sp-3); }
+.wf .crumbs { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.wf .centered { display: flex; justify-content: center; padding: var(--sp-16) var(--sp-8); min-height: calc(var(--sp-16) * 13); background: var(--w-surface); }
+.wf .centered .card { width: calc(var(--sp-16) * 9); align-self: flex-start; }
+.wf .panel { position: absolute; top: 0; right: 0; bottom: 0; width: calc(var(--sp-16) * 7); background: var(--w-canvas); border-left: 1px solid var(--w-border); padding: var(--sp-6); overflow: hidden; z-index: 1; }
+.wf .panel[hidden], .wf [hidden] { display: none; }
+.wf details { border-top: 1px solid var(--w-border); }
+.wf summary { display: flex; align-items: center; gap: var(--sp-2); height: var(--h-md); cursor: pointer; font-weight: 600; }
+.wf .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
+.wf .board h3 { margin: 0 0 var(--sp-2); }
+.wf .board .card { margin-bottom: var(--sp-2); }
+.wf .mobile .main { padding: var(--sp-4); }
+.wf .mobile .qrow { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+.wf .mobile .acts .btn { flex: 1; }
+</style>
+</head>
+<body data-view="grid" data-theme="light">
+
+<header class="board-header">
+  <div class="board-id">
+    <h1 class="board-title">FlowSyncAI — 와이어프레임</h1>
+    <p class="board-meta">Intent /wireframe · 2026년 11월 · 전체 화면 와이어프레임(mid-fi) + 클릭 프로토타입</p>
+  </div>
+  <div class="board-controls">
+    <nav class="view-toggle" aria-label="보기 방식">
+      <button data-setview="grid" aria-pressed="true">Grid</button>
+      <button data-setview="slides" aria-pressed="false">Slides</button>
+      <button data-setview="proto" aria-pressed="false">Prototype</button>
+    </nav>
+    <button class="theme-toggle" data-toggle-theme><span class="swatch" aria-hidden="true"></span><span class="theme-label">Dark</span></button>
+  </div>
+</header>
+
+<nav class="slide-nav" aria-label="화면 이동">
+  <span class="slide-section"></span>
+  <span class="slide-pos">1/11</span>
+  <span class="nav-hint slides-hint">← → 로 이동 · Esc 로 그리드 복귀</span>
+  <span class="nav-hint proto-hint">실제 메뉴·링크·버튼을 눌러 이동 · ← 이전 화면 · Esc 로 그리드 복귀 (구조 피드백용 와이어프레임이며 스타일은 아직 없음)</span>
+  <button data-prev aria-label="이전"></button>
+  <button data-next aria-label="다음"></button>
+  <button data-restart>처음으로</button>
+</nav>
+
+<!-- ============ 섹션 1: 내 리뷰 요청 ============ -->
+<section class="board-section" data-section="내 리뷰 요청 (S-A, S-C, S-D, S-G)">
+  <h2 class="section-label">내 리뷰 요청 (S-A, S-C, S-D, S-G)</h2>
+  <div class="frame-grid">
+
+    <!-- 1 첫 설정 -->
+    <article class="frame" id="scr-setup" style="width: 1440px">
+      <h3 class="frame-plate"><span>첫 설정 · S-A</span><span class="frame-pos">1/11</span></h3>
+      <div class="wf rel">
+        <div class="centered">
+          <div class="card rel">
+            <div class="card-body" style="padding: var(--sp-8)">
+              <p class="t-caption muted" style="margin:0 0 var(--sp-2)">FlowSyncAI</p>
+              <h1 class="t-display" style="margin:0 0 var(--sp-2)">누구의 리뷰 요청을 보여드릴까요?</h1>
+              <p class="t-body muted" style="margin:0 0 var(--sp-6)">GitHub 로그인을 입력하면, 연결된 레포에서 그 계정에게 온 리뷰 요청을 모아 보여드려요. 입력한 로그인은 이 브라우저에만 저장돼요.</p>
+              <div class="callout" style="margin-bottom: var(--sp-6)">
+                <span class="glyph gl-info" aria-hidden="true"></span>
+                <div class="callout-body"><p class="callout-title" style="margin:0">팀이 이미 레포 2개를 연결해 두었어요</p><p class="callout-text" style="margin:0">로그인만 입력하면 바로 시작할 수 있어요. 레포를 따로 추가하지 않아도 돼요.</p></div>
+              </div>
+              <div class="field rel">
+                <label class="field-label" for="login">내 GitHub 로그인</label>
+                <input class="input input-lg" id="login" value="Minji-Park" aria-describedby="login-hint login-prev">
+                <span class="note-marker" style="top: var(--sp-1); right: calc(var(--sp-8) * -1)">1</span>
+                <p class="field-hint" id="login-hint">github.com/ 뒤에 오는 이름이에요.</p>
+                <p class="t-small" id="login-prev" style="margin:var(--sp-1) 0 0">minji-park 으로 확인해요 <span class="muted">(대소문자는 구분하지 않아요)</span></p>
+              </div>
+              <div class="rel" style="margin-top: var(--sp-4)">
+                <p class="t-small" style="margin:0 0 var(--sp-2)" id="cand-l">팀에서 찾은 로그인</p>
+                <div class="row" role="group" aria-labelledby="cand-l" style="flex-wrap:wrap">
+                  <button class="chip">minji-park</button><button class="chip">jaeho-lee</button><button class="chip">sora-han</button><button class="chip">dev-kim</button>
+                </div>
+                <span class="note-marker" style="top: calc(var(--sp-1) * -1); right: calc(var(--sp-8) * -1)">2</span>
+              </div>
+              <button class="btn btn-primary btn-lg btn-block" style="margin-top: var(--sp-8)" data-go="scr-queue">저장하고 내 리뷰 요청 보기</button>
+              <p class="t-caption muted" style="margin:var(--sp-3) 0 0">나중에 설정에서 바꿀 수 있어요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2 큐 정상 -->
+    <article class="frame" id="scr-queue" style="width: 1440px">
+      <h3 class="frame-plate"><span>내 리뷰 요청 · S-C + S-D(펼침)</span><span class="frame-pos">2/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="queue" data-badge="4" data-sync="3분 전 확인"></aside>
+          <main class="main">
+            <div class="page-head">
+              <div><h1 class="t-display">내 리뷰 요청</h1></div>
+              <div class="row"><span class="t-small muted" role="status">3분 전 확인</span><button class="btn btn-secondary btn-sm">지금 확인</button></div>
+            </div>
+            <div class="stats rel" aria-label="요약">
+              <div class="stat"><span class="t-display">4건</span><span class="t-small muted">리뷰 대기</span></div>
+              <div class="stat"><span class="t-display">4일</span><span class="t-small muted">가장 오래 기다린 요청</span></div>
+              <div class="stat"><span class="t-display">2건</span><span class="t-small muted">내가 리뷰함 · 작성자 응답 대기</span></div>
+              <span class="note-marker" style="top: calc(var(--sp-1) * -1); right: 0">1</span>
+            </div>
+            <div class="toolbar">
+              <button class="select w-auto" aria-label="정렬">정렬: 대기 오래된 순</button>
+              <button class="select w-auto" aria-label="영역 필터">영역: 전체</button>
+              <span class="grow"></span>
+              <label class="choice"><input type="checkbox"> 초안(draft) 2건 보기</label>
+            </div>
+            <h2 class="t-heading" id="q-wait" style="margin:0 0 var(--sp-2)">리뷰 대기 4건</h2>
+            <ul class="qlist" aria-labelledby="q-wait">
+              <li class="rel">
+                <div class="qrow">
+                  <div class="wait"><strong>대기 4일</strong><span class="t-caption muted">PR 생성 기준</span></div>
+                  <div>
+                    <h3 class="t-body-strong">feat: 리뷰 요청 PR 상태 갱신(머지·닫힘 정리)</h3>
+                    <div class="meta"><span>acme/flowsync #58</span><span>작성자 jaeho-lee</span><span>+412 −96 · 파일 14개</span><span>다른 리뷰어 1명 중 0명 완료</span></div>
+                    <div class="chips"><button class="badge badge-muted" data-go="scr-area-detail">GitHub 연동</button><button class="badge badge-muted" data-go="scr-area-detail">대시보드 화면</button><span class="badge badge-muted">외 1</span></div>
+                  </div>
+                  <div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button><button class="btn-icon" data-toggle="d58" aria-expanded="true" aria-controls="d58" aria-label="#58 자세히 보기"><span class="glyph gl-chevron" style="transform:rotate(180deg)" aria-hidden="true"></span></button></div>
+                </div>
+                <div class="detail" id="d58">
+                  <div><h4>바뀐 영역 (파일 수)</h4>
+                    <table><tbody><tr><td>GitHub 연동</td><td>9</td></tr><tr><td>대시보드 화면</td><td>4</td></tr><tr><td>기타 파일</td><td>1</td></tr></tbody></table></div>
+                  <div><h4>리뷰어</h4>
+                    <div class="list"><div class="row" style="padding:var(--sp-1) 0"><span class="avatar avatar-sm"></span>minji-park (나)<span class="badge badge-muted">대기</span></div><div class="row" style="padding:var(--sp-1) 0"><span class="avatar avatar-sm"></span>kate-oh<span class="badge badge-muted">대기</span></div></div></div>
+                  <div><h4>작성자 설명 (앞부분)</h4><p class="t-small muted">머지·닫힌 PR이 할 일에 남아 있던 문제를 고칩니다. 동기화 때마다 PR 상태를 갱신하고, 요청이 취소된 항목은 정리됨으로 옮겨요…</p><p class="t-caption muted" style="margin-top:var(--sp-2)">생성 4일 전 · 마지막 업데이트 3시간 전</p></div>
+                  <div class="full"><button class="btn btn-primary">GitHub에서 리뷰</button><span class="t-small muted">리뷰는 GitHub에서 남겨요. 돌아오면 이 목록이 알아서 갱신돼요.</span></div>
+                </div>
+                <span class="note-marker" style="top: var(--sp-4); left: calc(var(--sp-8) * -1)">2</span>
+              </li>
+              <li><div class="qrow">
+                <div class="wait"><strong>대기 2일</strong><span class="badge badge-muted">다시 요청됨</span></div>
+                <div><h3 class="t-body-strong">refactor: 대시보드 목록 컴포넌트 분리</h3>
+                  <div class="meta"><span>acme/flowsync #61</span><span>작성자 sora-han</span><span>+230 −188 · 파일 9개</span><span>다른 리뷰어 없음</span></div>
+                  <div class="chips"><button class="badge badge-muted" data-go="scr-area-detail">대시보드 화면</button></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button><button class="btn-icon" data-toggle="d61" aria-expanded="false" aria-controls="d61" aria-label="#61 자세히 보기"><span class="glyph gl-chevron" aria-hidden="true"></span></button></div></div>
+                <div class="detail" id="d61" hidden><div class="full"><span class="t-small muted">변경 영역: 대시보드 화면 9개 파일. 이전 리뷰에서 요청한 변경이 반영되었는지 확인해 주세요.</span></div></div></li>
+              <li><div class="qrow">
+                <div class="wait"><strong>대기 1일</strong></div>
+                <div><h3 class="t-body-strong">fix: 역할 검토 수락 시 상태가 되돌아가는 문제</h3>
+                  <div class="meta"><span>acme/flowsync #63</span><span>작성자 dev-kim</span><span>+18 −6 · 파일 2개</span><span>다른 리뷰어 1명 중 1명 완료</span></div>
+                  <div class="chips"><button class="badge badge-muted" data-go="scr-area-detail">역할 검토</button></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button><button class="btn-icon" data-toggle="d63" aria-expanded="false" aria-controls="d63" aria-label="#63 자세히 보기"><span class="glyph gl-chevron" aria-hidden="true"></span></button></div></div>
+                <div class="detail" id="d63" hidden><div class="full"><span class="t-small muted">변경 영역: 역할 검토 2개 파일.</span></div></div></li>
+              <li class="rel"><div class="qrow">
+                <div class="wait"><strong>대기 5시간</strong></div>
+                <div><h3 class="t-body-strong">docs: 연결된 레포 설정 방법 추가</h3>
+                  <div class="meta"><span>acme/flowsync #64</span><span>작성자 sora-han</span><span>변경 규모 알 수 없음</span><span>다른 리뷰어 없음</span></div>
+                  <div class="chips"><span class="badge badge-muted">영역 알 수 없음</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button><button class="btn-icon" data-toggle="d64" aria-expanded="false" aria-controls="d64" aria-label="#64 자세히 보기"><span class="glyph gl-chevron" aria-hidden="true"></span></button></div></div>
+                <div class="detail" id="d64" hidden><div class="full"><span class="t-small muted">변경 파일 정보를 아직 가져오지 못했어요. 다음 확인 때 채워져요.</span></div></div>
+                <span class="note-marker" style="top: var(--sp-4); left: calc(var(--sp-8) * -1)">3</span></li>
+            </ul>
+            <div class="rel">
+              <button class="grp-head" data-toggle="g-done" aria-expanded="false" aria-controls="g-done"><span class="glyph gl-chevron" aria-hidden="true"></span>내가 리뷰함 2건 <span class="muted" style="font-weight:400">· 작성자 응답 대기</span></button>
+              <ul class="qlist" id="g-done" hidden>
+                <li class="qcompact"><span class="grow t-body-strong">feat: 연결된 레포 삭제 확인 추가 <span class="muted" style="font-weight:400">acme/flowsync #55 · jaeho-lee</span></span><span class="t-small muted">어제 리뷰함</span></li>
+                <li class="qcompact"><span class="grow t-body-strong">chore: 의존성 정리 <span class="muted" style="font-weight:400">acme/flowsync #52 · kate-oh</span></span><span class="t-small muted">3일 전 리뷰함</span></li>
+              </ul>
+              <button class="grp-head" data-toggle="g-clr" aria-expanded="false" aria-controls="g-clr"><span class="glyph gl-chevron" aria-hidden="true"></span>정리됨 3건 <span class="muted" style="font-weight:400">· 7일 동안 보관</span></button>
+              <ul class="qlist" id="g-clr" hidden>
+                <li class="qcompact"><span class="grow t-body-strong">fix: 폴링 간격 오류 <span class="muted" style="font-weight:400">#49</span></span><span class="badge badge-muted">머지됨</span></li>
+                <li class="qcompact"><span class="grow t-body-strong">feat: 영역 이름 편집 시안 <span class="muted" style="font-weight:400">#47</span></span><span class="badge badge-muted">리뷰 없이 머지됨</span></li>
+                <li class="qcompact"><span class="grow t-body-strong">wip: 활동 피드 복구 <span class="muted" style="font-weight:400">#44</span></span><span class="badge badge-muted">리뷰 요청이 취소됨</span></li>
+              </ul>
+              <span class="note-marker" style="top: var(--sp-2); right: 0">4</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 3 첫 동기화 로딩 -->
+    <article class="frame" id="scr-queue-loading" style="width: 1440px">
+      <h3 class="frame-plate"><span>내 리뷰 요청 · 로딩(첫 가져오기)</span><span class="frame-pos">3/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="queue" data-sync="확인 중…"></aside>
+          <main class="main" aria-busy="true">
+            <div class="page-head"><div><h1 class="t-display">내 리뷰 요청</h1></div>
+              <div class="row"><span class="spinner" aria-hidden="true"></span><span class="t-small muted" role="status">확인 중…</span></div></div>
+            <div class="card rel" style="margin-bottom: var(--sp-6)">
+              <div class="card-body">
+                <p class="t-body-strong" style="margin:0 0 var(--sp-2)">레포 2개에서 minji-park 에게 온 리뷰 요청을 확인하고 있어요</p>
+                <div class="list">
+                  <div class="list-row" style="min-height:var(--h-md)"><span class="glyph gl-check" aria-hidden="true"></span><span class="grow">acme/flowsync</span><span class="t-small muted">완료 · 3건</span></div>
+                  <div class="list-row" style="min-height:var(--h-md); border-bottom:0"><span class="spinner" aria-hidden="true"></span><span class="grow">acme/payments-api</span><span class="t-small muted">확인 중…</span></div>
+                </div>
+                <p class="t-caption muted" style="margin:var(--sp-2) 0 0">10초 넘게 걸리면 이 문구가 바뀌어요: “계속 확인하는 중이에요. 다른 화면으로 가도 돼요.”</p>
+              </div>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span>
+            </div>
+            <ul class="qlist" aria-label="불러오는 중">
+              <li class="qrow"><div class="skeleton skeleton-title"></div><div class="stack"><div class="skeleton skeleton-title" style="width:60%"></div><div class="skeleton skeleton-text" style="width:80%"></div></div><div class="skeleton skeleton-title" style="width:calc(var(--sp-16)*2)"></div></li>
+              <li class="qrow"><div class="skeleton skeleton-title"></div><div class="stack"><div class="skeleton skeleton-title" style="width:50%"></div><div class="skeleton skeleton-text" style="width:70%"></div></div><div class="skeleton skeleton-title" style="width:calc(var(--sp-16)*2)"></div></li>
+              <li class="qrow"><div class="skeleton skeleton-title"></div><div class="stack"><div class="skeleton skeleton-title" style="width:55%"></div><div class="skeleton skeleton-text" style="width:75%"></div></div><div class="skeleton skeleton-title" style="width:calc(var(--sp-16)*2)"></div></li>
+            </ul>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 4 동기화 일부 실패 + 오래됨 -->
+    <article class="frame" id="scr-queue-fail" style="width: 1440px">
+      <h3 class="frame-plate"><span>내 리뷰 요청 · 동기화 일부 실패 + 오래됨(E4·E13)</span><span class="frame-pos">4/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="queue" data-badge="3" data-sync="8분 전 확인 · 오래됨"></aside>
+          <main class="main">
+            <div class="page-head"><div><h1 class="t-display">내 리뷰 요청</h1></div>
+              <div class="row"><span class="t-small" role="status"><strong>8분 전 확인</strong> <span class="muted">· 14:02 기준</span></span><button class="btn btn-secondary btn-sm">지금 확인</button></div></div>
+            <div class="callout error rel" role="alert" style="margin-bottom: var(--sp-6)">
+              <span class="glyph gl-alert" aria-hidden="true"></span>
+              <div class="callout-body"><p class="callout-title" style="margin:0">레포 1개를 확인하지 못했어요: acme/payments-api</p>
+                <p class="callout-text" style="margin:0">서버 토큰이 이 레포를 읽을 수 없어요. 이 레포의 새 리뷰 요청이 아래에 빠져 있을 수 있어요. 토큰 권한은 서버 관리자만 바꿀 수 있어요.</p>
+                <div class="row" style="margin-top:var(--sp-3)"><button class="btn btn-secondary btn-sm">이 레포만 다시 시도</button><button class="btn btn-ghost btn-sm" data-go="scr-settings">연결된 레포 상태 보기</button></div></div>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span>
+            </div>
+            <div class="stats"><div class="stat"><span class="t-display">3건</span><span class="t-small muted">리뷰 대기 (확인된 레포 기준)</span></div><div class="stat"><span class="t-display">4일</span><span class="t-small muted">가장 오래 기다린 요청</span></div></div>
+            <ul class="qlist" aria-label="리뷰 대기">
+              <li><div class="qrow"><div class="wait"><strong>대기 4일</strong></div><div><h3 class="t-body-strong">feat: 리뷰 요청 PR 상태 갱신(머지·닫힘 정리)</h3><div class="meta"><span>acme/flowsync #58</span><span>작성자 jaeho-lee</span><span>+412 −96 · 파일 14개</span></div></div><div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button></div></div></li>
+              <li class="rel"><div class="qrow"><div class="wait"><strong>대기 3일</strong><span class="badge badge-muted">확인 안 됨</span></div><div><h3 class="t-body-strong">feat: 결제 웹훅 재시도</h3><div class="meta"><span>acme/payments-api #112</span><span>작성자 kate-oh</span><span>마지막으로 확인한 14:02 기준</span></div></div><div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button></div></div>
+                <span class="note-marker" style="top: var(--sp-4); left: calc(var(--sp-8) * -1)">2</span></li>
+              <li><div class="qrow"><div class="wait"><strong>대기 1일</strong></div><div><h3 class="t-body-strong">fix: 역할 검토 수락 시 상태가 되돌아가는 문제</h3><div class="meta"><span>acme/flowsync #63</span><span>작성자 dev-kim</span><span>+18 −6 · 파일 2개</span></div></div><div class="acts"><button class="btn btn-secondary btn-sm">GitHub에서 리뷰</button></div></div></li>
+            </ul>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5 정상 빈 큐 + 영역 요약 -->
+    <article class="frame" id="scr-queue-empty" style="width: 1440px">
+      <h3 class="frame-plate"><span>내 리뷰 요청 · 대기 0건 + 영역 요약(E7)</span><span class="frame-pos">5/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="queue" data-sync="방금 확인"></aside>
+          <main class="main">
+            <div class="page-head"><div><h1 class="t-display">내 리뷰 요청</h1></div>
+              <div class="row"><span class="t-small muted" role="status">방금 확인</span><button class="btn btn-secondary btn-sm">지금 확인</button></div></div>
+            <div class="card rel" style="margin-bottom: var(--sp-8)"><div class="card-body" style="padding: var(--sp-6)">
+              <h2 class="t-title" style="margin:0 0 var(--sp-1)">지금 리뷰 대기 요청이 없어요</h2>
+              <p class="t-body muted" style="margin:0">레포 2개에서 minji-park 에게 온 요청을 확인했어요. 최근에 리뷰한 요청은 “내가 리뷰함 2건”에 있어요.</p>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span></div></div>
+            <div class="rel">
+              <div class="page-head" style="margin-bottom: var(--sp-2)"><h2 class="t-heading">다른 영역은 지금 이래요</h2><button class="btn btn-secondary btn-sm" data-go="scr-areas">영역 흐름 전체 보기</button></div>
+              <table class="vz">
+                <thead><tr><th scope="col">영역</th><th scope="col">주간 활동 (5주)</th><th scope="col">추세</th><th scope="col">마지막 변경</th><th scope="col">리뷰 대기</th></tr></thead>
+                <tbody>
+                  <tr><td><button class="name" data-go="scr-area-detail">GitHub 연동</button></td><td><span class="bars" role="img" aria-label="5주 커밋: 4, 6, 10, 14, 16개(마지막은 진행 중인 주)"><i style="--n:2"></i><i style="--n:3"></i><i style="--n:5"></i><i style="--n:7"></i><i class="part" style="--n:8"></i></span></td><td>활발해짐</td><td>오늘</td><td><button class="link" data-go="scr-tasks">대기 3건</button> · 최장 4일</td></tr>
+                  <tr><td><button class="name" data-go="scr-area-detail">대시보드 화면</button></td><td><span class="bars" role="img" aria-label="5주 커밋: 2, 4, 4, 8, 12개(마지막은 진행 중인 주)"><i style="--n:1"></i><i style="--n:2"></i><i style="--n:2"></i><i style="--n:4"></i><i class="part" style="--n:6"></i></span></td><td>활발해짐</td><td>어제</td><td><button class="link" data-go="scr-tasks">대기 2건</button> · 최장 2일</td></tr>
+                  <tr><td><button class="name" data-go="scr-area-detail">역할 검토</button></td><td><span class="bars" role="img" aria-label="5주 커밋: 6, 4, 2, 0, 0개(마지막은 진행 중인 주)"><i style="--n:3"></i><i style="--n:2"></i><i style="--n:1"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td><td>조용함</td><td>12일 전</td><td><span class="badge"><span class="glyph glyph-sm gl-alert" aria-hidden="true"></span>정체 후보</span> 대기 2건 · 최장 6일</td></tr>
+                </tbody>
+              </table>
+              <span class="note-marker" style="top: calc(var(--sp-1) * -1); left: calc(var(--sp-8) * -1)">2</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 6 모바일 -->
+    <article class="frame" id="scr-queue-mobile" style="width: 390px">
+      <h3 class="frame-plate"><span>내 리뷰 요청 · 모바일(읽기용)</span><span class="frame-pos">6/11</span></h3>
+      <div class="wf mobile rel">
+        <div class="appbar"><h1 class="t-title" style="margin:0; flex:1">내 리뷰 요청</h1><button class="btn-icon" aria-label="지금 확인"><span class="glyph gl-search" aria-hidden="true"></span></button></div>
+        <main class="main">
+          <p class="t-small" style="margin:0 0 var(--sp-3)" role="status"><strong>대기 4건 · 가장 오래된 4일</strong><br><span class="muted">3분 전 확인</span></p>
+          <ul class="qlist">
+            <li class="rel"><div class="qrow"><div class="wait"><strong>대기 4일</strong></div>
+              <div><h3 class="t-body-strong">feat: 리뷰 요청 PR 상태 갱신(머지·닫힘 정리)</h3><div class="meta"><span>#58 · jaeho-lee</span><span>+412 −96 · 14개</span></div><div class="chips"><span class="badge badge-muted">GitHub 연동</span><span class="badge badge-muted">외 2</span></div></div>
+              <div class="acts"><button class="btn btn-secondary">GitHub에서 리뷰</button></div></div>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span></li>
+            <li><div class="qrow"><div class="wait"><strong>대기 2일</strong><span class="badge badge-muted">다시 요청됨</span></div>
+              <div><h3 class="t-body-strong">refactor: 대시보드 목록 컴포넌트 분리</h3><div class="meta"><span>#61 · sora-han</span><span>+230 −188 · 9개</span></div></div>
+              <div class="acts"><button class="btn btn-secondary">GitHub에서 리뷰</button></div></div></li>
+            <li><div class="qrow"><div class="wait"><strong>대기 1일</strong></div>
+              <div><h3 class="t-body-strong">fix: 역할 검토 수락 시 상태가 되돌아가는 문제</h3><div class="meta"><span>#63 · dev-kim</span><span>+18 −6 · 2개</span></div></div>
+              <div class="acts"><button class="btn btn-secondary">GitHub에서 리뷰</button></div></div></li>
+          </ul>
+          <button class="grp-head" aria-expanded="false"><span class="glyph gl-chevron" aria-hidden="true"></span>내가 리뷰함 2건</button>
+        </main>
+        <nav class="tabbar" aria-label="주 메뉴">
+          <button class="tab active" aria-current="page"><span class="icon icon-md"></span>내 리뷰 요청</button>
+          <button class="tab" data-go="scr-areas"><span class="icon icon-md"></span>영역 흐름</button>
+          <button class="tab" data-go="scr-tasks"><span class="icon icon-md"></span>전체 작업</button>
+          <button class="tab" data-go="scr-settings"><span class="icon icon-md"></span>설정</button>
+        </nav>
+      </div>
+    </article>
+
+  </div>
+  <aside class="note-rail">
+    <div class="note-group" data-for="scr-setup"><p class="note-frame">첫 설정 · S-A</p>
+      <p><span class="note-num">1</span> 입력 이유를 폼 위에 한 줄로 말하고(가치 전에 요구가 오는 마찰 완화), 입력값은 소문자로 정규화한 결과를 즉시 보여 오타·대소문자를 잡는다.</p>
+      <p><span class="note-num">2</span> 후보 칩은 서버가 이미 아는 로그인(연결된 레포·PR 작성자)만 제안. 합류자(J1-b)는 칩 하나 + 저장으로 끝난다. 후보가 없으면(J1-a) 칩 영역이 사라지고 레포 추가가 다음 단계.</p></div>
+    <div class="note-group" data-for="scr-queue"><p class="note-frame">내 리뷰 요청 · S-C</p>
+      <p><span class="note-num">1</span> 5초 질문 답: “대기 몇 건, 가장 오래된 건?”이 화면 맨 위 숫자 두 개다. 신선도(“3분 전 확인”)는 제목 줄에 항상 둔다.</p>
+      <p><span class="note-num">2</span> 한 행 = 한 결정에 필요한 신호(대기·크기·영역·다른 리뷰어). 주 행동은 “GitHub에서 리뷰”(새 탭)이고 앱 안 승인·코멘트는 일부러 없다. 화면의 주 버튼(채움)은 펼친 행의 하나뿐.</p>
+      <p><span class="note-num">3</span> 모르는 값은 0이 아니라 “알 수 없음”으로 쓴다(정직한 지표).</p>
+      <p><span class="note-num">4</span> 내가 리뷰함·정리됨은 접어 둬 압박을 줄인다. “리뷰 없이 머지됨”은 중립 배지(경고 아님). 열린 질문: 보관 7일이 맞는가.</p></div>
+    <div class="note-group" data-for="scr-queue-loading"><p class="note-frame">로딩</p>
+      <p><span class="note-num">1</span> 스피너 단독 금지. 레포별 진행을 보여 주고, 화면 틀(스켈레톤 행)을 먼저 깔아 레이아웃 점프를 막는다.</p></div>
+    <div class="note-group" data-for="scr-queue-fail"><p class="note-frame">동기화 일부 실패</p>
+      <p><span class="note-num">1</span> 실패는 목록 위 상시 배너(role=alert). 토스트만으로는 놓친다. 원인·영향·할 일 3요소, 문구는 /articulate가 확정.</p>
+      <p><span class="note-num">2</span> 실패 레포의 행은 지우지 않고 “확인 안 됨”으로 직전 데이터를 유지. 요약 숫자 라벨에 “(확인된 레포 기준)”을 붙여 잘못된 안심을 막는다.</p></div>
+    <div class="note-group" data-for="scr-queue-empty"><p class="note-frame">대기 0건</p>
+      <p><span class="note-num">1</span> “없음”은 정상 확인 문구 + 확인한 범위(레포 수·로그인)를 같이 적는다. 로그인 오류 의심(E5)일 땐 이 카드가 다른 문구로 바뀐다.</p>
+      <p><span class="note-num">2</span> 확정 결정 8: 막다른 길 대신 영역 요약 3줄을 바로 얹는다(대기 많은 영역 우선). 같은 표 컴포넌트를 재사용.</p></div>
+    <div class="note-group" data-for="scr-queue-mobile"><p class="note-frame">모바일</p>
+      <p><span class="note-num">1</span> 좁은 화면은 읽기·바로가기 용도: 행이 세로로 쌓이고 펼침 상세는 생략, 주 행동 버튼이 전체 너비. 내비는 하단 탭 4개. (사용 맥락 미확인 — 우선순위 낮음)</p></div>
+  </aside>
+</section>
+
+<!-- ============ 섹션 2: 영역 흐름 ============ -->
+<section class="board-section" data-section="영역 흐름 (S-E, S-F)">
+  <h2 class="section-label">영역 흐름 (S-E, S-F)</h2>
+  <div class="frame-grid">
+
+    <!-- 7 영역 개요 -->
+    <article class="frame" id="scr-areas" style="width: 1440px">
+      <h3 class="frame-plate"><span>영역 흐름 · 개요 S-E</span><span class="frame-pos">7/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="areas" data-badge="" data-sync="3분 전 확인"></aside>
+          <main class="main">
+            <div class="page-head">
+              <div><h1 class="t-display">영역 흐름</h1><p class="t-body muted">각 영역에서 최근 어떤 일이 있었고, 어디에서 리뷰가 기다리는지 보여줘요.</p></div>
+              <div class="row"><button class="select w-auto" aria-label="레포">acme/flowsync</button><button class="select w-auto" aria-label="기간">최근 30일</button></div>
+            </div>
+            <div class="callout rel">
+              <span class="glyph gl-info" aria-hidden="true"></span>
+              <div class="callout-body"><p class="callout-title" style="margin:0">활동이에요. 진행률이 아니에요.</p>
+                <p class="callout-text" style="margin:0">막대는 주별 커밋 수예요. 활발하다고 잘 되는 것도, 조용하다고 끝난 것도 아니에요. 커밋이 많아 최근 60개만 분석했어요(가장 오래된 주는 일부만 반영) · 5분 전 분석</p></div>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span>
+            </div>
+            <div class="legend" aria-label="범례">
+              <span><span class="sw"></span>막대 1칸 = 커밋 2개 (모든 영역 같은 눈금, 최대 16개)</span>
+              <span><span class="sw part"></span>속이 빈 막대 = 이번 주(아직 진행 중)</span>
+              <span><span class="sw na"></span>점선 = 데이터 없음</span>
+              <span>왼쪽 = 5주 전 · 오른쪽 = 이번 주</span>
+              <span class="grow"></span>
+              <button class="select w-auto" aria-label="정렬">정렬: 최근 변경 순</button>
+            </div>
+            <div class="rel">
+            <table class="vz">
+              <caption class="sr">영역별 최근 5주 활동과 리뷰 대기</caption>
+              <thead><tr><th scope="col" style="width:calc(var(--sp-16)*4)">영역</th><th scope="col" style="width:calc(var(--sp-16)*3)">주간 활동 (5주)</th><th scope="col" style="width:calc(var(--sp-16)*2)">추세</th><th scope="col" style="width:calc(var(--sp-16)*2)">마지막 변경</th><th scope="col">리뷰 대기 (건 · 막대 = 최장 대기, 1칸 = 1일)</th></tr></thead>
+              <tbody>
+                <tr><td><button class="name" data-go="scr-area-detail">GitHub 연동</button><span class="t-caption muted">backend/integrations · 파일 23개 · 3명</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 4, 6, 10, 14, 16개(마지막은 진행 중인 주)"><i style="--n:2"></i><i style="--n:3"></i><i style="--n:5"></i><i style="--n:7"></i><i class="part" style="--n:8"></i></span></td>
+                  <td>활발해짐</td><td>오늘</td>
+                  <td><button class="link" data-go="scr-tasks">대기 3건</button> · 최장 4일<span class="wbar" style="--d:4"></span></td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">대시보드 화면</button><span class="t-caption muted">frontend/src/components · 파일 41개 · 3명</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 2, 4, 4, 8, 12개(마지막은 진행 중인 주)"><i style="--n:1"></i><i style="--n:2"></i><i style="--n:2"></i><i style="--n:4"></i><i class="part" style="--n:6"></i></span></td>
+                  <td>활발해짐</td><td>어제</td>
+                  <td><button class="link" data-go="scr-tasks">대기 2건</button> · 최장 2일<span class="wbar" style="--d:2"></span></td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">작업 관리</button><span class="t-caption muted">backend/tasks · 파일 12개 · 2명</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 6, 4, 6, 4, 6개(마지막은 진행 중인 주)"><i style="--n:3"></i><i style="--n:2"></i><i style="--n:3"></i><i style="--n:2"></i><i class="part" style="--n:3"></i></span></td>
+                  <td>꾸준함</td><td>3일 전</td>
+                  <td><button class="link" data-go="scr-tasks">대기 1건</button> · 최장 1일<span class="wbar" style="--d:1"></span></td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">역할 검토</button><span class="t-caption muted">backend/reviews · 파일 6개 · 1명</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 6, 4, 2, 0, 0개(마지막은 진행 중인 주)"><i style="--n:3"></i><i style="--n:2"></i><i style="--n:1"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td>
+                  <td>조용함</td><td>12일 전</td>
+                  <td><span class="badge"><span class="glyph glyph-sm gl-alert" aria-hidden="true"></span>정체 후보</span> <button class="link" data-go="scr-tasks">대기 2건</button> · 최장 6일<span class="wbar" style="--d:6"></span><span class="t-caption muted">조용함 + 리뷰 대기 있음</span></td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">AI 체크리스트</button><span class="t-caption muted">backend/ai_services · 파일 4개 · 1명</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 0, 2, 0, 0, 0개(마지막은 진행 중인 주)"><i style="--n:0"></i><i style="--n:1"></i><i style="--n:0"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td>
+                  <td>조용함</td><td>24일 전</td><td class="muted">대기 없음</td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">배포 설정</button><span class="t-caption muted">docker-compose.yml, .env.example · 파일 3개</span></td>
+                  <td><span class="bars" role="img" aria-label="최근 30일 활동 없음"><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td>
+                  <td>조용함</td><td>41일 전 <span class="t-caption muted">(30일 밖)</span></td><td class="muted">대기 없음</td></tr>
+                <tr><td><button class="name" data-go="scr-area-detail">기타 파일</button><span class="t-caption muted"><span class="glyph glyph-sm gl-alert" aria-hidden="true" style="vertical-align:middle"></span> 분류되지 않은 파일이 많아요(약 38%) · 영역이 잘 안 나뉘었어요</span></td>
+                  <td><span class="bars" role="img" aria-label="5주 커밋: 2, 2, 4, 2, 2개(마지막은 진행 중인 주)"><i style="--n:1"></i><i style="--n:1"></i><i style="--n:2"></i><i style="--n:1"></i><i class="part" style="--n:1"></i></span></td>
+                  <td>꾸준함</td><td>5일 전</td><td class="muted">대기 없음</td></tr>
+              </tbody>
+            </table>
+            <span class="note-marker" style="top: calc(var(--sp-8) * -1); left: calc(var(--sp-8) * -1)">2</span>
+            <span class="note-marker" style="top: calc(var(--sp-16) * 3 + var(--sp-8)); right: var(--sp-2)">3</span>
+            </div>
+            <div class="sec" style="margin-top: var(--sp-8)">
+              <h2 class="t-heading">함께 바뀐 영역</h2>
+              <p class="t-small muted" style="margin:0 0 var(--sp-3)">같은 커밋에서 함께 수정된 횟수예요. 한쪽을 고치면 다른 쪽도 영향받는 경향을 알려 줘요.</p>
+              <table><tbody>
+                <tr><td style="width:calc(var(--sp-16)*6)"><button class="link" data-go="scr-area-detail">GitHub 연동</button> ↔ <button class="link" data-go="scr-area-detail">작업 관리</button></td><td style="width:calc(var(--sp-16)*3)"><span class="cbar" style="--n:9"></span></td><td>커밋 9개</td></tr>
+                <tr><td><button class="link" data-go="scr-area-detail">GitHub 연동</button> ↔ <button class="link" data-go="scr-area-detail">대시보드 화면</button></td><td><span class="cbar" style="--n:6"></span></td><td>커밋 6개</td></tr>
+                <tr><td><button class="link" data-go="scr-area-detail">작업 관리</button> ↔ <button class="link" data-go="scr-area-detail">역할 검토</button></td><td><span class="cbar" style="--n:3"></span></td><td>커밋 3개</td></tr>
+              </tbody></table>
+            </div>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 8 영역 상세 -->
+    <article class="frame" id="scr-area-detail" style="width: 1440px">
+      <h3 class="frame-plate"><span>영역 상세 · S-F</span><span class="frame-pos">8/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="areas" data-sync="3분 전 확인"></aside>
+          <main class="main">
+            <div class="crumbs"><button class="btn btn-ghost btn-sm" data-go="scr-areas"><span class="glyph glyph-sm gl-arrow-left" aria-hidden="true"></span>영역 흐름</button></div>
+            <div class="page-head">
+              <div><h1 class="t-display">GitHub 연동</h1><p class="t-small muted">원래 경로 backend/integrations · 파일 23개 · 활발해짐 · 마지막 변경 오늘</p></div>
+              <div class="row"><button class="btn btn-secondary btn-sm">이름 바꾸기</button></div>
+            </div>
+            <div class="two">
+              <div>
+                <div class="sec rel">
+                  <h2 class="t-heading">주간 활동 (커밋)</h2>
+                  <div class="bars bars-lg" role="img" aria-label="5주 커밋: 4, 6, 10, 14, 16개">
+                    <div class="col"><span class="t-caption">4</span><i style="--n:2"></i></div><div class="col"><span class="t-caption">6</span><i style="--n:3"></i></div><div class="col"><span class="t-caption">10</span><i style="--n:5"></i></div><div class="col"><span class="t-caption">14</span><i style="--n:7"></i></div><div class="col"><span class="t-caption">16</span><i class="part" style="--n:8"></i></div>
+                  </div>
+                  <div class="row t-caption muted" style="gap:var(--sp-4); margin-top:var(--sp-1)"><span style="width:var(--sp-12); text-align:center">10/27</span><span style="width:var(--sp-12); text-align:center">11/3</span><span style="width:var(--sp-12); text-align:center">11/10</span><span style="width:var(--sp-12); text-align:center">11/17</span><span style="width:var(--sp-12); text-align:center">11/24 (진행 중)</span></div>
+                  <span class="note-marker" style="top: 0; right: 0">1</span>
+                </div>
+                <div class="sec rel">
+                  <h2 class="t-heading">리뷰 대기 PR 3건</h2>
+                  <table>
+                    <thead><tr><th scope="col">PR</th><th scope="col">작성자</th><th scope="col">대기</th><th scope="col">리뷰어</th><th scope="col"><span class="sr">링크</span></th></tr></thead>
+                    <tbody>
+                      <tr><td>#58 feat: 리뷰 요청 PR 상태 갱신 <span class="badge badge-muted">내 리뷰 요청에 있음</span></td><td>jaeho-lee</td><td>4일</td><td>minji-park, kate-oh</td><td><button class="btn btn-ghost btn-sm">GitHub</button></td></tr>
+                      <tr><td>#60 feat: 영역 이름 서버 저장</td><td>kate-oh</td><td>2일</td><td>sora-han</td><td><button class="btn btn-ghost btn-sm">GitHub</button></td></tr>
+                      <tr><td>#62 fix: 동기화 오류 문구 정리</td><td>dev-kim</td><td>1일</td><td>jaeho-lee</td><td><button class="btn btn-ghost btn-sm">GitHub</button></td></tr>
+                    </tbody>
+                  </table>
+                  <p class="t-caption muted" style="margin:var(--sp-2) 0 0">여러 영역에 걸친 PR은 걸친 영역마다 포함돼요.</p>
+                  <span class="note-marker" style="top: 0; right: 0">2</span>
+                </div>
+                <div class="sec">
+                  <h2 class="t-heading">최근 커밋</h2>
+                  <div class="list">
+                    <div class="list-row"><span class="grow">feat: PR 상태 컬럼 추가<br><span class="t-caption muted">jaeho-lee · 오늘 · 3f9a1c2</span></span></div>
+                    <div class="list-row"><span class="grow">fix: 검색 결과 페이지네이션<br><span class="t-caption muted">kate-oh · 어제 · b72e0d4</span></span></div>
+                    <div class="list-row"><span class="grow">refactor: sync 서비스 분리<br><span class="t-caption muted">jaeho-lee · 3일 전 · 91c8aa7</span></span></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="sec rel"><h2 class="t-heading">최근 변경한 사람</h2>
+                  <div class="list"><div class="list-row"><span class="avatar avatar-sm"></span><span class="grow">jaeho-lee</span><span class="t-small muted">커밋 11</span></div><div class="list-row"><span class="avatar avatar-sm"></span><span class="grow">kate-oh</span><span class="t-small muted">커밋 4</span></div><div class="list-row"><span class="avatar avatar-sm"></span><span class="grow">dev-kim</span><span class="t-small muted">커밋 1</span></div></div>
+                  <p class="t-caption muted" style="margin:var(--sp-2) 0 0">물어볼 사람을 찾는 용도예요. 순위나 평가가 아니에요.</p>
+                  <span class="note-marker" style="top: 0; right: 0">3</span></div>
+                <div class="sec"><h2 class="t-heading">함께 바뀐 영역</h2>
+                  <div class="list"><button class="list-row" data-go="scr-area-detail"><span class="grow">작업 관리</span><span class="t-small muted">커밋 9</span></button><button class="list-row" data-go="scr-area-detail"><span class="grow">대시보드 화면</span><span class="t-small muted">커밋 6</span></button></div></div>
+                <div class="sec"><h2 class="t-heading">포함된 경로 (일부)</h2><p class="t-small muted" style="margin:0">backend/integrations/pr_sync.py<br>backend/integrations/github_client.py<br>backend/integrations/architecture.py</p></div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </article>
+
+    <!-- 9 영역 비어 있음 / 연결 끊김 -->
+    <article class="frame" id="scr-areas-empty" style="width: 1440px">
+      <h3 class="frame-plate"><span>영역 흐름 · 활동 없음 + 연결 끊김(E9·E10)</span><span class="frame-pos">9/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="areas" data-sync="3분 전 확인"></aside>
+          <main class="main">
+            <div class="page-head">
+              <div><h1 class="t-display">영역 흐름</h1><p class="t-body muted">각 영역에서 최근 어떤 일이 있었고, 어디에서 리뷰가 기다리는지 보여줘요.</p></div>
+              <div class="row"><button class="select w-auto" aria-label="레포">acme/payments-api</button><button class="select w-auto" aria-label="기간">최근 30일</button></div>
+            </div>
+            <div class="callout rel" style="margin-bottom: var(--sp-4)">
+              <span class="glyph gl-info" aria-hidden="true"></span>
+              <div class="callout-body"><p class="callout-title" style="margin:0">최근 30일 동안 이 레포에 커밋이 없어요</p>
+                <p class="callout-text" style="margin:0">분석은 정상이에요. 활동이 없다는 뜻이고, 일이 끝났다는 뜻은 아니에요. 마지막 변경은 41일 전이에요.</p>
+                <div class="row" style="margin-top:var(--sp-3)"><button class="btn btn-secondary btn-sm">기간을 90일로 늘리기</button></div></div>
+              <span class="note-marker" style="top: var(--sp-2); right: var(--sp-2)">1</span>
+            </div>
+            <div class="rel">
+            <table class="vz">
+              <caption class="sr">영역별 활동</caption>
+              <thead><tr><th scope="col" style="width:calc(var(--sp-16)*4)">영역</th><th scope="col" style="width:calc(var(--sp-16)*3)">주간 활동 (5주)</th><th scope="col" style="width:calc(var(--sp-16)*2)">추세</th><th scope="col" style="width:calc(var(--sp-16)*2)">마지막 변경</th><th scope="col">리뷰 대기</th></tr></thead>
+              <tbody>
+                <tr><td><span class="name">결제 처리</span><span class="t-caption muted">src/payments · 파일 18개</span></td><td><span class="bars" role="img" aria-label="최근 30일 활동 없음"><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td><td>조용함</td><td>41일 전</td><td><button class="link" data-go="scr-tasks">대기 1건</button> · 최장 3일<span class="wbar" style="--d:3"></span></td></tr>
+                <tr><td><span class="name">웹훅</span><span class="t-caption muted">src/webhooks · 파일 7개</span></td><td><span class="bars" role="img" aria-label="최근 30일 활동 없음"><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i style="--n:0"></i><i class="part" style="--n:0"></i></span></td><td>조용함</td><td>58일 전</td><td class="muted">대기 없음</td></tr>
+                <tr style="background: var(--w-surface)"><td><span class="name">정산 리포트 <span class="badge badge-muted">연결 끊김</span></span><span class="t-caption muted">팀이 붙인 이름 · 가리키던 경로 src/reports 가 코드에서 보이지 않아요</span></td><td><span class="bars" role="img" aria-label="데이터 없음"><i class="na"></i><i class="na"></i><i class="na"></i><i class="na"></i><i class="na"></i></span></td><td class="muted">알 수 없음</td><td class="muted">알 수 없음</td><td><button class="btn btn-secondary btn-sm" data-go="scr-settings">영역 이름 정리</button></td></tr>
+              </tbody>
+            </table>
+            <span class="note-marker" style="top: calc(var(--sp-8) * -1); left: calc(var(--sp-8) * -1)">2</span>
+            <span class="note-marker" style="bottom: var(--sp-4); right: var(--sp-2)">3</span>
+            </div>
+            <p class="t-small muted" style="margin-top: var(--sp-6)">다른 상태: 레포를 읽을 수 없으면 이 자리에 “이 레포를 읽을 수 없어요 — 서버 토큰 권한을 확인해 달라고 관리자에게 알려 주세요”와 [다시 시도]가 나오고, 직전 분석 캐시가 있으면 함께 보여요.</p>
+          </main>
+        </div>
+      </div>
+    </article>
+
+  </div>
+  <aside class="note-rail">
+    <div class="note-group" data-for="scr-areas"><p class="note-frame">영역 흐름 · 개요</p>
+      <p><span class="note-num">1</span> 가장 먼저 읽히는 문장이 “활동이지 진행률이 아니다”. 분석 한도(60개로 잘림)와 분석 시각을 숨기지 않는다 — 조용함이 “분석 실패/잘림”일 가능성까지 보여 주는 정직성 장치.</p>
+      <p><span class="note-num">2</span> 영역당 한 행(작은 다중 차트): 모든 행이 같은 5주 눈금·같은 세로 눈금이라 막대 높이를 영역끼리 비교할 수 있다. 정렬 기본 = 최근 변경 순. 이 마크 명세는 06 문서 §6.</p>
+      <p><span class="note-num">3</span> 정체 신호는 같은 행 안에서 “추세 + 리뷰 대기”가 만난다(조용함 + 대기 → 정체 후보). 색 아닌 글자+아이콘. 열린 질문: “정체 후보” 문구와 규칙.</p></div>
+    <div class="note-group" data-for="scr-area-detail"><p class="note-frame">영역 상세</p>
+      <p><span class="note-num">1</span> 개요와 같은 마크를 크게: 값 숫자를 막대 위에 적고 주 시작일을 아래에 적는다(툴팁에 의존하지 않음).</p>
+      <p><span class="note-num">2</span> “이 영역에서 막혀 있는 것”이 “누구에게 물어볼까” 다음으로 중요해서 활동 아래 바로 둔다. 내가 리뷰어인 PR은 큐와 연결 표시.</p>
+      <p><span class="note-num">3</span> 사람은 나열만 — 커밋 수로 정렬하지 않고 순위 표현을 쓰지 않는다(비난 구조 방지).</p></div>
+    <div class="note-group" data-for="scr-areas-empty"><p class="note-frame">활동 없음·연결 끊김</p>
+      <p><span class="note-num">1</span> 활동 0은 “완료”가 아니라 “활동 없음”. 분석 성공과 실패를 문구로 구분하고 다음 행동(기간 늘리기)을 같은 자리에 둔다.</p>
+      <p><span class="note-num">2</span> 0(막대 없음, 기준선만)과 모름(점선)을 시각적으로 구분 — 결정 7: 이름이 가리키던 경로가 사라진 별칭은 숨기지 않고 “연결 끊김”.</p>
+      <p><span class="note-num">3</span> 끊긴 행의 행동은 설정의 영역 이름 정리로 연결.</p></div>
+  </aside>
+</section>
+
+<!-- ============ 섹션 3: 전체 작업 · 설정 ============ -->
+<section class="board-section" data-section="전체 작업 · 설정 (S-B, S-H)">
+  <h2 class="section-label">전체 작업 · 설정 (S-B, S-H)</h2>
+  <div class="frame-grid">
+
+    <!-- 10 전체 작업 -->
+    <article class="frame" id="scr-tasks" style="width: 1440px">
+      <h3 class="frame-plate"><span>전체 작업 · 목록/보드 + 상세 패널</span><span class="frame-pos">10/11</span></h3>
+      <div class="wf rel">
+        <div class="app rel">
+          <aside data-shell="tasks" data-sync="3분 전 확인"></aside>
+          <main class="main">
+            <div class="page-head">
+              <div><h1 class="t-display">전체 작업</h1><p class="t-body muted">팀의 작업과 리뷰 요청을 한곳에서 찾아봐요.</p></div>
+              <button class="btn btn-secondary">새 작업</button>
+            </div>
+            <div class="toolbar rel">
+              <div class="search grow"><span class="glyph gl-search" aria-hidden="true"></span><input class="input" placeholder="제목, 영역, 작성자로 검색" aria-label="작업 검색"></div>
+              <button class="select w-auto" aria-label="종류">종류: 전체</button>
+              <button class="select w-auto" aria-label="담당자">담당자: 전체</button>
+              <button class="select w-auto" aria-label="영역">영역: GitHub 연동</button>
+              <span class="note-marker" style="top: calc(var(--sp-6) * -1); right: 0">1</span>
+            </div>
+            <div class="row" style="margin-bottom: var(--sp-3)" role="group" aria-label="상태 필터">
+              <button class="chip active">전체 6</button><button class="chip">할 일 1</button><button class="chip">진행 중 2</button><button class="chip">리뷰 중 2</button><button class="chip">완료 1</button>
+              <span class="grow"></span>
+              <div class="tabs" role="tablist" aria-label="보기 전환" style="border-bottom:0">
+                <button class="tab-item active" role="tab" aria-selected="true" data-view-tab="list">목록</button>
+                <button class="tab-item" role="tab" aria-selected="false" data-view-tab="board">보드</button>
+              </div>
+            </div>
+            <div id="view-list">
+              <table>
+                <caption class="sr">전체 작업 목록</caption>
+                <thead><tr><th scope="col">작업</th><th scope="col">종류</th><th scope="col">상태</th><th scope="col">담당자 · 작성자</th><th scope="col">영역</th><th scope="col">우선순위</th><th scope="col">갱신</th></tr></thead>
+                <tbody>
+                  <tr><td><button class="name t-body-strong" data-panel-open style="text-align:left">역할 검토 확인 버튼 문구 정리</button></td><td>수동</td><td><button class="select w-auto btn-sm" aria-label="상태 변경" style="height:var(--h-sm)">진행 중</button></td><td>담당 minji-park</td><td class="muted">—</td><td>높음</td><td>오늘</td></tr>
+                  <tr><td><button class="name t-body-strong" style="text-align:left">#58 feat: 리뷰 요청 PR 상태 갱신</button></td><td><span class="badge badge-muted">리뷰 요청</span></td><td>리뷰 중 <span class="t-caption muted">· GitHub 기준</span></td><td>작성 jaeho-lee</td><td>GitHub 연동 외 1</td><td class="muted">—</td><td>3시간 전</td></tr>
+                  <tr><td><button class="name t-body-strong" style="text-align:left">#60 feat: 영역 이름 서버 저장</button></td><td><span class="badge badge-muted">리뷰 요청</span></td><td>리뷰 중 <span class="t-caption muted">· GitHub 기준</span></td><td>작성 kate-oh</td><td>GitHub 연동</td><td class="muted">—</td><td>어제</td></tr>
+                  <tr><td><button class="name t-body-strong" style="text-align:left">연결된 레포 설정 가이드 작성</button></td><td>수동</td><td><button class="select w-auto btn-sm" aria-label="상태 변경" style="height:var(--h-sm)">할 일</button></td><td>담당 sora-han</td><td class="muted">—</td><td>보통</td><td>2일 전</td></tr>
+                  <tr><td><button class="name t-body-strong" style="text-align:left">AI 체크리스트 응답 지연 조사</button></td><td>수동</td><td><button class="select w-auto btn-sm" aria-label="상태 변경" style="height:var(--h-sm)">진행 중</button></td><td>담당 dev-kim</td><td>AI 체크리스트</td><td>보통</td><td>4일 전</td></tr>
+                  <tr><td><button class="name t-body-strong" style="text-align:left">#49 fix: 폴링 간격 오류</button></td><td><span class="badge badge-muted">리뷰 요청</span></td><td>완료 <span class="t-caption muted">· 머지됨</span></td><td>작성 dev-kim</td><td>작업 관리</td><td class="muted">—</td><td>5일 전</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="view-board" hidden>
+              <div class="board">
+                <section aria-label="할 일"><h3 class="t-heading">할 일 <span class="muted">1</span></h3><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">연결된 레포 설정 가이드 작성</p><p class="t-small muted" style="margin:var(--sp-1) 0 var(--sp-2)">담당 sora-han · 보통</p><button class="select btn-sm" style="height:var(--h-sm)" aria-label="상태 변경">상태 바꾸기</button></div></div></section>
+                <section aria-label="진행 중"><h3 class="t-heading">진행 중 <span class="muted">2</span></h3><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">역할 검토 확인 버튼 문구 정리</p><p class="t-small muted" style="margin:var(--sp-1) 0 0">담당 minji-park · 높음</p></div></div><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">AI 체크리스트 응답 지연 조사</p><p class="t-small muted" style="margin:var(--sp-1) 0 0">담당 dev-kim · 보통</p></div></div></section>
+                <section aria-label="리뷰 중"><h3 class="t-heading">리뷰 중 <span class="muted">2</span></h3><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">#58 feat: 리뷰 요청 PR 상태 갱신</p><p class="t-small muted" style="margin:var(--sp-1) 0 0"><span class="badge badge-muted">리뷰 요청</span> GitHub 기준 · 이동 불가</p></div></div><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">#60 feat: 영역 이름 서버 저장</p><p class="t-small muted" style="margin:var(--sp-1) 0 0"><span class="badge badge-muted">리뷰 요청</span> GitHub 기준 · 이동 불가</p></div></div></section>
+                <section aria-label="완료"><h3 class="t-heading">완료 <span class="muted">1</span></h3><div class="card"><div class="card-body"><p class="t-body-strong" style="margin:0">#49 fix: 폴링 간격 오류</p><p class="t-small muted" style="margin:var(--sp-1) 0 0"><span class="badge badge-muted">리뷰 요청</span> 머지됨</p></div></div></section>
+              </div>
+            </div>
+          </main>
+          <aside class="panel" id="task-panel" aria-label="작업 상세">
+            <div class="row" style="margin-bottom: var(--sp-4)"><h2 class="t-title grow" style="margin:0">역할 검토 확인 버튼 문구 정리</h2><button class="btn-icon" data-panel-close aria-label="상세 닫기"><span class="glyph gl-x" aria-hidden="true"></span></button></div>
+            <div class="field"><label class="field-label" for="p-st">상태</label><button class="select" id="p-st">진행 중</button></div>
+            <div class="grid-2" style="margin-top:var(--sp-4)"><div class="field" style="margin:0"><label class="field-label" for="p-pr">우선순위</label><button class="select" id="p-pr">높음</button></div><div class="field" style="margin:0"><label class="field-label" for="p-as">담당자</label><input class="input" id="p-as" value="minji-park"></div></div>
+            <div class="field"><label class="field-label" for="p-ds">설명</label><textarea class="textarea" id="p-ds">“수락”이라는 표현이 GitHub 리뷰의 승인과 헷갈려요. “확인함”으로 바꾸고 문구를 한 곳에서 관리해요.</textarea></div>
+            <div style="margin-top: var(--sp-4)">
+              <details><summary><span class="glyph glyph-sm gl-chevron" aria-hidden="true"></span>역할 검토 2건</summary><p class="t-small muted" style="margin:0 0 var(--sp-3)">앱 안에서 역할별로 남긴 검토 기록이에요. GitHub 리뷰와는 별개예요.</p></details>
+              <details><summary><span class="glyph glyph-sm gl-chevron" aria-hidden="true"></span>체크리스트 2/5</summary><p class="t-small muted" style="margin:0 0 var(--sp-3)"><button class="btn btn-secondary btn-sm">체크리스트 제안받기</button></p></details>
+            </div>
+            <div class="row" style="margin-top: var(--sp-4); justify-content: space-between"><button class="btn btn-ghost btn-sm">삭제</button><button class="btn btn-primary">저장</button></div>
+            <span class="note-marker" style="top: var(--sp-2); right: calc(var(--sp-16) * 7 - var(--sp-8))">3</span>
+          </aside>
+          <span class="note-marker" style="top: calc(var(--sp-16) * 5 + var(--sp-8)); left: calc(var(--sp-16) * 4 + var(--sp-1))">2</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 11 설정 -->
+    <article class="frame" id="scr-settings" style="width: 1440px">
+      <h3 class="frame-plate"><span>설정 · S-B + S-H</span><span class="frame-pos">11/11</span></h3>
+      <div class="wf rel">
+        <div class="app">
+          <aside data-shell="settings" data-sync="3분 전 확인"></aside>
+          <main class="main" style="max-width: calc(var(--sp-16) * 14)">
+            <div class="page-head"><div><h1 class="t-display">설정</h1></div></div>
+            <section class="sec rel" aria-labelledby="s-me">
+              <h2 class="t-title" id="s-me">나</h2>
+              <p class="t-small muted" style="margin:0 0 var(--sp-3)">이 브라우저에만 저장돼요. 다른 기기에서는 다시 입력해야 해요.</p>
+              <div class="row" style="align-items:flex-start"><div class="field grow" style="margin:0"><label class="field-label" for="s-login">GitHub 로그인</label><input class="input" id="s-login" value="minji-park"><p class="field-hint">저장하면 바로 다시 가져와요.</p></div><button class="btn btn-secondary" style="margin-top:var(--sp-6)">저장</button></div>
+              <span class="note-marker" style="top: 0; right: 0">1</span>
+            </section>
+            <hr class="divider">
+            <section class="sec rel" aria-labelledby="s-repo">
+              <div class="row" style="justify-content:space-between"><h2 class="t-title" id="s-repo" style="margin:0">연결된 레포</h2><button class="btn btn-secondary btn-sm">지금 가져오기</button></div>
+              <p class="t-small muted" style="margin:var(--sp-1) 0 var(--sp-3)">팀이 함께 쓰는 목록이에요. 여기서 가져온 리뷰 요청이 각자의 “내 리뷰 요청”이 돼요.</p>
+              <div class="list card">
+                <div class="list-row"><span class="grow"><span class="t-body-strong">acme/flowsync</span><br><span class="t-caption muted">3분 전 확인</span></span><span class="badge badge-muted"><span class="glyph glyph-sm gl-check" aria-hidden="true"></span>정상</span><button class="btn btn-ghost btn-sm" aria-label="acme/flowsync 연결 해제">연결 해제</button></div>
+                <div class="list-row" style="border-bottom:0"><span class="grow"><span class="t-body-strong">acme/payments-api</span><br><span class="t-caption" style="color:var(--w-error)">확인하지 못했어요 · 서버 토큰이 이 레포를 읽을 수 없어요</span></span><span class="badge badge-muted"><span class="glyph glyph-sm gl-alert" aria-hidden="true"></span>실패</span><button class="btn btn-secondary btn-sm">다시 시도</button><button class="btn btn-ghost btn-sm" aria-label="acme/payments-api 연결 해제">연결 해제</button></div>
+              </div>
+              <div class="row" style="margin-top: var(--sp-3); align-items:flex-start"><div class="field grow" style="margin:0"><label class="field-label" for="s-url">레포 추가</label><input class="input" id="s-url" placeholder="github.com/owner/name"></div><button class="btn btn-secondary" style="margin-top:var(--sp-6)"><span class="glyph glyph-sm gl-plus" aria-hidden="true"></span>추가</button></div>
+              <span class="note-marker" style="top: 0; right: calc(var(--sp-16) * 3)">2</span>
+            </section>
+            <hr class="divider">
+            <section class="sec rel" aria-labelledby="s-area">
+              <h2 class="t-title" id="s-area">영역 이름</h2>
+              <p class="t-small muted" style="margin:0 0 var(--sp-3)">폴더 이름 대신 팀이 부르는 이름을 붙여요. 팀 전체에 공유돼요.</p>
+              <table>
+                <thead><tr><th scope="col">원래 경로</th><th scope="col">표시 이름</th><th scope="col">상태</th></tr></thead>
+                <tbody>
+                  <tr><td>backend/integrations</td><td><input class="input" value="GitHub 연동" aria-label="backend/integrations 표시 이름"></td><td class="muted">연결됨</td></tr>
+                  <tr><td>backend/tasks</td><td><input class="input" value="작업 관리" aria-label="backend/tasks 표시 이름"></td><td class="muted">연결됨</td></tr>
+                  <tr style="background:var(--w-surface)"><td>src/reports</td><td><input class="input" value="정산 리포트" aria-label="src/reports 표시 이름"></td><td><span class="badge badge-muted">연결 끊김</span> <button class="btn btn-ghost btn-sm">이름 지우기</button></td></tr>
+                </tbody>
+              </table>
+              <p class="t-caption muted" style="margin:var(--sp-2) 0 0">이름을 비우면 원래 경로 이름으로 돌아가요. 합치기는 이번 범위에 없어요.</p>
+              <span class="note-marker" style="top: 0; right: 0">3</span>
+            </section>
+            <hr class="divider">
+            <section class="sec" aria-labelledby="s-theme">
+              <h2 class="t-title" id="s-theme">화면</h2>
+              <div role="radiogroup" aria-labelledby="s-theme" class="row" style="gap:var(--sp-6)"><label class="choice"><input type="radio" name="th" checked> 시스템 설정 따르기</label><label class="choice"><input type="radio" name="th"> 밝게</label><label class="choice"><input type="radio" name="th"> 어둡게</label></div>
+            </section>
+          </main>
+        </div>
+      </div>
+    </article>
+
+  </div>
+  <aside class="note-rail">
+    <div class="note-group" data-for="scr-tasks"><p class="note-frame">전체 작업</p>
+      <p><span class="note-num">1</span> 필터 3종(종류·담당자·영역)이 “리뷰 대기 N건” 링크의 도착지다 — 영역 흐름에서 넘어오면 영역 필터가 이미 걸려 있다.</p>
+      <p><span class="note-num">2</span> PR 행의 상태는 읽기 전용 글자 + “GitHub 기준”(결정 12). 수동 작업만 상태 선택 컨트롤이 있다. 목록이 기본, 보드는 같은 데이터의 4열 동시 표시(2단계 포털 폐기).</p>
+      <p><span class="note-num">3</span> 상세는 모달이 아니라 오른쪽 패널(URL 있음). 역할 검토·체크리스트는 접힘으로 강등(결정 4). 닫아도 목록 위치·필터가 유지된다. 열린 질문: 이 패널이 PR 작업에서 어떻게 달라지는지는 S-D 재사용으로 충분한가.</p></div>
+    <div class="note-group" data-for="scr-settings"><p class="note-frame">설정</p>
+      <p><span class="note-num">1</span> “나”는 개인(이 브라우저), 레포는 팀 공용이라 같은 화면에서 분리해 보여 준다(P3).</p>
+      <p><span class="note-num">2</span> 레포마다 상태(정상/실패)와 사유를 보여 줘서 내 리뷰 요청의 실패 배너가 가리키는 곳이 여기다. 연결 해제는 되돌릴 수 없는 영향(큐에서 사라짐)을 확인 대화상자로 한 번 더 말한다(미도식).</p>
+      <p><span class="note-num">3</span> 별칭은 서버 저장(결정 7), 끊긴 별칭은 지우기 전까지 보존.</p></div>
+  </aside>
+</section>
+
+<script>
+/* 사이드바 쉘: 프레임마다 같은 내비를 손으로 복붙하지 않도록 한 곳에서 생성 (뷰어 스크립트보다 먼저 실행) */
+(function () {
+  const items = [['queue', '내 리뷰 요청', 'scr-queue'], ['areas', '영역 흐름', 'scr-areas'], ['tasks', '전체 작업', 'scr-tasks']];
+  const item = (k, l, t, cur, badge) =>
+    `<button class="nav-item" data-go="${t}"${cur === k ? ' aria-current="page"' : ''}><span class="icon icon-md"></span><span class="grow">${l}</span>${badge && k === 'queue' ? `<span class="badge">${badge}</span>` : ''}</button>`;
+  document.querySelectorAll('[data-shell]').forEach(el => {
+    const cur = el.dataset.shell, badge = el.dataset.badge;
+    el.className = 'side';
+    el.innerHTML = `<div class="brand t-heading">FlowSyncAI</div>
+      <nav aria-label="주 메뉴">${items.map(i => item(i[0], i[1], i[2], cur, badge)).join('')}</nav>
+      <nav aria-label="설정" style="margin-top:auto">${item('settings', '설정', 'scr-settings', cur)}</nav>
+      <div class="side-foot"><p class="t-caption muted" style="margin:0 0 var(--sp-1)" role="status">${el.dataset.sync || ''}</p>
+        <div class="row"><span class="avatar avatar-sm"></span><span class="t-small">@minji-park</span></div></div>`;
+    el.querySelector('nav[aria-label="설정"]').style.marginTop = 'auto';
+  });
+  /* 접힘/펼침, 상세 패널, 보기 전환: 와이어프레임 내부의 단순 토글 */
+  document.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => {
+    const t = document.getElementById(b.dataset.toggle), open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open)); if (t) t.hidden = !open;
+    const g = b.querySelector('.glyph.gl-chevron'); if (g && b.classList.contains('btn-icon')) g.style.transform = open ? 'rotate(180deg)' : '';
+  }));
+  const panel = document.getElementById('task-panel');
+  document.querySelectorAll('[data-panel-open]').forEach(b => b.addEventListener('click', () => { panel.hidden = false; }));
+  document.querySelectorAll('[data-panel-close]').forEach(b => b.addEventListener('click', () => { panel.hidden = true; }));
+  document.querySelectorAll('[data-view-tab]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-view-tab]').forEach(x => { const on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-selected', String(on)); });
+    document.getElementById('view-list').hidden = b.dataset.viewTab !== 'list';
+    document.getElementById('view-board').hidden = b.dataset.viewTab !== 'board';
+  }));
+})();
+</script>
+<script>
+/* ===== Intent /wireframe viewer.js (코멘트 축약, 로직은 원본 그대로) ===== */
+const frames = [...document.querySelectorAll('.frame')];
+let cur = 0;
+let gridScroll = 0;
+let protoHist = [];
+let protoStart = 0;
+const prevBtn = document.querySelector('[data-prev]');
+const nextBtn = document.querySelector('[data-next]');
+function view() { return document.body.dataset.view || 'grid'; }
+function setView(v) {
+  const was = view();
+  if (was === 'grid' && v !== 'grid') gridScroll = scrollY;
+  if (v === 'proto') { protoHist = []; protoStart = cur; }
+  document.body.dataset.view = v;
+  document.querySelectorAll('[data-setview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.setview === v)));
+  document.querySelectorAll('[data-go]').forEach(el => {
+    if (v === 'proto') el.setAttribute('tabindex', '0');
+    else el.removeAttribute('tabindex');
+  });
+  document.querySelectorAll('.wf :is(button, input, select, textarea, a)').forEach(el => {
+    const wired = el.closest('[data-go]') || el.querySelector('[data-go]');
+    if (v === 'proto' && !wired) el.setAttribute('tabindex', '-1');
+    else if (el.getAttribute('tabindex') === '-1') el.removeAttribute('tabindex');
+  });
+  document.querySelectorAll('.plate-open').forEach(b => v === 'grid' ? b.removeAttribute('tabindex') : b.setAttribute('tabindex', '-1'));
+  if (v !== 'grid') show(cur);
+  else requestAnimationFrame(() => scrollTo(0, gridScroll));
+  syncHash();
+}
+function show(i) {
+  cur = Math.max(0, Math.min(frames.length - 1, i));
+  frames.forEach((f, n) => f.classList.toggle('active', n === cur));
+  const sec = frames[cur].closest('.board-section')?.dataset.section || '';
+  const pos = document.querySelector('.slide-pos');
+  if (pos) pos.textContent = `${cur + 1}/${frames.length}`;
+  const secLabel = document.querySelector('.slide-section');
+  if (secLabel) secLabel.textContent = sec;
+  if (prevBtn) prevBtn.disabled = view() === 'proto' ? protoHist.length === 0 : cur === 0;
+  if (nextBtn) nextBtn.disabled = cur === frames.length - 1;
+  document.querySelectorAll('.note-group').forEach(g => g.classList.toggle('active', g.dataset.for === frames[cur].id));
+  syncHash();
+  fit();
+}
+function fit() {
+  const f = frames[cur];
+  if (!f || view() === 'grid') return;
+  const stage = f.closest('.frame-grid');
+  if (!stage) return;
+  const rail = view() === 'slides' ? f.closest('.board-section')?.querySelector('.note-rail') : null;
+  const railW = rail ? rail.offsetWidth : 0;
+  const avail = stage.clientWidth - railW;
+  f.style.removeProperty('--slide-scale');
+  const s = Math.min(1, avail / f.offsetWidth, stage.clientHeight / f.offsetHeight);
+  f.style.setProperty('--slide-scale', s.toFixed(4));
+  const pageCentered = stage.clientWidth / 2 + (f.offsetWidth * s) / 2 <= stage.clientWidth - railW;
+  f.style.left = pageCentered ? '50%' : `${avail / 2}px`;
+}
+function syncHash() {
+  const v = view();
+  const h = v === 'grid' ? '' : `#${v}-${cur + 1}`;
+  if (h !== location.hash) history.replaceState(null, '', h || location.pathname + location.search);
+}
+addEventListener('resize', fit);
+document.querySelectorAll('[data-setview]').forEach(b => b.addEventListener('click', () => setView(b.dataset.setview)));
+prevBtn?.addEventListener('click', () => view() === 'proto' ? histBack() : show(cur - 1));
+nextBtn?.addEventListener('click', () => show(cur + 1));
+document.querySelector('[data-restart]')?.addEventListener('click', () => { protoHist = []; show(protoStart); });
+function histBack() { if (protoHist.length) show(protoHist.pop()); }
+addEventListener('keydown', e => {
+  const v = view();
+  if (v === 'grid') return;
+  if (e.key === 'ArrowLeft') v === 'proto' ? histBack() : show(cur - 1);
+  if (e.key === 'ArrowRight' && v === 'slides') show(cur + 1);
+  if (e.key === 'Escape') setView('grid');
+});
+document.querySelectorAll('.frame-plate').forEach(p => {
+  const f = p.closest('.frame');
+  if (!f) return;
+  const b = document.createElement('button');
+  b.className = 'plate-open';
+  b.setAttribute('title', 'Open in slides');
+  while (p.firstChild) b.appendChild(p.firstChild);
+  p.appendChild(b);
+  b.addEventListener('click', () => {
+    if (view() !== 'grid') return;
+    cur = frames.indexOf(f);
+    setView('slides');
+  });
+});
+const th = document.querySelector('[data-toggle-theme]');
+const thLabel = th?.querySelector('.theme-label');
+function setTheme(dark) {
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.body.dataset.theme = dark ? 'dark' : 'light';
+  th?.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  th?.removeAttribute('aria-pressed');
+  if (thLabel) thLabel.textContent = dark ? 'Light' : 'Dark';
+}
+let saved = null;
+try { saved = localStorage.getItem('wf-theme'); } catch (e) {}
+const authored = document.body.dataset.theme;
+setTheme(saved ? saved === 'dark' : authored ? authored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+th?.addEventListener('click', () => {
+  const dark = document.body.dataset.theme !== 'dark';
+  setTheme(dark);
+  try { localStorage.setItem('wf-theme', dark ? 'dark' : 'light'); } catch (e) {}
+});
+function go(el) {
+  if (view() !== 'proto') return;
+  const t = document.getElementById(el.dataset.go);
+  if (t) { protoHist.push(cur); show(frames.indexOf(t)); }
+}
+document.querySelectorAll('[data-go]').forEach(el => {
+  el.addEventListener('click', e => { e.stopPropagation(); go(el); });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(el); } });
+});
+addEventListener('click', e => {
+  if (view() !== 'proto') return;
+  const ctl = e.target.closest('.wf :is(button, input, select, textarea, a, .choice)');
+  if (!ctl || ctl.closest('[data-go]') || ctl.querySelector('[data-go]')) return;
+  ctl.classList.add('dead-tap');
+  setTimeout(() => ctl.classList.remove('dead-tap'), 450);
+});
+document.querySelectorAll('.note-marker').forEach(m => {
+  m.setAttribute('role', 'img');
+  m.setAttribute('aria-label', 'Note ' + m.textContent.trim());
+});
+document.querySelector('.slide-pos')?.setAttribute('aria-live', 'polite');
+const linked = location.hash.match(/^#(slides|proto)-(\d+)$/);
+if (linked && frames.length) {
+  cur = Math.max(0, Math.min(frames.length - 1, +linked[2] - 1));
+  setView(linked[1]);
+}
+document.querySelectorAll('.wf .chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+document.querySelectorAll('.wf .switch').forEach(s => s.addEventListener('click', () => s.setAttribute('aria-checked', String(s.getAttribute('aria-checked') !== 'true'))));
+</script>
+</body>
+</html>

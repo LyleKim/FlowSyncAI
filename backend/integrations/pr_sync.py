@@ -1,58 +1,82 @@
-from django.db import transaction
+import logging
+from datetime import timedelta, timezone as dt_tz
+
+from django.db.models import Q
 from django.utils import timezone
 
-from tasks.models import Task
-
 from . import github_client
-from .models import SeenPullRequest, WatchedRepo
+from .models import WatchedRepo
+from .pr_ingest import ingest_prs, tracked_open_numbers
+from .task_mirror import mirror_repo
+
+logger = logging.getLogger(__name__)
+
+MIN_INTERVAL = timedelta(seconds=30)
 
 
-def _sync_repo(repo):
-    login = repo.github_login or github_client.get_authenticated_login()
-    prs = github_client.search_review_requested_prs(login, repo.owner, repo.name)
-    seen = set(repo.seen_prs.values_list('number', flat=True))
-    created = skipped = 0
-    for pr in prs:
-        if pr['number'] in seen:
-            skipped += 1
+def iso_z(dt):
+    """UTC `YYYY-MM-DDTHH:MM:SSZ` (contract format); None passes through."""
+    return dt.astimezone(dt_tz.utc).strftime('%Y-%m-%dT%H:%M:%SZ') if dt else None
+
+
+def serialize_repo_status(repo):
+    err = None
+    if repo.last_error_kind:
+        err = {'kind': repo.last_error_kind, 'message': repo.last_error_message,
+               'resetAt': iso_z(repo.last_error_reset_at)}
+    return {'repoId': repo.id, 'repo': str(repo), 'lastAttemptAt': iso_z(repo.last_attempt_at),
+            'lastSuccessAt': iso_z(repo.last_synced_at), 'lastError': err, 'truncated': repo.truncated}
+
+
+def _sync_one(repo, now):
+    """-> (created, skipped); raises GitHubError. Failure leaves PR data and last_synced_at alone."""
+    data = github_client.fetch_repo_pull_requests(
+        repo.owner, repo.name, tracked_open=tracked_open_numbers(repo))
+    res = ingest_prs(repo, data['prs'], now)
+    WatchedRepo.objects.filter(pk=repo.pk).filter(  # never move lastSuccessAt backwards
+        Q(last_synced_at__isnull=True) | Q(last_synced_at__lt=now)).update(
+        last_synced_at=now)
+    WatchedRepo.objects.filter(pk=repo.pk).update(
+        last_error_kind='', last_error_message='', last_error_reset_at=None,
+        truncated=bool(data['truncated']))
+    try:  # legacy kanban mirror: its failure must not undo the ingest or last_synced_at
+        mirror_repo(repo)
+    except Exception:
+        logger.exception('task mirror failed for %s', repo)
+    return res.created, res.updated
+
+
+def sync_repos(repo_id=None, now=None):
+    now = now or timezone.now()
+    out = {'created': 0, 'skipped': 0, 'errors': [], 'throttled': [], 'repos': []}
+    repos = WatchedRepo.objects.order_by('id')
+    if repo_id is not None:
+        repos = repos.filter(pk=repo_id)
+    for repo in repos:
+        # atomic claim: the DB serializes concurrent callers, only one wins per interval
+        claimed = WatchedRepo.objects.filter(pk=repo.pk).filter(
+            Q(last_attempt_at__isnull=True) | Q(last_attempt_at__lt=now - MIN_INTERVAL)
+        ).update(last_attempt_at=now)
+        if not claimed:
+            out['throttled'].append(repo.id)
+        else:
+            try:
+                created, skipped = _sync_one(repo, now)
+                out['created'] += created
+                out['skipped'] += skipped
+            except Exception as e:  # one repo must never break the call
+                err = e if isinstance(e, github_client.GitHubError) else github_client.GitHubError(
+                    0, str(e) or e.__class__.__name__)
+                WatchedRepo.objects.filter(pk=repo.pk).update(
+                    last_error_kind=err.kind, last_error_message=err.message, last_error_reset_at=err.reset_at)
+                out['errors'].append(f'{repo}: {err.message}')
+        try:
+            repo.refresh_from_db()
+        except WatchedRepo.DoesNotExist:  # deleted mid-sync
             continue
-        title = f"[PR] #{pr['number']} {pr['title']}" + (' (draft)' if pr.get('draft') else '')
-        with transaction.atomic():
-            _, is_new = SeenPullRequest.objects.get_or_create(repo=repo, number=pr['number'])
-            if not is_new:
-                skipped += 1
-                continue
-            Task.objects.get_or_create(
-                id=f"pr-{repo.owner}-{repo.name}-{pr['number']}",
-                defaults={
-                    'title': title[:255],
-                    'description': (
-                        f"{pr['html_url']}\nAuthor: {pr['author']}\n"
-                        'Auto-created from GitHub review request'
-                    ),
-                    'creator': pr['author'] or 'Unknown',
-                    'category': 'Review',
-                    'status': 'todo',
-                    'source_url': pr['html_url'],
-                },
-            )
-        created += 1
-    return created, skipped
+        out['repos'].append(serialize_repo_status(repo))
+    return out
 
 
 def sync_review_requests():
-    result = {'created': 0, 'skipped': 0, 'errors': []}
-    for repo in WatchedRepo.objects.all():
-        try:
-            created, skipped = _sync_repo(repo)
-        except github_client.GitHubError as e:
-            msg = e.message
-            if e.status == 401 or (not repo.github_login and e.status in (403, 404)):
-                msg = f'{msg} (a valid GITHUB_TOKEN is required, or set githubLogin)'
-            result['errors'].append(f'{repo}: {msg}')
-            continue
-        result['created'] += created
-        result['skipped'] += skipped
-        repo.last_synced_at = timezone.now()
-        repo.save(update_fields=['last_synced_at'])
-    return result
+    return sync_repos()

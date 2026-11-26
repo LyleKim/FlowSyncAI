@@ -233,9 +233,10 @@ class ViewTests(TestCase):
         self.get()
         self.assertEqual(self.mocks[0].call_count, 1)  # second call served from cache
         self.get(days=60)
-        self.assertEqual(self.mocks[0].call_count, 2)  # different days -> different key
+        self.assertEqual(self.mocks[0].call_count, 1)  # different days -> new activity, tree shared via areas.get_paths
+        self.assertEqual(self.mocks[1].call_count, 2)  # ...but commits are re-read
         self.get(refresh='1')
-        self.assertEqual(self.mocks[0].call_count, 3)
+        self.assertEqual(self.mocks[0].call_count, 2)  # refresh re-reads the tree too
         # ETag round trip: unchanged cached payload -> 304
         r = self.client.get(self.URL, {'url': 'https://github.com/acme/widgets'},
                             HTTP_IF_NONE_MATCH=self.get()['ETag'])

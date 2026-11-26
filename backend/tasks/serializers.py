@@ -21,6 +21,11 @@ def serialize_subtask(subtask):
     return {'id': subtask.id, 'title': subtask.title, 'completed': subtask.completed}
 
 
+def task_kind(task):
+    # id 접두사가 유일한 기준 (수동 작업이 PR URL을 sourceUrl로 가져도 manual)
+    return 'pr' if task.id.startswith('pr-') else 'manual'
+
+
 def serialize_task(task, reviews=None):
     """프론트엔드 Task 타입(camelCase)에 맞춘 직렬화."""
     if reviews is None:
@@ -34,6 +39,8 @@ def serialize_task(task, reviews=None):
         and (not task.checklist_generated_at or latest_review_at > task.checklist_generated_at)
     )
 
+    is_pr = task_kind(task) == 'pr'
+
     return {
         'id': task.id,
         'title': task.title,
@@ -41,7 +48,10 @@ def serialize_task(task, reviews=None):
         'status': task.status,
         'priority': task.priority,
         'category': task.category,
-        'assigneeId': task.creator or task.assignee_id,
+        # PR Task: 작성자 != 담당자 (작성자는 author)
+        'assigneeId': (task.assignee_id or '') if is_pr else (task.creator or task.assignee_id),
+        'kind': 'pr' if is_pr else 'manual',
+        'author': (task.creator or '') if is_pr else None,
         'subtasks': [serialize_subtask(subtask) for subtask in task.subtasks.all()],
         'createdAt': task.created_at.isoformat() if task.created_at else None,
         'roles': _parse_roles(task.roles),
@@ -56,18 +66,29 @@ def map_body_to_model_data(body, instance=None):
     """프론트엔드 camelCase 요청을 Django 모델 필드로 변환."""
     assignee = body.get('assigneeId')
     if assignee is None and instance:
-        assignee = instance.creator or instance.assignee_id
+        # PR Task의 creator는 작성자이므로 담당자 폴백으로 쓰지 않는다
+        assignee = (
+            instance.assignee_id if task_kind(instance) == 'pr'
+            else instance.creator or instance.assignee_id
+        )
     assignee = (assignee or '').strip()
+
+    # PR 작성자(creator)는 Task API로 바뀌지 않는다
+    pr_instance = instance is not None and task_kind(instance) == 'pr'
 
     data = {
         'id': body.get('id') or (instance.id if instance else f"task-{uuid.uuid4().hex[:8]}"),
         'title': body.get('title', instance.title if instance else ''),
         'description': body.get('description', instance.description if instance else ''),
-        'creator': assignee or (instance.creator if instance else 'Unknown'),
+        'creator': instance.creator if pr_instance else (
+            assignee or (instance.creator if instance else 'Unknown')),
         'status': body.get('status', instance.status if instance else 'todo'),
         'priority': body.get('priority', instance.priority if instance else 'medium'),
         'category': body.get('category', instance.category if instance else ''),
-        'assignee_id': assignee or (instance.assignee_id if instance else ''),
+        # PR Task는 assigneeId 키가 있으면 빈 문자열도 그대로 저장(담당자 해제)
+        'assignee_id': (
+            (assignee if 'assigneeId' in body else instance.assignee_id) if pr_instance
+            else assignee or (instance.assignee_id if instance else '')),
     }
 
     if 'roles' in body:

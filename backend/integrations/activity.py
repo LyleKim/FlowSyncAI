@@ -27,11 +27,11 @@ def _trend(commit_dts, mid):
     return 'rising' if last > first else 'steady'
 
 
-def compute_activity(owner, name, days=30):
+def compute_activity(owner, name, days=30, paths=None):
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=days)
     mid = since + timedelta(days=days / 2)
-    groups = group_paths(github_client.list_repo_tree(owner, name))
+    groups = group_paths(paths if paths is not None else github_client.list_repo_tree(owner, name))
     locate = Locator(groups)
 
     commits = github_client.list_commits(owner, name, since=since.isoformat())

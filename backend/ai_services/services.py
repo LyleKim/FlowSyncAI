@@ -3,22 +3,15 @@ import os
 import requests
 from django.conf import settings
 
+# llama-3.1-8b-instant was retired by Groq (404); override with GROQ_MODEL env.
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+
 
 def run_checklist_generation(title, description, reviews_str):
     """
     Executes the content generation via Groq API (Chat Completions) using requests.
     Supports JSON mode.
     """
-    api_key = settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable is required")
-
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
     prompt = (
         "You are a professional project manager. Please generate a detailed subtask checklist "
         "for the following task to ensure high-quality execution.\n\n"
@@ -42,9 +35,26 @@ def run_checklist_generation(title, description, reviews_str):
         "}\n"
         "Output ONLY raw valid JSON."
     )
+    return run_json_completion(prompt)
 
+
+def groq_api_key():
+    return settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")
+
+
+def run_json_completion(prompt):
+    """One Groq chat completion in JSON mode -> raw content string. ValueError if no key / no choices."""
+    api_key = groq_api_key()
+    if not api_key:
+        raise ValueError("GROQ_API_KEY environment variable is required")
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
     data = {
-        "model": "llama-3.1-8b-instant",
+        "model": GROQ_MODEL,
         "messages": [
             {
                 "role": "user",

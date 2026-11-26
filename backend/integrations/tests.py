@@ -31,30 +31,43 @@ class ClientTests(SimpleTestCase):
     def test_token_header(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'}):
-            self.assertEqual(gh.get_authenticated_login(), 'me')
+            self.assertEqual(gh._get('/user')['login'], 'me')
         kw = get.call_args.kwargs
         self.assertEqual(kw['headers']['Authorization'], 'Bearer tok')
         self.assertEqual(kw['timeout'], 10)
 
+    def test_network_errors_become_upstream(self, get):
+        import requests
+        for exc in (requests.ConnectionError('x'), requests.Timeout('t')):
+            get.side_effect = exc
+            with self.assertRaises(gh.GitHubError) as cm:
+                gh._get('/user')
+            self.assertEqual(cm.exception.kind, 'upstream')
+
+    def test_non_json_200_becomes_upstream(self, get):
+        r = resp(body={})
+        r.json.side_effect = ValueError('no json')
+        get.side_effect = None
+        get.return_value = r
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh._get('/user')
+        self.assertEqual(cm.exception.kind, 'upstream')
+
+    def test_tree_unexpected_shape_is_upstream(self, get):
+        get.return_value = resp(body={'tree': [{'type': 'blob'}]})  # blob without path
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh.list_repo_tree('o', 'r', ref='main')
+        self.assertEqual(cm.exception.kind, 'upstream')
+        get.return_value = resp(body=['x'])
+        with self.assertRaises(gh.GitHubError) as cm:
+            gh.list_repo_tree('o', 'r', ref='main')
+        self.assertEqual(cm.exception.kind, 'upstream')
+
     def test_no_token(self, get):
         get.return_value = resp(body={'login': 'me'})
         with mock.patch.dict('os.environ', {}, clear=True):
-            gh.get_authenticated_login()
+            gh._get('/user')
         self.assertNotIn('Authorization', get.call_args.kwargs['headers'])
-
-    def test_search(self, get):
-        get.return_value = resp(body={'items': [{
-            'number': 3, 'title': 't', 'html_url': 'u', 'created_at': 'c', 'updated_at': 'x',
-            'repository_url': 'https://api.github.com/repos/o/r', 'user': {'login': 'a'}, 'draft': True}]})
-        out = gh.search_review_requested_prs('me', 'o', 'r')
-        self.assertEqual(out, [{'number': 3, 'title': 't', 'html_url': 'u', 'repo': 'o/r', 'author': 'a',
-                                'created_at': 'c', 'updated_at': 'x', 'draft': True}])
-        self.assertEqual(get.call_args.kwargs['params']['q'], 'is:pr is:open review-requested:me repo:o/r')
-
-    def test_search_no_repo(self, get):
-        get.return_value = resp(body={'items': []})
-        self.assertEqual(gh.search_review_requested_prs('me'), [])
-        self.assertNotIn('repo:', get.call_args.kwargs['params']['q'])
 
     def test_tree_default_branch(self, get):
         get.side_effect = [resp(body={'default_branch': 'main'}),
@@ -92,7 +105,7 @@ class ClientTests(SimpleTestCase):
     def test_errors(self, get):
         get.return_value = resp(404, {'message': 'Not Found'})
         with self.assertRaises(gh.GitHubError) as c:
-            gh.get_authenticated_login()
+            gh._get('/user')
         self.assertEqual((c.exception.status, c.exception.message), (404, 'Not Found'))
 
     def test_rate_limit(self, get):
@@ -100,6 +113,176 @@ class ClientTests(SimpleTestCase):
             get.return_value = resp(status, {'message': 'API rate limit exceeded'},
                                     {'X-RateLimit-Remaining': '0'})
             with self.assertRaises(gh.GitHubError) as c:
-                gh.get_authenticated_login()
+                gh._get('/user')
             self.assertEqual(c.exception.status, status)
             self.assertIn('rate limit', c.exception.message)
+
+
+import copy
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+FIXTURE = json.loads((Path(__file__).parent / 'testdata' / 'graphql_repo_prs.json').read_text())
+
+
+def gql(open_nodes=(), recent_nodes=(), has_next=False, **extra):
+    return {'data': {'repository': {
+        'open': {'pageInfo': {'hasNextPage': has_next, 'endCursor': 'c'}, 'nodes': list(open_nodes)},
+        'recent': {'nodes': list(recent_nodes)}, **extra}}}
+
+
+def pr_node(number=1, **kw):
+    n = copy.deepcopy(FIXTURE['data']['repository']['open']['nodes'][1])
+    n['number'] = number
+    n.update(kw)
+    return n
+
+
+@mock.patch('integrations.github_client.requests.post')
+class GraphQLClientTests(SimpleTestCase):
+    def setUp(self):
+        p = mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_normalizes_fixture(self, post):
+        post.return_value = resp(body=FIXTURE)
+        out = gh.fetch_repo_pull_requests('acme', 'widgets')
+        self.assertFalse(out['truncated'])
+        by = {p['number']: p for p in out['prs']}
+        self.assertEqual(set(by), {42, 40, 39, 38})
+        p = by[42]
+        self.assertEqual(p['author'], 'alice')
+        self.assertEqual(p['state'], 'open')
+        self.assertEqual(p['files'], ['backend/integrations/github_client.py', 'backend/integrations/tests.py'])
+        self.assertEqual(p['review_requests'], [
+            {'kind': 'user', 'login': 'bob', 'team_slug': '', 'requested_at': '2026-11-20T01:05:00Z'},
+            {'kind': 'team', 'login': '', 'team_slug': 'acme/backend', 'requested_at': '2026-11-21T02:00:00Z'},
+        ])
+        self.assertEqual(p['latest_reviews'],
+                         [{'login': 'carol', 'state': 'COMMENTED', 'submitted_at': '2026-11-22T10:00:00Z'}])
+        self.assertEqual(by[38]['state'], 'merged')
+        self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer tok')
+        self.assertEqual(post.call_args.kwargs['timeout'], 10)
+
+    def test_malformed_pr_node_is_upstream_error(self, post):
+        bad = pr_node(1)
+        del bad['reviewRequests']
+        post.return_value = resp(body=gql([bad]))
+        with self.assertRaises(gh.GitHubError) as c:
+            gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual(c.exception.kind, 'upstream')
+
+    def test_pagination_and_truncation(self, post):
+        post.return_value = resp(body=gql([pr_node(1)], has_next=True))
+        out = gh.fetch_repo_pull_requests('o', 'r', max_open=1)
+        self.assertTrue(out['truncated'])
+        self.assertEqual(post.call_count, 1)
+        post.reset_mock()
+        post.side_effect = [resp(body=gql([pr_node(1)], has_next=True)), resp(body=gql([pr_node(2)]))]
+        out = gh.fetch_repo_pull_requests('o', 'r', max_open=250)
+        self.assertFalse(out['truncated'])
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 2})
+
+    def test_ghost_author_and_null_reviewer(self, post):
+        n = pr_node(1, author=None)
+        n['reviewRequests']['nodes'] = [
+            {'requestedReviewer': None},
+            {'requestedReviewer': {'__typename': 'Bot', 'login': 'b'}},
+            {'requestedReviewer': {'__typename': 'Mannequin', 'login': 'm'}},
+            {'requestedReviewer': {'__typename': 'User', 'login': 'u'}},
+        ]
+        post.return_value = resp(body=gql([n]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertEqual(p['author'], '')
+        self.assertEqual([r['login'] for r in p['review_requests']], ['u'])
+
+    def test_files_truncated_flag(self, post):
+        n = pr_node(1)
+        n['files'] = {'nodes': [{'path': f'f{i}'} for i in range(100)], 'pageInfo': {'hasNextPage': True}}
+        post.return_value = resp(body=gql([n]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertTrue(p['files_truncated'])
+        self.assertEqual(len(p['files']), 100)
+
+    def test_tracked_missing_triggers_single_extra_query(self, post):
+        post.side_effect = [resp(body=gql([pr_node(1)])), resp(body=gql(pr9=pr_node(9, state='CLOSED')))]
+        out = gh.fetch_repo_pull_requests('o', 'r', tracked_open=[1, 9])
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 9})
+        post.reset_mock()
+        post.side_effect = None
+        post.return_value = resp(body=gql([pr_node(9)]))
+        gh.fetch_repo_pull_requests('o', 'r', tracked_open=[9])
+        self.assertEqual(post.call_count, 1)
+
+    def test_graphql_errors_array_raises(self, post):
+        body = gql([pr_node(1)])
+        body['errors'] = [{'message': 'boom'}]
+        post.return_value = resp(body=body)
+        with self.assertRaises(gh.GitHubError) as c:
+            gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual(c.exception.kind, 'unknown')
+
+    def test_error_kinds(self, post):
+        def kind(r):
+            post.return_value = r
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+            return c.exception
+        self.assertEqual(kind(resp(401, {'message': 'bad'})).kind, 'auth')
+        e = kind(resp(403, {'message': 'x'}, {'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': '1800000000'}))
+        self.assertEqual(e.kind, 'rate_limit')
+        self.assertEqual(e.reset_at, datetime.fromtimestamp(1800000000, timezone.utc))
+        self.assertEqual(kind(resp(200, {'errors': [{'type': 'RATE_LIMITED', 'message': 'r'}]})).kind, 'rate_limit')
+        self.assertEqual(kind(resp(200, {'errors': [{'type': 'NOT_FOUND', 'message': 'n'}]})).kind, 'not_found')
+        self.assertEqual(kind(resp(404, {'message': 'n'})).kind, 'not_found')
+        self.assertEqual(kind(resp(502, {'message': 'u'})).kind, 'upstream')
+        self.assertEqual(kind(resp(418, {'message': 't'})).kind, 'unknown')
+
+    def test_no_token_fails_before_call(self, post):
+        with mock.patch.dict('os.environ', {}, clear=True):
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+        self.assertEqual((c.exception.status, c.exception.kind), (401, 'auth'))
+        post.assert_not_called()
+
+
+@mock.patch('integrations.github_client.requests.post')
+class GraphQLFixRound1Tests(SimpleTestCase):
+    def setUp(self):
+        p = mock.patch.dict('os.environ', {'GITHUB_TOKEN': 'tok'})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def _fallback(self, post, errors):
+        fb = gql(pr8=pr_node(8), pr9=None)
+        fb['errors'] = errors
+        post.side_effect = [resp(body=gql([pr_node(1)])), resp(body=fb)]
+        return gh.fetch_repo_pull_requests('o', 'r', tracked_open=[8, 9])
+
+    def test_tracked_not_found_alias_is_skipped(self, post):
+        out = self._fallback(post, [{'type': 'NOT_FOUND', 'path': ['repository', 'pr9'], 'message': 'x'}])
+        self.assertEqual({p['number'] for p in out['prs']}, {1, 8})
+
+    def test_tracked_other_error_still_raises(self, post):
+        with self.assertRaises(gh.GitHubError):
+            self._fallback(post, [{'type': 'FORBIDDEN', 'path': ['repository', 'pr9'], 'message': 'x'}])
+        with self.assertRaises(gh.GitHubError):  # NOT_FOUND on a non-alias path is not tolerated
+            self._fallback(post, [{'type': 'NOT_FOUND', 'path': ['repository'], 'message': 'x'}])
+
+    def test_non_json_and_null_data_are_upstream(self, post):
+        bad = resp(body=None)
+        bad.json.side_effect = ValueError('no json')
+        for r in (bad, resp(body={'data': None})):
+            post.return_value = r
+            with self.assertRaises(gh.GitHubError) as c:
+                gh.fetch_repo_pull_requests('o', 'r')
+            self.assertEqual(c.exception.kind, 'upstream')
+
+    def test_null_files(self, post):
+        post.return_value = resp(body=gql([pr_node(1, files=None)]))
+        p = gh.fetch_repo_pull_requests('o', 'r')['prs'][0]
+        self.assertEqual((p['files'], p['files_truncated']), ([], False))
