@@ -3,6 +3,7 @@
 GITHUB_TOKEN env is optional (public repos) but required for review-requested
 search and private repos. All functions raise GitHubError on non-2xx.
 """
+import base64
 import os
 import re
 from datetime import datetime, timezone
@@ -264,3 +265,12 @@ def list_commits(owner, name, since=None, until=None, max_pages=5):
 def get_commit_files(owner, name, sha):
     """Changed file paths of one commit -> list[str]."""
     return [f['filename'] for f in _get(f'/repos/{owner}/{name}/commits/{sha}').get('files', [])]
+
+
+def get_file_text(owner, name, path):
+    """Decoded text of one file on the default branch (read-only contents API) -> str."""
+    data = _get(f'/repos/{owner}/{name}/contents/{quote(path)}')
+    try:
+        return base64.b64decode(data['content']).decode('utf-8', 'replace')
+    except (KeyError, TypeError, ValueError) as e:
+        raise GitHubError(200, f'unexpected GitHub response shape: {e!r}', kind='upstream')

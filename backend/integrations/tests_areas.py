@@ -77,7 +77,7 @@ class ListTests(ViewBase):
         a = {x['id']: x for x in d['areas']}
         self.assertEqual(set(a[B]), {'id', 'name', 'displayName', 'alias', 'pathPrefix', 'kind', 'fileCount',
                                      'samplePaths', 'weekly', 'totalCommits', 'lastChangeAt', 'authors',
-                                     'trend', 'reviewWaiting'})
+                                     'trend', 'reviewWaiting', 'description'})
         self.assertEqual((a[B]['displayName'], a[B]['alias']['displayName'], a[B]['pathPrefix']),
                          ('할 일', '할 일', 'backend/tasks'))
         self.assertEqual((a[A]['displayName'], a[A]['alias']), (a[A]['name'], None))
@@ -158,7 +158,7 @@ class DetailTests(ViewBase):
         self.assertEqual((w[0]['isDraft'], w[1]['filesTruncated']), (True, True))
         for n in range(20, 70):
             mk(self.repo, n, B_FILES + A_FILES)
-        with self.assertNumQueries(7):  # constant: repo, 2x aliases, 2x (PRs + reviewers prefetch)
+        with self.assertNumQueries(8):  # constant: repo, 2x aliases, 2x (PRs + reviewers prefetch), descriptions
             r = self.detail(B)
         self.assertEqual(len(r.json()['waitingPullRequests']), 53)
 

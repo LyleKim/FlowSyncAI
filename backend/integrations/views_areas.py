@@ -6,8 +6,13 @@ from api.http import conditional_json_response, json_error
 
 from . import areas
 from .architecture import group_paths
+from .folders import serialize_description
 from .github_client import GitHubError
 from .models import WatchedRepo
+
+
+def _descs(repo):
+    return {d.path: d for d in repo.folder_descriptions.all()}
 
 
 def _context(request, repo_id):
@@ -29,10 +34,11 @@ def _context(request, repo_id):
     return (repo, days, groups, activity), None
 
 
-def _area(data, group, aliases, waiting):
+def _area(data, group, aliases, waiting, descs):
     prefix = areas.path_prefix(group)
     alias = aliases.get(prefix)
     return {
+        'description': serialize_description(descs.get(prefix)) if group.prefix else None,
         **{k: v for k, v in data.items() if k != 'recentCommits'},
         'displayName': alias.display_name if alias else data['name'],
         'alias': {'id': alias.id, 'displayName': alias.display_name,
@@ -52,10 +58,12 @@ def area_list(request, repo_id):
     by_id = {g.id: g for g in groups}
     aliases = {a.path_prefix: a for a in repo.area_aliases.all()}
     waiting = areas.review_waiting_by_area(repo, groups, timezone.now())
+    descs = _descs(repo)
     return conditional_json_response(request, {
         'repoId': repo.id, 'generatedAt': activity['generatedAt'], 'days': days,
         'truncated': activity['truncated'], 'analyzedCommits': activity['analyzedCommits'],
-        'areas': [_area(d, by_id[d['id']], aliases, waiting) for d in activity['groups'] if d['id'] in by_id],
+        'areas': [_area(d, by_id[d['id']], aliases, waiting, descs)
+                  for d in activity['groups'] if d['id'] in by_id],
         'couplings': activity['couplings'],
     })
 
@@ -75,7 +83,7 @@ def area_detail(request, repo_id, area_id):
     aliases = {a.path_prefix: a for a in repo.area_aliases.all()}
     waiting = areas.review_waiting_by_area(repo, groups, now)
     return conditional_json_response(request, {
-        **_area(data, group, aliases, waiting),
+        **_area(data, group, aliases, waiting, _descs(repo)),
         'recentCommits': data['recentCommits'],
         'waitingPullRequests': areas.waiting_prs_for_area(repo, groups, area_id, now),
         'coupledWith': [{'areaId': c['b'] if c['a'] == area_id else c['a'], 'count': c['count']}

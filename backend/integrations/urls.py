@@ -7,4 +7,5 @@ urlpatterns = [
     path('', include('integrations.urls_queue')),  # my review-request queue
     path('', include('integrations.urls_aliases')),  # area aliases
     path('', include('integrations.urls_areas')),  # area list/detail
+    path('', include('integrations.urls_folders')),  # folder tree + AI folder descriptions
 ]

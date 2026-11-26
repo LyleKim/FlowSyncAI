@@ -161,6 +161,7 @@ draft는 **항상 포함**하고 `isDraft`로 알린다. 숨김과 "draft N건 �
 - `authors`는 커밋 수 상위 5명(동률은 로그인 사전순), 최상위 `couplings`는 함께 바뀐 횟수 상위 10쌍(동률은 id 순). 상세 `coupledWith`는 이 상위 10쌍 중 해당 영역이 낀 것만이라 10개 밖의 결합은 보이지 않는다.
 - 영역 목록·상세와 별칭 목록 GET은 ETag/304를 지원한다(공통 규칙). 목록의 `generatedAt`은 서버 캐시(5분) 생성 시각이라 캐시 안에서는 ETag가 유지된다.
 - `displayName`: 별칭이 있으면 별칭, 없으면 `name`. `alias`는 연결된 별칭 또는 null.
+- `description`(2026-11-26 추가, §8): 이 영역의 `pathPrefix`와 같은 경로의 폴더 설명 `{ "text", "source": "ai"|"manual", "generatedAt" }` 또는 null. 특수 영역(`@docs` 등)은 폴더가 아니므로 항상 null. 목록·상세 모두 같은 값. 기존 필드는 불변(추가만).
 - 레포 트리를 못 읽으면 502 `code:"github_unavailable"`(`error`에 사유). 404 `code:"repo_not_found"`(연결 안 된 repoId). `groups`가 0개면 200 + `areas: []`.
 - `architecture/`(url 기반)는 **변경 없음**. 이 엔드포인트가 그 위의 상위 집합이며 같은 5분 캐시를 공유한다.
 
@@ -228,3 +229,76 @@ draft는 **항상 포함**하고 `isDraft`로 알린다. 숨김과 "draft N건 �
 3. 큐·영역 응답에 경과 시간은 없다. 시각만 있다.
 4. `group`/`closedReason`은 GitHub의 요청 목록 잔류 동작(08 미확인 1~3)에 의존하지 않는다.
 5. 팀 요청은 `teams` 파라미터를 보낸 경우에만 큐에 나온다.
+6. 폴더 설명(§8)은 파일 이름 기반 **추정**이다. 화면에 "AI 추정" 표시와 `source`(AI/수동)를 함께 보여야 한다.
+
+## 8. 전체 레포 분석: 폴더 트리 · AI 폴더 설명 (2026-11-26 추가)
+
+> **기본값 표시:** 아래 상한·간격·문장 길이·DELETE 의미는 구현이 고른 **기본값(사용자 미확정)**이다. 값이 바뀌어도 필드 이름과 의미는 유지한다.
+
+프라이버시: LLM(Groq `llama-3.1-8b-instant`)에는 **폴더 경로, 하위 파일·폴더 이름(폴더당 파일 30·폴더 15개), 루트 README 앞 1500자, `package.json`/`pyproject.toml`의 name·description만** 보낸다. 소스 코드 내용은 GitHub에서 읽지도 않는다. GitHub 호출은 읽기 전용(트리, contents API로 README·매니페스트 3개)만.
+
+### 8.1 트리
+
+`GET /integrations/watched-repos/<repoId>/tree/[?refresh=1]` — 영역과 같은 5분 트리 캐시를 쓴다. ETag/304 지원.
+
+```json
+{
+  "repoId": 1, "treeHash": "9f2c…(sha256 64자)", "truncated": false, "folderCount": 3,
+  "limits": { "maxDepth": 6, "maxNodes": 400 },
+  "root": {
+    "path": "", "name": "api", "fileCount": 42, "areaId": null, "description": null,
+    "children": [
+      { "path": "backend", "name": "backend", "fileCount": 30, "areaId": null, "description": null,
+        "children": [
+          { "path": "backend/tasks", "name": "tasks", "fileCount": 5, "areaId": "backend-tasks",
+            "description": { "text": "이 폴더는 할 일 화면에서 작업 생성·수정 API를 구현하는 것으로 보입니다.",
+                             "source": "ai", "generatedAt": "2026-11-26T03:00:00Z" },
+            "children": [] } ] },
+      { "path": "docs", "name": "docs", "fileCount": 12, "areaId": null, "description": null, "children": [] }
+    ]
+  }
+}
+```
+
+- 노드 = 폴더. `root.path`는 `""`, `root.name`은 레포 이름, 루트의 `areaId`·`description`은 항상 null. `children`은 이름순.
+- `fileCount`: 그 폴더 아래(하위 폴더 포함) 파일 수. `node_modules`, `__pycache__`, `.venv`, `dist` 등 잡음 폴더(`architecture.NOISE_DIRS`)는 노드와 개수에서 모두 제외.
+- `areaId`: 이 폴더 경로가 디렉터리 영역의 `pathPrefix`와 정확히 같을 때 영역 id, 아니면 null. 프런트는 이 값으로 영역 카드/상세와 연결한다.
+- 상한(기본값): 깊이 6(최상위 폴더 = 1), 노드 400(루트 제외). 노드가 넘치면 얕은 것 우선, 같은 깊이는 `fileCount` 큰 것 우선으로 남긴다(남은 노드의 부모는 항상 남음). 하나라도 빠지면 `truncated: true`. `folderCount`는 응답에 실린 폴더 수.
+- `description`은 저장된 설명을 트리 변경과 무관하게 보여준다(오래됐을 수 있음, 최신 여부는 `generatedAt`으로만 판단).
+- 오류: 404 `repo_not_found`, 502 `github_unavailable`.
+
+### 8.2 설명 생성 (수동 트리거)
+
+`POST /integrations/watched-repos/<repoId>/describe/` — `Idempotency-Key` 지원(scope `integrations:describe:POST:<repoId>`, 성공 응답만 저장·재생). 본문 선택: `{ "force": true }`.
+
+```json
+{
+  "repoId": 1, "treeHash": "9f2c…", "model": "llama-3.1-8b-instant",
+  "generated": ["backend/tasks", "backend/reviews"],
+  "skippedUnchanged": 12, "skippedManual": 1,
+  "failed": ["frontend/src/legacy"], "limited": false
+}
+```
+
+- 대상(기본값): 디렉터리 영역 폴더를 먼저, 나머지는 `fileCount` 내림차순(동률 경로순), 깊이 6 이내, **최대 40개**(`limited: true`면 더 있었음). LLM 호출은 10개씩 배치(최대 4회).
+- 건너뜀: `source:"manual"` 설명은 **절대 덮어쓰지 않는다**(`force`여도, 생성 도중 수정돼도). `ai` 설명은 저장된 `treeHash`가 현재와 같으면 건너뛴다. `force: true`면 `ai` 설명을 다시 만든다.
+- 문장: 한국어 1~2문장, 300자 상한. 프롬프트가 "근거는 파일 이름뿐이니 추정으로 쓰고, 모르면 모른다고 쓰라"고 지시한다(`"파일 이름만으로는 역할을 추정하기 어렵습니다."` 같은 문장이 그대로 올 수 있음).
+- `failed`: LLM 배치 실패·응답 누락 폴더. 일부 실패는 200. **전부 실패**하면 502 `ai_failed` + `failed`.
+- 쓰로틀(기본값): 레포당 120초에 1회(진행 중 실행도 이 창으로 막음). 창 안이면 **429** `describe_throttled` + `retryAfterSeconds`. 실패(502)는 창을 즉시 해제해 바로 재시도 가능. 같은 `Idempotency-Key` 재시도는 쓰로틀 없이 저장된 응답을 돌려준다.
+- `GROQ_API_KEY` 미설정: **503** `ai_unavailable`(GitHub·LLM 호출 없음). 트리·영역 등 다른 엔드포인트는 영향 없음.
+- 그 외: 400 `invalid_json`, 404 `repo_not_found`, 502 `github_unavailable`.
+- 응답 뒤 프런트는 `tree/`(와 영역 목록)를 다시 읽는다.
+
+### 8.3 수동 수정 · 되돌리기
+
+| 메서드·경로 | 요청 | 응답 |
+|---|---|---|
+| `PATCH /integrations/watched-repos/<repoId>/tree/folders/` | `{ "path": "backend/tasks", "text": "할 일 API 폴더" }` | 200 `{ "path": "backend/tasks", "description": { "text": "할 일 API 폴더", "source": "manual", "generatedAt": "..." } }` |
+| `DELETE /integrations/watched-repos/<repoId>/tree/folders/?path=backend/tasks` | | 204 |
+
+- `path` 앞뒤 `/`는 무시. 현재 트리에 없는 폴더(루트 `""` 포함)는 404 `folder_not_found`. `text`는 공백 정리 후 1~300자, 아니면 400 `invalid_text`. 트리를 못 읽으면 502 `github_unavailable`.
+- DELETE(기본값): 그 폴더의 저장된 설명(수동이든 AI든)을 지운다. 이전 AI 문장은 보관하지 않으므로 "되돌리기" = 설명 없음 상태가 되고, 다음 `describe/`(force 불필요)가 다시 만든다. 설명이 없으면 404 `description_not_found`.
+
+### 8.4 오류 코드 추가분
+
+`ai_unavailable`(503), `ai_failed`(502), `describe_throttled`(429), `folder_not_found`(404), `description_not_found`(404), `invalid_text`(400). 429는 이 엔드포인트에서 처음 쓰는 상태 코드다.

@@ -92,3 +92,18 @@ class AreaAlias(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['repo', 'path_prefix'], name='uniq_area_alias')]
+
+
+class FolderDescription(models.Model):
+    """One-or-two sentence role of a repo folder. 'ai' rows are regenerated; 'manual' rows never are."""
+    SOURCES = [('ai', 'ai'), ('manual', 'manual')]
+    repo = models.ForeignKey(WatchedRepo, on_delete=models.CASCADE, related_name='folder_descriptions')
+    path = models.CharField(max_length=300)  # 'backend/tasks', no leading/trailing slash
+    text = models.TextField()
+    source = models.CharField(max_length=10, choices=SOURCES)
+    tree_hash = models.CharField(max_length=64)  # folders.tree_hash of the tree it was written against
+    generated_at = models.DateTimeField()
+    model = models.CharField(max_length=100, blank=True, default='')  # LLM id; '' for manual
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['repo', 'path'], name='uniq_folder_description')]
